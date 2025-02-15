@@ -489,9 +489,9 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
             # image_features = torch.split(image_features, split_sizes, dim=0)
 
-            # Insert the hierarchical memory module here
-            frame_memory = self.compress_temporal_features(image_features)
-            rank_print(f"Frame memory : {[x.shape for x in frame_memory]}")
+            # # Insert the hierarchical memory module here
+            # frame_memory = self.compress_temporal_features(image_features)
+            # rank_print(f"Frame memory : {[x.shape for x in frame_memory]}")
 
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

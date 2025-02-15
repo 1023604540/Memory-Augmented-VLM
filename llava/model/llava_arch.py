@@ -29,6 +29,7 @@ from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_PATCH
 from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
+from llava.model.compress_functions import drop_feature, merge_feature, kmeans_feature, weighted_kmeans_feature, k_drop_feature, k_merge_feature, attention_feature
 
 ################################################################
 # Llava OneVision config
@@ -298,6 +299,70 @@ class LlavaMetaForCausalLM(ABC):
         image_feature =  torch.cat((image_feature, self.model.image_newline[:, None, None].expand(*image_feature.shape[:-1], 1).to(image_feature.device)), dim=-1)  # [3584, frame_num, 197]
         image_feature = image_feature.permute(1, 2, 0).contiguous()  # [frame_num, 197, 3584]
         return image_feature
+    def compress_temporal_features(self, image_features):
+        video_long_memory_length = getattr(self.config, "video_long_memory_length", 10)
+        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 10)
+        video_short_memory_length = getattr(self.config, "video_short_memory_length", 10)  # not used
+        video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
+        compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 1)
+        compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 1)
+        compress_Turing_update_ratio = getattr(self.config, "compress_Turing_update_ratio", 0.2)
+        compress_fn_dic = {
+            'drop': drop_feature,
+            'merge': merge_feature,
+            'kmeans': kmeans_feature,
+            'weighted_kmeans': weighted_kmeans_feature,
+            'kdrop': k_drop_feature,
+            'kmerge': k_merge_feature,
+            'attention': attention_feature,
+        }
+        compress_type = self.config.video_sample_type
+        if compress_type in compress_fn_dic:
+            compress_fn = compress_fn_dic[compress_type]
+        else:
+            raise NotImplementedError(f'max_length = {self.config.video_max_frames},'
+                                        f'while video_sample_type = {compress_type} is not supported yet.')
+        new_image_features = []
+        step_indices = []
+        step_features = []
+        for img_feature in image_features:  # [T, P*P, D]
+            cur_start = min(video_current_memory_length, img_feature.shape[0])
+            ### Calc Spatial Memory
+            if cur_start == 0:
+                cur_memory = img_feature[:0]
+                long_memory = img_feature
+                Turing_memory = img_feature
+            else:
+                cur_memory = img_feature[-cur_start:]  # [C, P*P, D]
+                long_memory = img_feature[:-cur_start]  # [L, P*P, D]
+                Turing_memory = img_feature[:-cur_start]  # [L, P*P, D]
+            if compress_long_memory_size * compress_long_memory_size != long_memory.shape[1]:
+                long_memory = self.compress_spatial_features(long_memory, compress_long_memory_size) # [L, P'*P', D]
+            if compress_Turing_memory_size * compress_Turing_memory_size != Turing_memory.shape[1]:
+                Turing_memory = self.compress_spatial_features(Turing_memory, compress_Turing_memory_size) # [L, P'*P', D]
+            ### Calc Temporal Memory
+            if video_long_memory_length == 0 or long_memory.shape[0] == 0:
+                long_memory_compreesed = long_memory[:0]
+            else:
+                long_memory_compreesed, weight, step_long_indices = compress_fn(long_memory, video_long_memory_length) # [L_long, P'*P', D], [L_long]
+                ### Calc Retrieved Memory
+                sorted_indices = torch.argsort(weight, descending=True)  # [L_long]
+                key_centroids = long_memory[sorted_indices]  # [L_long, P'*P', D]
+                key_length = 3
+                if key_centroids.shape[0] > key_length:
+                    key_centroids = key_centroids[:key_length]
+                dists = ((long_memory.unsqueeze(1) - key_centroids.unsqueeze(0)) ** 2).sum(dim=3).sum(dim=2).sqrt()  # [L_long, k_L]
+                min_indices = torch.argmin(dists, dim=0)  # [k_L]
+                key_memory = img_feature[min_indices]
+                cur_memory = torch.cat([key_memory, cur_memory], dim=0)
+            ### Calc Abstract Memory
+            if video_Turing_memory_length == 0 or Turing_memory.shape[0] == 0:
+                Turing_memory_compreesed = Turing_memory[:0]
+            else:
+                Turing_memory_compreesed, _ = attention_feature(Turing_memory, video_Turing_memory_length, self.attention, update_ratio=compress_Turing_update_ratio)
+            memory_feature = torch.cat([Turing_memory_compreesed.flatten(0, 1), long_memory_compreesed.flatten(0, 1), cur_memory.flatten(0, 1)], dim=0)
+            new_image_features.append(memory_feature)
+        return new_image_features
 
     def prepare_inputs_labels_for_multimodal(self, input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities=["image"], image_sizes=None):
         vision_tower = self.get_vision_tower()
@@ -344,6 +409,8 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
             # image_features = torch.split(image_features, split_sizes, dim=0)
 
+            frame_memory = self.compress_temporal_features(image_features)
+            rank_print(f"Frame memory : {[x.shape for x in frame_memory]}")
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

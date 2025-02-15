@@ -373,8 +373,8 @@ class LlavaMetaForCausalLM(ABC):
         return image_features
 
     def compress_temporal_features(self, image_features):
-        video_long_memory_length = getattr(self.config, "video_long_memory_length", 25)
-        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 25)
+        video_long_memory_length = getattr(self.config, "video_long_memory_length", 10)
+        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 10)
         video_short_memory_length = getattr(self.config, "video_short_memory_length", 10)  # not used
         video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
         compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 7)

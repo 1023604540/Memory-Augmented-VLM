@@ -310,7 +310,7 @@ class LlavaMetaForCausalLM(ABC):
         if patch_size == compress_size:
             return image_features
         elif compress_type is not None:
-            if 'mean' in self.config.compress_type:
+            if 'mean' in compress_type:
                 if compress_size == 1:
                     image_features = image_features.mean(dim=1, keepdim=True)
                 else:

@@ -301,6 +301,17 @@ class LlavaMetaForCausalLM(ABC):
         image_feature = image_feature.permute(1, 2, 0).contiguous()  # [frame_num, 197, 3584]
         return image_feature
 
+    def attention(self, turing_memory, new_feature, update_ratio=0.2):
+        T1, D1 = turing_memory.shape
+        T2, D2 = new_feature.shape
+        assert D1 == D2, f"dimmension not match, {D1} != {D2}"
+        model = self.get_model().attention_model
+        weight = model.get_weight(turing_memory, new_feature)
+        weight = weight * update_ratio  # [T1, T2]
+        decay = weight.sum(dim=1, keepdim=True)  # [T0*P, 1], 表示当前NTM memory和新来的feat的相似度
+        turing_memory = turing_memory * (1 - decay) + torch.mm(weight, new_feature)
+        return turing_memory
+
     def compress_spatial_features(self, image_features,
                                   compress_size=1):  # use 2d conv to compress spatial features from P*P to compress_size*compress_size
         compress_type = getattr(self.config, "compress_type", 'mean')

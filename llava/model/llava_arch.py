@@ -373,9 +373,8 @@ class LlavaMetaForCausalLM(ABC):
         return image_features
 
     def compress_temporal_features(self, image_features):
-        video_long_memory_length = getattr(self.config, "video_long_memory_length", 10)
-        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 10)
-        video_short_memory_length = getattr(self.config, "video_short_memory_length", 10)  # not used
+        video_long_memory_length = getattr(self.config, "video_long_memory_length", 8)
+        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 8)
         video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
         compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 7)
         compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 7)
@@ -440,7 +439,8 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Long_memory_compreesed shape: {long_memory_compreesed.shape}")
             rank_print(f"Retrieved_memory shape: {cur_memory.shape}")
             rank_print(f"Turing_memory_compreesed shape: {Turing_memory_compreesed.shape}")
-            memory_feature = torch.cat([Turing_memory_compreesed.flatten(0, 1), long_memory_compreesed.flatten(0, 1), cur_memory.flatten(0, 1)], dim=0)
+            #memory_feature = torch.cat([Turing_memory_compreesed.flatten(0, 1), long_memory_compreesed.flatten(0, 1), cur_memory.flatten(0, 1)], dim=0)
+            memory_feature = torch.cat([Turing_memory_compreesed.view(-1, 196, 3584), long_memory_compreesed.view(-1, 196, 3584)], dim=0)
             new_image_features.append(memory_feature)
         return new_image_features
 

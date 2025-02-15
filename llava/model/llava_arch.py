@@ -377,8 +377,8 @@ class LlavaMetaForCausalLM(ABC):
         video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 25)
         video_short_memory_length = getattr(self.config, "video_short_memory_length", 10)  # not used
         video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
-        compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 1)
-        compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 1)
+        compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 7)
+        compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 7)
         compress_Turing_update_ratio = getattr(self.config, "compress_Turing_update_ratio", 0.2)
         video_sample_type = getattr(self.config, "video_sample_type", "weighted_kmeans")
         compress_fn_dic = {
@@ -411,7 +411,7 @@ class LlavaMetaForCausalLM(ABC):
                 long_memory = img_feature[:-cur_start]  # [L, P*P, D]
                 Turing_memory = img_feature[:-cur_start]  # [L, P*P, D]
             if compress_long_memory_size * compress_long_memory_size != long_memory.shape[1]:
-                long_memory = self.compress_spatial_features(long_memory, compress_long_memory_size) # [L, P'*P', D]
+                long_memory = self.compress_spatial_features(long_memory, compress_long_memory_size) # [L, P'*P', D][num_frame,49,3584]
             if compress_Turing_memory_size * compress_Turing_memory_size != Turing_memory.shape[1]:
                 Turing_memory = self.compress_spatial_features(Turing_memory, compress_Turing_memory_size) # [L, P'*P', D]
             ### Calc Temporal Memory

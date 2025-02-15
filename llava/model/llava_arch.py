@@ -307,6 +307,7 @@ class LlavaMetaForCausalLM(ABC):
         compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 1)
         compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 1)
         compress_Turing_update_ratio = getattr(self.config, "compress_Turing_update_ratio", 0.2)
+        video_sample_type = getattr(self.config, "video_sample_type", "weighted_kmeans")
         compress_fn_dic = {
             'drop': drop_feature,
             'merge': merge_feature,
@@ -316,7 +317,7 @@ class LlavaMetaForCausalLM(ABC):
             'kmerge': k_merge_feature,
             'attention': attention_feature,
         }
-        compress_type = self.config.video_sample_type
+        compress_type = video_sample_type
         if compress_type in compress_fn_dic:
             compress_fn = compress_fn_dic[compress_type]
         else:

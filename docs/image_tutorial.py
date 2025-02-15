@@ -20,6 +20,7 @@ device = "cuda"
 device_map = "auto"
 llava_model_args = {
         "multimodal": True,
+        "attn_implementation": None,
     }
 overwrite_config = {}
 overwrite_config["image_aspect_ratio"] = "pad"

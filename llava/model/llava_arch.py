@@ -20,6 +20,7 @@ import re
 import time
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from .multimodal_encoder.builder import build_vision_tower
 from .multimodal_resampler.builder import build_vision_resampler
 from .multimodal_projector.builder import build_vision_projector
@@ -299,6 +300,30 @@ class LlavaMetaForCausalLM(ABC):
         image_feature =  torch.cat((image_feature, self.model.image_newline[:, None, None].expand(*image_feature.shape[:-1], 1).to(image_feature.device)), dim=-1)  # [3584, frame_num, 197]
         image_feature = image_feature.permute(1, 2, 0).contiguous()  # [frame_num, 197, 3584]
         return image_feature
+
+    def compress_spatial_features(self, image_features,
+                                  compress_size=1):  # use 2d conv to compress spatial features from P*P to compress_size*compress_size
+        compress_type = getattr(self.config, "compress_type", 'mean')
+        patch_size = round(math.sqrt(image_features.shape[1]))
+        assert patch_size * patch_size == image_features.shape[
+            1], f"For ViT feature map, {patch_size}*{patch_size}={patch_size ** 2} != {image_features.shape[1]}"
+        if patch_size == compress_size:
+            return image_features
+        elif compress_type is not None:
+            if 'mean' in self.config.compress_type:
+                if compress_size == 1:
+                    image_features = image_features.mean(dim=1, keepdim=True)
+                else:
+                    image_features = image_features.view(-1, patch_size, patch_size, image_features.shape[-1])
+                    image_features = image_features.permute(0, 3, 1, 2)  # [B*T, D, P, P]
+                    pooled_features = F.avg_pool2d(image_features,
+                                                   (patch_size // compress_size, patch_size // compress_size))
+                    pooled_features = pooled_features.permute(0, 2, 3, 1)  # [B*T, P, P, D]
+                    image_features = pooled_features.view(-1, compress_size * compress_size, pooled_features.shape[-1])
+            else:
+                raise NotImplementedError(f"`compress_type` {self.config.compress_type} is not supported yet.")
+        return image_features
+
     def compress_temporal_features(self, image_features):
         video_long_memory_length = getattr(self.config, "video_long_memory_length", 10)
         video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 10)

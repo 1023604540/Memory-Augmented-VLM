@@ -372,7 +372,7 @@ class LlavaMetaForCausalLM(ABC):
                 raise NotImplementedError(f"`compress_type` {self.config.compress_type} is not supported yet.")
         return image_features
 
-    def compress_temporal_features(self, image_features):
+    def compress_temporal_features(self, image_features, video_idx_in_batch):
         video_long_memory_length = getattr(self.config, "video_long_memory_length", 8)
         video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 8)
         video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
@@ -398,7 +398,10 @@ class LlavaMetaForCausalLM(ABC):
         new_image_features = []
         step_indices = []
         step_features = []
-        for img_feature in image_features:  # [T, P*P, D]
+        for idx, img_feature in enumerate(image_features):  # [T, P*P, D]
+            if idx not in video_idx_in_batch:
+                new_image_features.append(None)
+                continue
             cur_start = min(video_current_memory_length, img_feature.shape[0])
             ### Calc Spatial Memory
             if cur_start == 0:
@@ -490,9 +493,11 @@ class LlavaMetaForCausalLM(ABC):
             # image_features = torch.split(image_features, split_sizes, dim=0)
 
             # # Insert the hierarchical memory module here
-            frame_memory = self.compress_temporal_features(image_features)
+
+            frame_memory = self.compress_temporal_features(image_features, video_idx_in_batch)
             rank_print(f"Frame memory : {[x.shape for x in frame_memory]}")
-            image_features = [torch.cat((a, b), dim=0) for a, b in zip(image_features, frame_memory)]
+            image_features = [torch.cat((a, b), dim=0) if b is not None else a
+                              for a, b in zip(image_features, frame_memory)]
             rank_print(f"Image_feature + Frame memory : {[x.shape for x in image_features]}")
 
 

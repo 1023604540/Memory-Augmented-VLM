@@ -97,6 +97,10 @@ class LlavaMetaModel:
             if "unpad" in getattr(config, "mm_patch_merge_type", ""):
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
+        self.mm_input_dim = getattr(config, "mm_hidden_size", 3584)
+        compress_Turing_hidden_dim = getattr(config, "compress_Turing_hidden_dim", 32)
+        self.attention_model = NeuralTuringMachine(self.mm_input_dim, compress_Turing_hidden_dim)
+
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
         if type(vision_tower) is list:
@@ -209,6 +213,39 @@ def unpad_image(tensor, original_size):
         unpadded_tensor = tensor[:, :, padding : current_width - padding]
 
     return unpadded_tensor
+
+class NeuralTuringMachine(nn.Module):
+    def __init__(self, input_dim=1024, output_dim=1024, attention_dropout=0.1):
+        super(NeuralTuringMachine, self).__init__()
+        self.input_dim = input_dim
+        self.output_dim = output_dim
+        self.q_proj = nn.Linear(input_dim, output_dim)
+        self.k_proj = nn.Linear(input_dim, output_dim)
+        self.v_proj = nn.Linear(input_dim, output_dim)
+        self.dropout = nn.Dropout(attention_dropout)
+        self.out_proj = nn.Linear(output_dim, input_dim)
+        self.out_dropout = nn.Dropout(attention_dropout)
+        self.out_ln = nn.LayerNorm(input_dim, eps=1e-12)
+
+    def get_weight(self, x, y):
+        query = self.q_proj(x)
+        key = self.k_proj(y)
+        scores = torch.matmul(query, key.transpose(0, 1)) / math.sqrt(self.output_dim)
+        weight = F.softmax(scores, dim=-1)
+        return weight
+
+    def forward(self, x, y):
+        query = self.q_proj(x)
+        key = self.k_proj(y)
+        scores = torch.matmul(query, key.transpose(0, 1)) / math.sqrt(self.output_dim)
+        weight = F.softmax(scores, dim=-1)
+        attn = self.dropout(weight)
+        value = self.v_proj(y)
+        output = torch.matmul(attn, value)
+        output = self.out_proj(output)
+        output = self.out_dropout(output)
+        output = self.out_ln(output.unsqueeze(0)).squeeze(0)
+        return output
 
 
 class LlavaMetaForCausalLM(ABC):

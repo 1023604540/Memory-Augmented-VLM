@@ -215,7 +215,7 @@ def unpad_image(tensor, original_size):
     return unpadded_tensor
 
 class NeuralTuringMachine(nn.Module):
-    def __init__(self, input_dim=1024, output_dim=1024, attention_dropout=0.1):
+    def __init__(self, input_dim=3584, output_dim=3584, attention_dropout=0.1):
         super(NeuralTuringMachine, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim

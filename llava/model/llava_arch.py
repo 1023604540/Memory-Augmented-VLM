@@ -419,7 +419,7 @@ class LlavaMetaForCausalLM(ABC):
                 long_memory_compreesed = long_memory[:0]
             else:
                 long_memory_compreesed, weight, step_long_indices = compress_fn(long_memory, video_long_memory_length) # [L_long, P'*P', D], [L_long]
-                rank_print(f"Long_memory_compreesed shape: {long_memory_compreesed.shape}")
+
                 ### Calc Retrieved Memory
                 sorted_indices = torch.argsort(weight, descending=True)  # [L_long]
                 key_centroids = long_memory[sorted_indices]  # [L_long, P'*P', D]
@@ -430,13 +430,16 @@ class LlavaMetaForCausalLM(ABC):
                 min_indices = torch.argmin(dists, dim=0)  # [k_L]
                 key_memory = img_feature[min_indices]
                 cur_memory = torch.cat([key_memory, cur_memory], dim=0)
-                rank_print(f"Retrieved_memory shape: {long_memory_compreesed.shape}")
+
             ### Calc Abstract Memory
             if video_Turing_memory_length == 0 or Turing_memory.shape[0] == 0:
                 Turing_memory_compreesed = Turing_memory[:0]
             else:
                 Turing_memory_compreesed, _ = attention_feature(Turing_memory, video_Turing_memory_length, self.attention, update_ratio=compress_Turing_update_ratio)
-                rank_print(f"Turing_memory_compreesed shape: {Turing_memory_compreesed.shape}")
+
+            rank_print(f"Long_memory_compreesed shape: {long_memory_compreesed.shape}")
+            rank_print(f"Retrieved_memory shape: {cur_memory.shape}")
+            rank_print(f"Turing_memory_compreesed shape: {Turing_memory_compreesed.shape}")
             memory_feature = torch.cat([Turing_memory_compreesed.flatten(0, 1), long_memory_compreesed.flatten(0, 1), cur_memory.flatten(0, 1)], dim=0)
             new_image_features.append(memory_feature)
         return new_image_features

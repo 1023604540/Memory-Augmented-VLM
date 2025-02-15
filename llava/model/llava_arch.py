@@ -489,8 +489,10 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
             # image_features = torch.split(image_features, split_sizes, dim=0)
 
+            # Insert the hierarchical memory module here
             frame_memory = self.compress_temporal_features(image_features)
             rank_print(f"Frame memory : {[x.shape for x in frame_memory]}")
+
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
@@ -542,7 +544,11 @@ class LlavaMetaForCausalLM(ABC):
                         elif mm_newline_position == "one_token":
                             # one-token
                             # 模型将整个视频序列展平成一个单一的视觉 token
+
+                            # Add hierarchical memory module
+                            frame_memory = self.compress_temporal_features(image_feature)
                             image_feature = image_feature.flatten(0, 1)
+                            image_feature = torch.cat((image_feature, frame_memory[0]), dim=0)
                             rank_print(f"Image feature shape one_token : {image_feature.shape}")  # [frame_num*196, 3584]
                             if 'unpad' in mm_patch_merge_type:
                                 image_feature = torch.cat((

@@ -377,7 +377,7 @@ class LlavaMetaForCausalLM(ABC):
         video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 25)
         video_short_memory_length = getattr(self.config, "video_short_memory_length", 10)  # not used
         video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
-        compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 4)
+        compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 1)
         compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 1)
         compress_Turing_update_ratio = getattr(self.config, "compress_Turing_update_ratio", 0.2)
         video_sample_type = getattr(self.config, "video_sample_type", "weighted_kmeans")

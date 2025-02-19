@@ -528,7 +528,7 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Image_feature + Frame memory : {[x.shape for x in memory_features]}")
 
             concat_images = torch.cat([image for image in memory_features], dim=0)
-            split_sizes = [image.shape[0] for image in image_features]
+            split_sizes = [image.shape[0] for image in memory_features]
             projected_features = self.get_model().mm_projector(concat_images)
             image_features = torch.split(projected_features, split_sizes)
             rank_print(f"Projected image feats : {[x.shape for x in image_features]}")

@@ -57,11 +57,33 @@ def load_full_video(video_path):
     return dense_frames  # (frames, height, width, channels)
 
 
+def load_sampled_video(video_path, sample_fps=5):
+    # 初始化 VideoReader 对象
+    vr = VideoReader(video_path, ctx=cpu(0))
+
+    # 获取视频的原始帧率
+    original_fps = vr.get_avg_fps()
+
+    # 计算采样间隔
+    sample_interval = int(original_fps // sample_fps)
+
+    # 获取视频的总帧数
+    total_frame_num = len(vr)
+
+    # 生成需要采样的帧索引列表
+    frame_idx = list(range(0, total_frame_num, sample_interval))
+
+    # 获取采样的帧
+    sampled_frames = vr.get_batch(frame_idx).asnumpy()
+
+    return sampled_frames  # 返回采样的帧 (frames, height, width, channels)
+
+
 print("load video")
 # Load and process video
 video_path = "/home/hpc/b232dd/b232dd16/LLaVA-OV/docs/jobs.mp4"
 # video_frames = load_video(video_path, 32)
-video_frames = load_full_video(video_path)
+video_frames = load_sampled_video(video_path)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []
 frames = image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()

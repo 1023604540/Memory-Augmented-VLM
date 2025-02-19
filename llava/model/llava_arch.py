@@ -517,10 +517,12 @@ class LlavaMetaForCausalLM(ABC):
             sampled_image_features = []
             for image_feature in image_features:
                 sampled_image_features.append(self.uniform_sample_frames(image_feature, num_samples=32))
-            # # Insert the hierarchical memory module here
+            ## Insert the hierarchical memory module here
 
             frame_memory = self.compress_temporal_features(image_features, video_idx_in_batch)
             rank_print(f"Frame memory : {[x.shape for x in frame_memory if x is not None]}")
+
+            ## Concatenate memory module with original image features
             image_features = [torch.cat((a, b), dim=0) if b is not None else a
                               for a, b in zip(sampled_image_features, frame_memory)]
             rank_print(f"Image_feature + Frame memory : {[x.shape for x in image_features]}")

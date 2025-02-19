@@ -502,17 +502,17 @@ class LlavaMetaForCausalLM(ABC):
 
             # This is a list, each element is [num_images, patch * patch, dim]
             rank_print(f"Concat images : {concat_images.shape}")
-            encoded_image_features = torch.split(encoded_image_features, split_sizes)  # [torch.Size([frame_num, 729, 3584])]
+            image_features = torch.split(encoded_image_features, split_sizes)  # [torch.Size([frame_num, 729, 3584])]
             rank_print(f"Encoded image feats : {[x.shape for x in encoded_image_features]}")
-            image_features = []
-            for idx, image_feat in enumerate(encoded_image_features):
-                if idx in video_idx_in_batch:
-                    image_features.append(self.get_2dPool(image_feat))
-                else:
-                    image_features.append(image_feat)
-            # image_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
-            rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
-            # image_features = torch.split(image_features, split_sizes, dim=0)
+            # image_features = []
+            # for idx, image_feat in enumerate(encoded_image_features):
+            #     if idx in video_idx_in_batch:
+            #         image_features.append(self.get_2dPool(image_feat))
+            #     else:
+            #         image_features.append(image_feat)
+            # # image_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
+            # rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
+            # # image_features = torch.split(image_features, split_sizes, dim=0)
 
             sampled_image_features = []
             for image_feature in image_features:
@@ -523,16 +523,27 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Frame memory : {[x.shape for x in frame_memory if x is not None]}")
 
             ## Concatenate memory module with original image features
-            memory_features = [torch.cat((a, b), dim=0) if b is None else a
+            memory_features = [torch.cat((a, b), dim=0) if b is not None else a
                               for a, b in zip(sampled_image_features, frame_memory)]
             rank_print(f"Image_feature + Frame memory : {[x.shape for x in memory_features]}")
 
+            # Apply mm_projector
             concat_images = torch.cat([image for image in memory_features], dim=0)
             split_sizes = [image.shape[0] for image in memory_features]
             projected_features = self.get_model().mm_projector(concat_images)
             image_features = torch.split(projected_features, split_sizes)
             rank_print(f"Projected image feats : {[x.shape for x in image_features]}")
 
+            new_image_features = []
+            for idx, image_feat in enumerate(encoded_image_features):
+                if idx in video_idx_in_batch:
+                    new_image_features.append(self.get_2dPool(image_feat))
+                else:
+                    new_image_features.append(image_feat)
+            # image_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
+            rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in new_image_features]}")  # [frame_num, 196, 3584]
+            # image_features = torch.split(image_features, split_sizes, dim=0)
+            image_features = new_image_features
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

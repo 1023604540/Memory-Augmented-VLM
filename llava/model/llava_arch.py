@@ -504,21 +504,13 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Concat images : {concat_images.shape}")
             image_features = torch.split(encoded_image_features, split_sizes)  # [torch.Size([frame_num, 729, 3584])]
             rank_print(f"Encoded image feats : {[x.shape for x in image_features]}")
-            # image_features = []
-            # for idx, image_feat in enumerate(encoded_image_features):
-            #     if idx in video_idx_in_batch:
-            #         image_features.append(self.get_2dPool(image_feat))
-            #     else:
-            #         image_features.append(image_feat)
-            # # image_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
-            # rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
-            # # image_features = torch.split(image_features, split_sizes, dim=0)
 
+            # Sample maximal 32 frames as the original input
             sampled_image_features = []
             for image_feature in image_features:
                 sampled_image_features.append(self.uniform_sample_frames(image_feature, num_samples=32))
-            ## Insert the hierarchical memory module here
 
+            ## Insert the hierarchical memory module here
             frame_memory = self.compress_temporal_features(image_features, video_idx_in_batch)
             rank_print(f"Frame memory : {[x.shape for x in frame_memory if x is not None]}")
 

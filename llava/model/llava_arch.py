@@ -216,7 +216,7 @@ def unpad_image(tensor, original_size):
     return unpadded_tensor
 
 class NeuralTuringMachine(nn.Module):
-    def __init__(self, input_dim=3584, output_dim=3584, attention_dropout=0.1):
+    def __init__(self, input_dim=1152, output_dim=1152, attention_dropout=0.1):
         super(NeuralTuringMachine, self).__init__()
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -531,6 +531,7 @@ class LlavaMetaForCausalLM(ABC):
             split_sizes = [image.shape[0] for image in image_features]
             projected_features = self.get_model().mm_projector(concat_images)
             image_features = torch.split(projected_features, split_sizes)
+            rank_print(f"Projected image feats : {[x.shape for x in image_features]}")
 
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

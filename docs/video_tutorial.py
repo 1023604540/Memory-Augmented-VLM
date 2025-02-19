@@ -47,6 +47,7 @@ def load_video(video_path, max_frames_num):
     return spare_frames  # (frames, height, width, channels)
 
 def load_full_video(video_path):
+    # Using this would give you too many frames, leading to cuda OOM
     if type(video_path) == str:
         vr = VideoReader(video_path, ctx=cpu(0))
     else:

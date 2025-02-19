@@ -503,7 +503,7 @@ class LlavaMetaForCausalLM(ABC):
             # This is a list, each element is [num_images, patch * patch, dim]
             rank_print(f"Concat images : {concat_images.shape}")
             image_features = torch.split(encoded_image_features, split_sizes)  # [torch.Size([frame_num, 729, 3584])]
-            rank_print(f"Encoded image feats : {[x.shape for x in encoded_image_features]}")
+            rank_print(f"Encoded image feats : {[x.shape for x in image_features]}")
             # image_features = []
             # for idx, image_feat in enumerate(encoded_image_features):
             #     if idx in video_idx_in_batch:

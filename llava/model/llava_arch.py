@@ -535,7 +535,7 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Projected image feats : {[x.shape for x in image_features]}")
 
             new_image_features = []
-            for idx, image_feat in enumerate(encoded_image_features):
+            for idx, image_feat in enumerate(image_features):
                 if idx in video_idx_in_batch:
                     new_image_features.append(self.get_2dPool(image_feat))
                 else:

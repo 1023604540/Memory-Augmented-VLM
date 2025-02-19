@@ -283,7 +283,7 @@ class LlavaMetaForCausalLM(ABC):
     def encode_images(self, images):
         image_features = self.get_model().get_vision_tower()(images)
         # image_features = self.get_model().vision_resampler(image_features, images=images)
-        image_features = self.get_model().mm_projector(image_features)
+        # image_features = self.get_model().mm_projector(image_features)
         return image_features
 
     def encode_multimodals(self, videos_or_images, video_idx_in_batch, split_sizes=None):
@@ -523,9 +523,14 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Frame memory : {[x.shape for x in frame_memory if x is not None]}")
 
             ## Concatenate memory module with original image features
-            image_features = [torch.cat((a, b), dim=0) if b is not None else a
+            memory_features = [torch.cat((a, b), dim=0) if b is not None else a
                               for a, b in zip(sampled_image_features, frame_memory)]
-            rank_print(f"Image_feature + Frame memory : {[x.shape for x in image_features]}")
+            rank_print(f"Image_feature + Frame memory : {[x.shape for x in memory_features]}")
+
+            concat_images = torch.cat([image for image in memory_features], dim=0)
+            split_sizes = [image.shape[0] for image in image_features]
+            projected_features = self.get_model().mm_projector(concat_images)
+            image_features = torch.split(projected_features, split_sizes)
 
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

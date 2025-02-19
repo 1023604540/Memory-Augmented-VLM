@@ -32,6 +32,7 @@ from llava.utils import rank0_print, rank_print
 import random
 from llava.model.compress_functions import drop_feature, merge_feature, kmeans_feature, weighted_kmeans_feature, k_drop_feature, k_merge_feature, attention_feature
 
+
 ################################################################
 # Llava OneVision config
   # "mm_newline_position":"one_token",
@@ -447,7 +448,28 @@ class LlavaMetaForCausalLM(ABC):
             new_image_features.append(memory_feature)
         return new_image_features
 
+    def uniform_sample_frames(self, tensor, num_samples=32):
+        """
+        Uniformly samples frames from a 4D tensor.
+
+        Args:
+            tensor (torch.Tensor): Input tensor of shape (F, P, D)
+            num_samples (int): Number of frames to sample
+
+        Returns:
+            torch.Tensor: Sampled tensor of shape (num_samples, P, D)
+        """
+        frame_num = tensor.shape[0]  # Total frames
+        if frame_num > num_samples:
+            indices = torch.linspace(0, frame_num - 1, num_samples).long()  # Uniformly spaced indices
+            return tensor[indices]
+        else:
+            return tensor
+
+
+
     def prepare_inputs_labels_for_multimodal(self, input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities=["image"], image_sizes=None):
+
         vision_tower = self.get_vision_tower()
         # rank_print(modalities)
         if vision_tower is None or images is None or input_ids.shape[1] == 1:
@@ -492,12 +514,15 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
             # image_features = torch.split(image_features, split_sizes, dim=0)
 
+            sampled_image_features = []
+            for image_feature in image_features:
+                sampled_image_features.append(self.uniform_sample_frames(image_feature, num_samples=32))
             # # Insert the hierarchical memory module here
 
             frame_memory = self.compress_temporal_features(image_features, video_idx_in_batch)
             rank_print(f"Frame memory : {[x.shape for x in frame_memory if x is not None]}")
             image_features = [torch.cat((a, b), dim=0) if b is not None else a
-                              for a, b in zip(image_features, frame_memory)]
+                              for a, b in zip(sampled_image_features, frame_memory)]
             rank_print(f"Image_feature + Frame memory : {[x.shape for x in image_features]}")
 
 

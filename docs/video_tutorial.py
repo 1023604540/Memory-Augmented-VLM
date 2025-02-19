@@ -46,13 +46,26 @@ def load_video(video_path, max_frames_num):
     spare_frames = vr.get_batch(frame_idx).asnumpy()
     return spare_frames  # (frames, height, width, channels)
 
+def load_full_video(video_path):
+    if type(video_path) == str:
+        vr = VideoReader(video_path, ctx=cpu(0))
+    else:
+        vr = VideoReader(video_path[0], ctx=cpu(0))
+    total_frame_num = len(vr)
+    frame_idx = [i for i in range(0, total_frame_num)]
+    dense_frames = vr.get_batch(frame_idx).asnumpy()
+    return dense_frames  # (frames, height, width, channels)
+
+
 print("load video")
 # Load and process video
 video_path = "/home/hpc/b232dd/b232dd16/LLaVA-OV/docs/needle_32.mp4"
-video_frames = load_video(video_path, 32)
+# video_frames = load_video(video_path, 32)
+video_frames = load_full_video(video_path)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []
 frames = image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()
+print(frames.shape) # torch.Size([16, 3, 384, 384])
 image_tensors.append(frames)
 
 # memory_inserted = False

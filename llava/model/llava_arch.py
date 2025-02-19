@@ -523,7 +523,7 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Frame memory : {[x.shape for x in frame_memory if x is not None]}")
 
             ## Concatenate memory module with original image features
-            memory_features = [torch.cat((a, b), dim=0) if b is not None else a
+            memory_features = [torch.cat((a, b), dim=0) if b is None else a
                               for a, b in zip(sampled_image_features, frame_memory)]
             rank_print(f"Image_feature + Frame memory : {[x.shape for x in memory_features]}")
 

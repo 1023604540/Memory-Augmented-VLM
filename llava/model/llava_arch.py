@@ -444,7 +444,7 @@ class LlavaMetaForCausalLM(ABC):
             rank_print(f"Retrieved_memory shape: {cur_memory.shape}")
             rank_print(f"Turing_memory_compreesed shape: {Turing_memory_compreesed.shape}")
             #memory_feature = torch.cat([Turing_memory_compreesed.flatten(0, 1), long_memory_compreesed.flatten(0, 1), cur_memory.flatten(0, 1)], dim=0)
-            memory_feature = torch.cat([Turing_memory_compreesed.view(-1, 196, 3584), long_memory_compreesed.view(-1, 196, 3584)], dim=0)  # Retrieved memory deprecated
+            memory_feature = torch.cat([Turing_memory_compreesed.view(-1, 196, 1152), long_memory_compreesed.view(-1, 196, 1152)], dim=0)  # Retrieved memory deprecated
             new_image_features.append(memory_feature)
         return new_image_features
 

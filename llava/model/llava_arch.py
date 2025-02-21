@@ -359,7 +359,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # If it is not a video feature, we don't need to process it
                 if idx not in video_idx_in_batch:
                     continue
-                boundaries = segment(image.mean(dim=1), k=50)
+                boundaries = segment(image.mean(dim=1).flatten(1,2), k=50)
                 images_list[idx] = torch.cat([image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)], dim=0)
 
 

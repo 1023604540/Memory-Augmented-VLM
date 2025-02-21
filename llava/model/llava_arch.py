@@ -361,6 +361,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     continue
                 boundaries = segment(image.mean(dim=1).flatten(1,2), k=50)
                 print(f"boundaries:{len(boundaries)}")
+                selected_frames = [image[boundaries[i]] for i in range(len(boundaries) - 1)]
                 images_list[idx] = torch.stack(selected_frames, dim=0)
 
 

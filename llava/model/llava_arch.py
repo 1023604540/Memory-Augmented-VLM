@@ -30,6 +30,7 @@ from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
+from llava.model.memory_module.segment import segment
 
 
 ################################################################
@@ -354,13 +355,20 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 else:
                     images_list.append(image.unsqueeze(0))
 
+            for idx, image in enumerate(images_list):
+                # If it is not a video feature, we don't need to process it
+                if idx not in video_idx_in_batch:
+                    continue
+                boundaries = segment(image.mean(dim=1), k=50)
+                images_list[idx] = torch.cat([image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)], dim=0)
+
+
             concat_images = torch.cat([image for image in images_list], dim=0)  # torch.Size([frame_num, 3, 384, 384])
+            rank_print(f"Concat images : {concat_images.shape}")
             split_sizes = [image.shape[0] for image in images_list]
             encoded_image_features = self.encode_images(concat_images)
             # image_features,all_faster_video_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
-
             # This is a list, each element is [num_images, patch * patch, dim]
-            rank_print(f"Concat images : {concat_images.shape}")
             image_features = torch.split(encoded_image_features, split_sizes)  # [torch.Size([frame_num, 729, 3584])]
             rank_print(f"Encoded image feats : {[x.shape for x in image_features]}")
 

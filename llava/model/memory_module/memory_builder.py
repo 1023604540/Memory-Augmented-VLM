@@ -113,6 +113,7 @@ class MultimodalOpsMixin:
 
         new_image_features = []
         for idx, img_feature in enumerate(image_features):
+            # If it is not a video feature, we don't need to process it
             if idx not in video_idx_in_batch:
                 new_image_features.append(None)
                 continue

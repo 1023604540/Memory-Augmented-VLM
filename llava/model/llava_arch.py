@@ -360,6 +360,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 if idx not in video_idx_in_batch:
                     continue
                 boundaries = segment(image.mean(dim=1).flatten(1,2), k=50)
+                print(f"boundaries:{len(boundaries)}")
                 images_list[idx] = torch.cat([image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)], dim=0)
 
 

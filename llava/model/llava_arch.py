@@ -17,7 +17,6 @@ from abc import ABC, abstractmethod
 
 import math
 import re
-import time
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -30,7 +29,7 @@ from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_PATCH
 from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
-from llava.model.compress_functions import drop_feature, merge_feature, kmeans_feature, weighted_kmeans_feature, k_drop_feature, k_merge_feature, attention_feature
+from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
 
 
 ################################################################
@@ -215,41 +214,9 @@ def unpad_image(tensor, original_size):
 
     return unpadded_tensor
 
-class NeuralTuringMachine(nn.Module):
-    def __init__(self, input_dim=1152, output_dim=1152, attention_dropout=0.1):
-        super(NeuralTuringMachine, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.q_proj = nn.Linear(input_dim, output_dim)
-        self.k_proj = nn.Linear(input_dim, output_dim)
-        self.v_proj = nn.Linear(input_dim, output_dim)
-        self.dropout = nn.Dropout(attention_dropout)
-        self.out_proj = nn.Linear(output_dim, input_dim)
-        self.out_dropout = nn.Dropout(attention_dropout)
-        self.out_ln = nn.LayerNorm(input_dim, eps=1e-12)
-
-    def get_weight(self, x, y):
-        query = self.q_proj(x)
-        key = self.k_proj(y)
-        scores = torch.matmul(query, key.transpose(0, 1)) / math.sqrt(self.output_dim)
-        weight = F.softmax(scores, dim=-1)
-        return weight
-
-    def forward(self, x, y):
-        query = self.q_proj(x)
-        key = self.k_proj(y)
-        scores = torch.matmul(query, key.transpose(0, 1)) / math.sqrt(self.output_dim)
-        weight = F.softmax(scores, dim=-1)
-        attn = self.dropout(weight)
-        value = self.v_proj(y)
-        output = torch.matmul(attn, value)
-        output = self.out_proj(output)
-        output = self.out_dropout(output)
-        output = self.out_ln(output.unsqueeze(0)).squeeze(0)
-        return output
 
 
-class LlavaMetaForCausalLM(ABC):
+class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
     @abstractmethod
     def get_model(self):
@@ -339,114 +306,6 @@ class LlavaMetaForCausalLM(ABC):
         image_feature = image_feature.permute(1, 2, 0).contiguous()  # [frame_num, 197, 3584]
         return image_feature
 
-    def attention(self, turing_memory, new_feature, update_ratio=0.2):
-        T1, D1 = turing_memory.shape
-        T2, D2 = new_feature.shape
-        assert D1 == D2, f"dimmension not match, {D1} != {D2}"
-        model = self.get_model().attention_model
-        weight = model.get_weight(turing_memory, new_feature)
-        weight = weight * update_ratio  # [T1, T2]
-        decay = weight.sum(dim=1, keepdim=True)  # [T0*P, 1], 表示当前NTM memory和新来的feat的相似度
-        turing_memory = turing_memory * (1 - decay) + torch.mm(weight, new_feature)
-        return turing_memory
-
-    def compress_spatial_features(self, image_features,
-                                  compress_size=1):  # use 2d conv to compress spatial features from P*P to compress_size*compress_size
-        compress_type = getattr(self.config, "compress_type", 'mean')
-        patch_size = round(math.sqrt(image_features.shape[1]))
-        assert patch_size * patch_size == image_features.shape[
-            1], f"For ViT feature map, {patch_size}*{patch_size}={patch_size ** 2} != {image_features.shape[1]}"
-        if patch_size == compress_size:
-            return image_features
-        elif compress_type is not None:
-            if 'mean' in compress_type:
-                if compress_size == 1:
-                    image_features = image_features.mean(dim=1, keepdim=True)
-                else:
-                    image_features = image_features.view(-1, patch_size, patch_size, image_features.shape[-1])
-                    image_features = image_features.permute(0, 3, 1, 2)  # [B*T, D, P, P]
-                    pooled_features = F.avg_pool2d(image_features,
-                                                   (patch_size // compress_size, patch_size // compress_size))
-                    pooled_features = pooled_features.permute(0, 2, 3, 1)  # [B*T, P, P, D]
-                    image_features = pooled_features.view(-1, compress_size * compress_size, pooled_features.shape[-1])
-            else:
-                raise NotImplementedError(f"`compress_type` {self.config.compress_type} is not supported yet.")
-        return image_features
-
-    def compress_temporal_features(self, image_features, video_idx_in_batch):
-        video_long_memory_length = getattr(self.config, "video_long_memory_length", 9)
-        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 9)
-        video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
-        compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 9)
-        compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 9)
-        compress_Turing_update_ratio = getattr(self.config, "compress_Turing_update_ratio", 0.2)
-        video_sample_type = getattr(self.config, "video_sample_type", "weighted_kmeans")
-        compress_fn_dic = {
-            'drop': drop_feature,
-            'merge': merge_feature,
-            'kmeans': kmeans_feature,
-            'weighted_kmeans': weighted_kmeans_feature,
-            'kdrop': k_drop_feature,
-            'kmerge': k_merge_feature,
-            'attention': attention_feature,
-        }
-        compress_type = video_sample_type
-        if compress_type in compress_fn_dic:
-            compress_fn = compress_fn_dic[compress_type]
-        else:
-            raise NotImplementedError(f'max_length = {self.config.video_max_frames},'
-                                        f'while video_sample_type = {compress_type} is not supported yet.')
-        new_image_features = []
-        step_indices = []
-        step_features = []
-        for idx, img_feature in enumerate(image_features):  # [T, P*P, D]
-            if idx not in video_idx_in_batch:
-                new_image_features.append(None)
-                continue
-            cur_start = min(video_current_memory_length, img_feature.shape[0])
-            ### Calc Spatial Memory
-            if cur_start == 0:
-                cur_memory = img_feature[:0]
-                long_memory = img_feature
-                Turing_memory = img_feature
-            else:
-                cur_memory = img_feature[-cur_start:]  # [C, P*P, D]
-                long_memory = img_feature[:-cur_start]  # [L, P*P, D]
-                Turing_memory = img_feature[:-cur_start]  # [L, P*P, D]
-            if compress_long_memory_size * compress_long_memory_size != long_memory.shape[1]:
-                long_memory = self.compress_spatial_features(long_memory, compress_long_memory_size) # [L, P'*P', D][num_frame,49,3584]
-            if compress_Turing_memory_size * compress_Turing_memory_size != Turing_memory.shape[1]:
-                Turing_memory = self.compress_spatial_features(Turing_memory, compress_Turing_memory_size) # [L, P'*P', D]
-            ### Calc Temporal Memory
-            if video_long_memory_length == 0 or long_memory.shape[0] == 0:
-                long_memory_compreesed = long_memory[:0]
-            else:
-                long_memory_compreesed, weight, step_long_indices = compress_fn(long_memory, video_long_memory_length) # [L_long, P'*P', D], [L_long]
-
-                ### Calc Retrieved Memory
-                sorted_indices = torch.argsort(weight, descending=True)  # [L_long]
-                key_centroids = long_memory[sorted_indices]  # [L_long, P'*P', D]
-                key_length = 3
-                if key_centroids.shape[0] > key_length:
-                    key_centroids = key_centroids[:key_length]
-                dists = ((long_memory.unsqueeze(1) - key_centroids.unsqueeze(0)) ** 2).sum(dim=3).sum(dim=2).sqrt()  # [L_long, k_L]
-                min_indices = torch.argmin(dists, dim=0)  # [k_L]
-                key_memory = img_feature[min_indices]
-                cur_memory = torch.cat([key_memory, cur_memory], dim=0)
-
-            ### Calc Abstract Memory
-            if video_Turing_memory_length == 0 or Turing_memory.shape[0] == 0:
-                Turing_memory_compreesed = Turing_memory[:0]
-            else:
-                Turing_memory_compreesed, _ = attention_feature(Turing_memory, video_Turing_memory_length, self.attention, update_ratio=compress_Turing_update_ratio)
-
-            rank_print(f"Long_memory_compreesed shape: {long_memory_compreesed.shape}")
-            rank_print(f"Retrieved_memory shape: {cur_memory.shape}")
-            rank_print(f"Turing_memory_compreesed shape: {Turing_memory_compreesed.shape}")
-            #memory_feature = torch.cat([Turing_memory_compreesed.flatten(0, 1), long_memory_compreesed.flatten(0, 1), cur_memory.flatten(0, 1)], dim=0)
-            memory_feature = torch.cat([Turing_memory_compreesed.view(-1, 729, 1152), long_memory_compreesed.view(-1, 729, 1152)], dim=0)  # Retrieved memory deprecated
-            new_image_features.append(memory_feature)
-        return new_image_features
 
     def uniform_sample_frames(self, tensor, num_samples=32):
         """
@@ -511,6 +370,7 @@ class LlavaMetaForCausalLM(ABC):
                 sampled_image_features.append(self.uniform_sample_frames(image_feature, num_samples=32))
 
             ## Insert the hierarchical memory module here
+
             frame_memory = self.compress_temporal_features(image_features, video_idx_in_batch)
             rank_print(f"Frame memory : {[x.shape for x in frame_memory if x is not None]}")
 

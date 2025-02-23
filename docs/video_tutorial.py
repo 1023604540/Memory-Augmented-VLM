@@ -58,7 +58,7 @@ def load_full_video(video_path):
     return dense_frames  # (frames, height, width, channels)
 
 
-def load_sampled_video(video_path, sample_fps=5):
+def load_sampled_video(video_path, sample_fps=10):
     # 初始化 VideoReader 对象
     vr = VideoReader(video_path, ctx=cpu(0))
 
@@ -130,6 +130,7 @@ prompt_question = conv.get_prompt()
 
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
 image_sizes = [frame.size for frame in video_frames]
+print(image_sizes)
 
 # Generate response
 cont = model.generate(

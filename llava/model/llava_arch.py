@@ -362,7 +362,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 if idx not in video_idx_in_batch:
                     continue
                 boundaries = segment(image.mean(dim=1).flatten(1,2))
-                print(f"boundaries:{len(boundaries)}", {boundaries[0], boundaries[-1]})
+                print(f"boundaries:{len(boundaries)}, {boundaries[0]}, {boundaries[-1]}")
+                print(f"boundaries:{boundaries}")
                 image_segments = [image[boundaries[i]:boundaries[i+1]] for i in range(len(boundaries) - 1)]
                 segment_memory = []
                 for image_segment in image_segments:

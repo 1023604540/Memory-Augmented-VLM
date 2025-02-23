@@ -400,9 +400,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
 
 
-
-
-
             # for idx, image in enumerate(images_list):
             #     # If it is not a video feature, we don't need to process it
             #     if idx not in video_idx_in_batch:

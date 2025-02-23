@@ -128,7 +128,7 @@ class MultimodalOpsMixin:
                 cur_memory = img_feature[-cur_start:]
                 long_memory = img_feature[:-cur_start]
                 Turing_memory = img_feature[:-cur_start]
-
+            print(f"long_memory: {long_memory.shape}")
             if compress_long_memory_size * compress_long_memory_size != long_memory.shape[1]:
                 long_memory = self.compress_spatial_features(long_memory, compress_long_memory_size)
             if compress_Turing_memory_size * compress_Turing_memory_size != Turing_memory.shape[1]:

@@ -30,7 +30,7 @@ from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
-from llava.model.memory_module.segment import segment
+from llava.model.memory_module.segment import segment, adjusted_segment
 
 
 ################################################################
@@ -361,7 +361,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # If it is not a video feature, we don't need to process it
                 if idx not in video_idx_in_batch:
                     continue
-                boundaries = segment(image.mean(dim=1).flatten(1,2))
+                boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
                 boundaries.insert(0,0)
                 print(f"boundaries:{len(boundaries)}, {boundaries[0]}, {boundaries[-1]}")
                 print(f"boundaries:{boundaries}")

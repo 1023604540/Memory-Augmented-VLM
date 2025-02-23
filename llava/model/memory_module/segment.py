@@ -54,6 +54,66 @@ def segment(features, alpha=0.5, k=None):
 
     return boundaries
 
+def adjusted_segment(features, alpha=0.5, k=None, min_distance=5, max_distance=50):
+    """
+    Segment a sequence of features into segments based on cosine similarity.
+
+    Parameters:
+      features: tensor of shape (t, d)
+      alpha: parameter for thresholding depth scores
+      k: if provided, select top-k boundaries based on depth scores
+      min_distance: minimum allowed gap between consecutive boundaries
+      max_distance: maximum allowed gap between consecutive boundaries;
+                    if a gap is larger, extra boundaries will be inserted evenly.
+    """
+    # If there is only one time point, return [0] as the only boundary.
+    if features.shape[0] == 1:
+        return [0]
+
+    # Compute cosine similarity between adjacent features
+    sim_scores = torch.cosine_similarity(features[:-1, :], features[1:, :])
+    depth_scores = cal_depth_score(sim_scores)
+
+    # Determine candidate boundaries based on either top-k or thresholding
+    if k is not None:
+        boundaries = torch.topk(depth_scores, k).indices.sort()[0]
+    else:
+        std, mean = torch.std_mean(depth_scores)
+        thresh = mean + alpha * std
+        condition = depth_scores > thresh
+        boundaries = condition.nonzero().squeeze(-1)
+        if len(boundaries) > 15:
+            boundaries = torch.topk(depth_scores, 15).indices.sort()[0]
+
+    boundaries = boundaries.tolist()
+
+    # Always include the last time point as a boundary
+    if not boundaries or boundaries[-1] != features.shape[0] - 1:
+        boundaries.append(features.shape[0] - 1)
+
+    # Remove duplicates and sort
+    boundaries = sorted(set(boundaries))
+
+    # Enforce minimum and maximum distance constraints
+    adjusted_boundaries = [boundaries[0]]
+    for b in boundaries[1:]:
+        gap = b - adjusted_boundaries[-1]
+        if gap < min_distance:
+            # If too close, skip this boundary
+            continue
+        elif gap > max_distance:
+            # If the gap is too large, insert additional boundaries evenly spaced by max_distance.
+            current = adjusted_boundaries[-1]
+            while b - current > max_distance:
+                current += max_distance
+                adjusted_boundaries.append(current)
+            # Finally, add the current candidate boundary.
+            adjusted_boundaries.append(b)
+        else:
+            adjusted_boundaries.append(b)
+
+    return adjusted_boundaries
+
 def cal_left_depth_score(sim_scores):
     n = sim_scores.shape[0]
     depth_scores = torch.zeros(sim_scores.size(), dtype=sim_scores.dtype, device=sim_scores.device)

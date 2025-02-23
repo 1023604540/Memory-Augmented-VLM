@@ -356,7 +356,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     images_list.append(image.unsqueeze(0))
 
 
-            image_features = []
             for idx, image in enumerate(images_list):
                 # If it is not a video feature, we don't need to process it
                 if idx not in video_idx_in_batch:
@@ -373,8 +372,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     segment_memory += (self.compress_temporal_features([encoded_segment], video_idx_in_batch, all_video=True))
                 print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
                 # Apply mm_projector
-                projected_feature = self.get_model().mm_projector(torch.cat([image for image in segment_memory], dim=0))
-                image_features.append(projected_feature)
+                cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
+                images_list[idx] = cat_segment_memory
+
+            split_sizes = [image.shape[0] for image in images_list]
+            projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
+            image_features = torch.split(projected_feature, split_sizes)
+
 
 
 

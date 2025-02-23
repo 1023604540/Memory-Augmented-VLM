@@ -147,7 +147,7 @@ class MultimodalOpsMixin:
                 dists = ((long_memory.unsqueeze(1) - key_centroids.unsqueeze(0)) ** 2).sum(dim=3).sum(dim=2).sqrt()
                 min_indices = torch.argmin(dists, dim=0)
                 key_memory = img_feature[min_indices]
-                cur_memory = torch.cat([key_memory, cur_memory], dim=0)
+                # cur_memory = torch.cat([key_memory, cur_memory], dim=0)
 
             if video_Turing_memory_length == 0 or Turing_memory.shape[0] == 0:
                 Turing_memory_compressed = Turing_memory[:0]
@@ -155,11 +155,11 @@ class MultimodalOpsMixin:
                 Turing_memory_compressed, _ = attention_feature(
                     Turing_memory, video_Turing_memory_length, self.attention, update_ratio=compress_Turing_update_ratio
                 )
-            print(f"Memory: Long{long_memory_compressed.shape}, Turing{Turing_memory_compressed.shape}, Cur{cur_memory.shape}")
+            print(f"Memory: Long {long_memory_compressed.shape}, Turing {Turing_memory_compressed.shape}, Cur {cur_memory.shape}")
             memory_feature = torch.cat([
                 Turing_memory_compressed.view(-1, 729, 1152),
                 long_memory_compressed.view(-1, 729, 1152),
-                cur_memory.view(-1, 1, 1152),
+                cur_memory.view(-1, 729, 1152),
             ], dim=0)
             new_image_features.append(memory_feature)
         return new_image_features

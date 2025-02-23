@@ -329,7 +329,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
 
     def prepare_inputs_labels_for_multimodal(self, input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities=["image"], image_sizes=None):
-
+        torch.cuda.memory_summary()
         vision_tower = self.get_vision_tower()
         # rank_print(modalities)
         if vision_tower is None or images is None or input_ids.shape[1] == 1:

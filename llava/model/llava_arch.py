@@ -377,7 +377,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             # Sample maximal 32 frames as the original input
             sampled_image_features = []
             for image_feature in image_features:
-                sampled_image_features.append(self.uniform_sample_frames(image_feature, num_samples=32))
+                sampled_image_features.append(image_feature[:32])
+                #sampled_image_features.append(self.uniform_sample_frames(image_feature, num_samples=32))
 
             ## Insert the hierarchical memory module here
 

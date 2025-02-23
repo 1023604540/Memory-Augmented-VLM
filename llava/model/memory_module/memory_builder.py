@@ -90,7 +90,7 @@ class MultimodalOpsMixin:
         """
         video_long_memory_length = getattr(self.config, "video_long_memory_length", 9)
         video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 9)
-        video_current_memory_length = getattr(self.config, "video_current_memory_length", 0)
+        video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
         compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 9)
         compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 9)
         compress_Turing_update_ratio = getattr(self.config, "compress_Turing_update_ratio", 0.2)
@@ -128,7 +128,7 @@ class MultimodalOpsMixin:
                 cur_memory = img_feature[-cur_start:]
                 long_memory = img_feature[:-cur_start]
                 Turing_memory = img_feature[:-cur_start]
-            print(f"long_memory: {long_memory.shape}")
+
             if compress_long_memory_size * compress_long_memory_size != long_memory.shape[1]:
                 long_memory = self.compress_spatial_features(long_memory, compress_long_memory_size)
             if compress_Turing_memory_size * compress_Turing_memory_size != Turing_memory.shape[1]:
@@ -155,10 +155,11 @@ class MultimodalOpsMixin:
                 Turing_memory_compressed, _ = attention_feature(
                     Turing_memory, video_Turing_memory_length, self.attention, update_ratio=compress_Turing_update_ratio
                 )
-
+            print(f"Memory: Long{long_memory_compressed.shape}, Turing{Turing_memory_compressed.shape}, Cur{cur_memory.shape}")
             memory_feature = torch.cat([
                 Turing_memory_compressed.view(-1, 729, 1152),
-                long_memory_compressed.view(-1, 729, 1152)
+                long_memory_compressed.view(-1, 729, 1152),
+                cur_memory.view(-1, 1, 1152),
             ], dim=0)
             new_image_features.append(memory_feature)
         return new_image_features

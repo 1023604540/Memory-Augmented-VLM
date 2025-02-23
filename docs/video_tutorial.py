@@ -58,7 +58,7 @@ def load_full_video(video_path):
     return dense_frames  # (frames, height, width, channels)
 
 
-def load_sampled_video(video_path, sample_fps=10):
+def load_sampled_video(video_path, sample_fps=1):
     # 初始化 VideoReader 对象
     vr = VideoReader(video_path, ctx=cpu(0))
 

@@ -144,4 +144,4 @@ cont = model.generate(
 )
 text_outputs = tokenizer.batch_decode(cont, skip_special_tokens=True)
 print(text_outputs[0])
-print(text_outputs)
+

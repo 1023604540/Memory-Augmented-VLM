@@ -82,7 +82,7 @@ class MultimodalOpsMixin:
                 raise NotImplementedError(f"`compress_type` {self.config.compress_type} is not supported yet.")
         return image_features
 
-    def compress_temporal_features(self, image_features, video_idx_in_batch):
+    def compress_temporal_features(self, image_features, video_idx_in_batch, all_video = False):
         """
         Compress temporal features from image_features.
         This method depends on configuration parameters such as:
@@ -110,7 +110,8 @@ class MultimodalOpsMixin:
             compress_fn = compress_fn_dic[video_sample_type]
         else:
             raise NotImplementedError(f'video_sample_type {video_sample_type} is not supported.')
-
+        if all_video:
+            video_idx_in_batch = list(range(len(image_features)))
         new_image_features = []
         for idx, img_feature in enumerate(image_features):
             # If it is not a video feature, we don't need to process it

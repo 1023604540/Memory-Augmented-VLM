@@ -366,6 +366,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image_segments = [image[boundaries[i]:boundaries[i+1]] for i in range(len(boundaries) - 1)]
                 segment_memory = []
                 for image_segment in image_segments:
+                    print(f"Image segment shape : {image_segment.shape}")
                     encoded_segment = self.encode_images(image_segment)
                     segment_memory.append(self.compress_temporal_features(encoded_segment, video_idx_in_batch, all_video=True))
                     print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")

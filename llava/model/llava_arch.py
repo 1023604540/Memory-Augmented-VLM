@@ -355,10 +355,15 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 else:
                     images_list.append(image.unsqueeze(0))
 
+            # Initialize lists to collect non-video images and their original indices.
+            non_video_images = []
+            non_video_positions = []
 
             for idx, image in enumerate(images_list):
                 # If it is not a video feature, we don't need to process it
                 if idx not in video_idx_in_batch:
+                    non_video_images.append(image)
+                    non_video_positions.append(idx)
                     continue
                 boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
                 print(f"boundaries:{len(boundaries)}")
@@ -374,6 +379,20 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Apply mm_projector
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
                 images_list[idx] = cat_segment_memory
+
+            # Now process all non-video images together.
+            if non_video_images:
+                # Record the original batch sizes of each non-video image tensor.
+                original_lengths = [img.shape[0] for img in non_video_images]
+                # Concatenate them along the batch dimension.
+                concatenated = torch.cat(non_video_images, dim=0)
+                # Encode the concatenated tensor.
+                encoded = self.encode_images(concatenated)
+                # Split the encoded tensor back into individual parts.
+                splits = torch.split(encoded, original_lengths, dim=0)
+                # Place the processed tensors back to their original positions.
+                for pos, enc in zip(non_video_positions, splits):
+                    images_list[pos] = enc
 
             split_sizes = [image.shape[0] for image in images_list]
             projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))

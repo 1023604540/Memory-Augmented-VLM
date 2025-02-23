@@ -93,7 +93,7 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=
 
     # Remove duplicates and sort
     boundaries = sorted(set(boundaries))
-
+    print("boundaries before adjusted: ", boundaries)
     # Enforce minimum and maximum distance constraints
     adjusted_boundaries = [boundaries[0]]
     for b in boundaries[1:]:

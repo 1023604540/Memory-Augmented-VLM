@@ -371,7 +371,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     print(f"Image segment shape : {image_segment.shape}")
                     encoded_segment = self.encode_images(image_segment)
                     print(f"Encoded segment shape : {encoded_segment.shape}")
-                    segment_memory.append(self.compress_temporal_features([encoded_segment], video_idx_in_batch, all_video=True))
+                    segment_memory += (self.compress_temporal_features([encoded_segment], video_idx_in_batch, all_video=True))
                     print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
                 # Apply mm_projector
                 projected_feature = self.get_model().mm_projector(torch.cat([image for image in segment_memory], dim=0))

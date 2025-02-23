@@ -90,6 +90,8 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=
     # Always include the last time point as a boundary
     if not boundaries or boundaries[-1] != features.shape[0] - 1:
         boundaries.append(features.shape[0] - 1)
+    if boundaries[0] != 0:
+        boundaries.insert(0, 0)
     # Remove duplicates and sort
     boundaries = sorted(set(boundaries))
     print("boundaries before adjusted: ", boundaries)
@@ -99,9 +101,7 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=
     if not boundaries or boundaries[0] != 0:
         boundaries.insert(0, 0)
 
-    # Remove duplicates and sort boundaries
-    boundaries = sorted(set(boundaries))
-    print("Boundaries before adjustment:", boundaries)
+
 
     adjusted_boundaries = [boundaries[0]]
     for idx, b in enumerate(boundaries[1:], start=1):

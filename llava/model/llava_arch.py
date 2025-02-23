@@ -362,7 +362,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 if idx not in video_idx_in_batch:
                     continue
                 boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
-                boundaries.insert(0,0)
                 print(f"boundaries:{len(boundaries)}")
                 print(f"boundaries:{boundaries}")
                 image_segments = [image[boundaries[i]:boundaries[i+1]] for i in range(len(boundaries) - 1)]
@@ -372,7 +371,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     encoded_segment = self.encode_images(image_segment)
                     print(f"Encoded segment shape : {encoded_segment.shape}")
                     segment_memory += (self.compress_temporal_features([encoded_segment], video_idx_in_batch, all_video=True))
-                    print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
+                print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
                 # Apply mm_projector
                 projected_feature = self.get_model().mm_projector(torch.cat([image for image in segment_memory], dim=0))
                 image_features.append(projected_feature)

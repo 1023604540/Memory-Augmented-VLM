@@ -90,27 +90,37 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=
     # Always include the last time point as a boundary
     if not boundaries or boundaries[-1] != features.shape[0] - 1:
         boundaries.append(features.shape[0] - 1)
-
     # Remove duplicates and sort
     boundaries = sorted(set(boundaries))
     print("boundaries before adjusted: ", boundaries)
+
     # Enforce minimum and maximum distance constraints
+    # Ensure that the first and last indices are included
+    if not boundaries or boundaries[0] != 0:
+        boundaries.insert(0, 0)
+
+    # Remove duplicates and sort boundaries
+    boundaries = sorted(set(boundaries))
+    print("Boundaries before adjustment:", boundaries)
+
     adjusted_boundaries = [boundaries[0]]
-    for b in boundaries[1:]:
+    for idx, b in enumerate(boundaries[1:], start=1):
         gap = b - adjusted_boundaries[-1]
         if gap < min_distance:
-            # If too close, skip this boundary
+            # Skip if too close
             continue
-        elif gap > max_distance:
-            # If the gap is too large, insert additional boundaries evenly spaced by max_distance.
-            current = adjusted_boundaries[-1]
-            while b - current > max_distance:
-                current += max_distance
-                adjusted_boundaries.append(current)
-            # Finally, add the current candidate boundary.
-            adjusted_boundaries.append(b)
-        else:
-            adjusted_boundaries.append(b)
+        if gap > max_distance:
+            # Compute number of extra boundaries to insert uniformly.
+            X = int(gap / max_distance)
+            start = adjusted_boundaries[-1]
+            # Insert extra boundaries uniformly between start and b
+            for i in range(1, X + 1):
+                new_boundary = start + round(gap * i / (X + 1))
+                # Ensure that the new boundary is strictly between start and b
+                if new_boundary > adjusted_boundaries[-1] and new_boundary < b:
+                    adjusted_boundaries.append(new_boundary)
+        # Always add the candidate boundary.
+        adjusted_boundaries.append(b)
 
     return adjusted_boundaries
 

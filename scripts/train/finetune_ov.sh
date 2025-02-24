@@ -31,8 +31,8 @@ ACCELERATE_CPU_AFFINITY=1 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
     --data_path /mnt/bn/vl-research/workspace/boli01/projects/LLaVA_Next/scripts/i18n/scale_llms/next_ov_stage_july21.yaml \
-    --image_folder /mnt/bn/vl-research/data/llava_data \
-    --video_folder /mnt/bn/vl-research/data/llava_video \
+    --image_folder /anvme/workspace/b232dd21-zyr/llava-data \
+    --video_folder /anvme/workspace/b232dd21-zyr/llava-video \
     --mm_tunable_parts="mm_vision_tower,mm_mlp_adapter,mm_language_model" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \

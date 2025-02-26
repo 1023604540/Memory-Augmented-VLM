@@ -105,16 +105,16 @@ datasets:
     sampling_strategy: "first:10%"
   - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_TabMWP_22462.json
     sampling_strategy: "first:10%"
-  - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_TQA_10181.json
-    sampling_strategy: "first:10%"
+  #- json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_TQA_10181.json
+  #  sampling_strategy: "first:10%"
   - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_UniGeo_11959.json
     sampling_strategy: "first:10%"
   - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_VizWiz_6614.json
     sampling_strategy: "first:10%"
-  - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_VQA-AS_5907.json
-    sampling_strategy: "first:10%"
-  - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_VQA-RAD_2130.json
-    sampling_strategy: "first:10%"
+  #- json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_VQA-AS_5907.json
+  #  sampling_strategy: "first:10%"
+  #- json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_VQA-RAD_2130.json
+  #  sampling_strategy: "first:10%"
   - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/magpie_pro_qwen2_72b_st_300000_sp_token_fltd_299992.json
     sampling_strategy: "end:20%"
   - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/magpie_pro_l3_80b_st_300000.json

@@ -97,8 +97,8 @@ datasets:
     sampling_strategy: "first:5%"
   - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_MapQA_5235.json
     sampling_strategy: "first:10%"
-  - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_PlotQA_5485.json
-    sampling_strategy: "first:10%"
+  #- json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_PlotQA_5485.json
+  #  sampling_strategy: "first:10%"
   - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_PMC-VQA_35958.json
     sampling_strategy: "first:1%"
   - json_path: /anvme/workspace/b232dd21-zyr/llava-instruct/real_vision_flan/MathV360K_Super-CLEVR_8652.json

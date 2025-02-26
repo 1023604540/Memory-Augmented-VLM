@@ -678,7 +678,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         tokenizer_model_max_length = getattr(self.config, "tokenizer_model_max_length", None)
         #rank_print("Finishing Inserting")
         for x, modality in zip(new_input_embeds, modalities):
-             #rank_print(f"New input embeds shape with {modality}: {x.shape}") # [squence_length, 3584]
+             rank_print(f"New input embeds shape with {modality}: {x.shape}") # [squence_length, 3584]
         new_input_embeds = [x[:tokenizer_model_max_length] for x, modality in zip(new_input_embeds, modalities)]
         new_labels = [x[:tokenizer_model_max_length] for x, modality in zip(new_labels, modalities)]
         # TODO: Hard code for control loss spike

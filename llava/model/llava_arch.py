@@ -366,16 +366,16 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_positions.append(idx)
                     continue
                 boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
-                print(f"boundaries:{len(boundaries)}")
-                print(f"boundaries:{boundaries}")
+                #print(f"boundaries:{len(boundaries)}")
+                #print(f"boundaries:{boundaries}")
                 image_segments = [image[boundaries[i]:boundaries[i+1]] for i in range(len(boundaries) - 1)]
                 segment_memory = []
                 for image_segment in image_segments:
-                    print(f"Image segment shape : {image_segment.shape}")
+                    #print(f"Image segment shape : {image_segment.shape}")
                     encoded_segment = self.encode_images(image_segment)
-                    print(f"Encoded segment shape : {encoded_segment.shape}")
+                    #print(f"Encoded segment shape : {encoded_segment.shape}")
                     segment_memory += (self.compress_temporal_features([encoded_segment], video_idx_in_batch, all_video=True))
-                print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
+                #print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
                 # Apply mm_projector
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
                 images_list[idx] = cat_segment_memory
@@ -450,7 +450,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 else:
                     new_image_features.append(image_feat)
             # image_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
-            rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in new_image_features]}")  # [frame_num, 196, 3584]
+            #rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in new_image_features]}")  # [frame_num, 196, 3584]
             # image_features = torch.split(image_features, split_sizes, dim=0)
             image_features = new_image_features
 
@@ -460,7 +460,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
             if mm_patch_merge_type == "flat":
                 image_features = [x.flatten(0, 1) for x in image_features]
-                rank_print(f"Image feature shape flat : {image_features[0].shape}")
+                #rank_print(f"Image feature shape flat : {image_features[0].shape}")
 
             elif mm_patch_merge_type.startswith("spatial"):
                 new_image_features = []
@@ -477,7 +477,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                             # Grid-wise
                             # 模型将视频帧划分为多个网格（grid），并在每个网格位置添加一个视觉 token
                             image_feature = self.add_token_per_grid(image_feature)
-                            rank_print(f"Image feature shape grid : {image_feature.shape}")
+                            #rank_print(f"Image feature shape grid : {image_feature.shape}")
                             if getattr(self.config, "add_faster_video", False):
                                 faster_video_feature = self.add_token_per_grid(all_faster_video_features[image_idx])
                                 # Add a token for each frame
@@ -500,25 +500,25 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                             image_feature = self.add_token_per_frame(image_feature)  # [frame_num, 197, 3584]
 
                             new_image_features.append(image_feature.flatten(0, 1))
-                            rank_print(f"Image feature shape frame : {new_image_features[0].shape}")  # [n, 3584]
+                            #rank_print(f"Image feature shape frame : {new_image_features[0].shape}")  # [n, 3584]
                         elif mm_newline_position == "one_token":
                             # one-token
                             # 模型将整个视频序列展平成一个单一的视觉 token
 
                             # Add hierarchical memory module
                             # frame_memory = self.compress_temporal_features(image_feature)
-                            rank_print(f"Image feature shape one_token before flatten: {image_feature.shape}")  # [frame_num*196, 3584]
+                            #rank_print(f"Image feature shape one_token before flatten: {image_feature.shape}")  # [frame_num*196, 3584]
                             image_feature = image_feature.flatten(0, 1)
                             # image_feature = torch.cat((image_feature, frame_memory[0]), dim=0)
-                            rank_print(f"Image feature shape one_token : {image_feature.shape}")  # [frame_num*196, 3584]
+                            #rank_print(f"Image feature shape one_token : {image_feature.shape}")  # [frame_num*196, 3584]
                             if 'unpad' in mm_patch_merge_type:
                                 image_feature = torch.cat((
                                     image_feature,
                                     self.model.image_newline[None].to(image_feature.device) # Adds a new dimension at the beginning of the tensor
                                 ), dim=0)
-                            rank_print(f"Image feature shape one_token after unpad: {image_feature.shape}")  # [frame_num*196+1, 3584]
+                            #rank_print(f"Image feature shape one_token after unpad: {image_feature.shape}")  # [frame_num*196+1, 3584]
                             new_image_features.append(image_feature)
-                            rank_print(f"new_image_features length: {len(new_image_features)}")
+                            #rank_print(f"new_image_features length: {len(new_image_features)}")
                         elif mm_newline_position == "no_token":
                             new_image_features.append(image_feature.flatten(0, 1))
                         else:
@@ -596,7 +596,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # TODO: image start / end is not implemented here to support pretraining.
         if getattr(self.config, "tune_mm_mlp_adapter", False) and getattr(self.config, "mm_use_im_start_end", False):
             raise NotImplementedError
-        rank_print(f"Total images : {len(image_features)} with shape {[x.shape for x in image_features]}")
+        #rank_print(f"Total images : {len(image_features)} with shape {[x.shape for x in image_features]}")
 
         # Let's just add dummy tensors if they do not exist,
         # it is a headache to deal with None all the time.
@@ -622,7 +622,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         new_input_embeds = []
         new_labels = []
         cur_image_idx = 0
-        rank_print("Inserting Images embedding")
+        #rank_print("Inserting Images embedding")
         for batch_idx, cur_input_ids in enumerate(input_ids):
             num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
             # rank0_print(num_images)
@@ -676,9 +676,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
         # Truncate sequences to max length as image embeddings can make the sequence longer
         tokenizer_model_max_length = getattr(self.config, "tokenizer_model_max_length", None)
-        rank_print("Finishing Inserting")
+        #rank_print("Finishing Inserting")
         for x, modality in zip(new_input_embeds, modalities):
-            rank_print(f"New input embeds shape with {modality}: {x.shape}") # [squence_length, 3584]
+            #rank_print(f"New input embeds shape with {modality}: {x.shape}") # [squence_length, 3584]
         new_input_embeds = [x[:tokenizer_model_max_length] for x, modality in zip(new_input_embeds, modalities)]
         new_labels = [x[:tokenizer_model_max_length] for x, modality in zip(new_labels, modalities)]
         # TODO: Hard code for control loss spike
@@ -712,7 +712,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     position_ids[i, :cur_len] = torch.arange(0, cur_len, dtype=position_ids.dtype, device=position_ids.device)
 
         new_input_embeds = torch.stack(new_input_embeds_padded, dim=0)
-        rank_print(f"New input embeds shape: {new_input_embeds.shape}")  # [batch_size, sequence_length, 3584]
+        #rank_print(f"New input embeds shape: {new_input_embeds.shape}")  # [batch_size, sequence_length, 3584]
 
         if _labels is None:
             new_labels = None
@@ -734,7 +734,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             position_ids[:, :split_position] += left_add
             position_ids[:, split_position:] += right_add
         # import pdb; pdb.set_trace()
-        # rank_print("Finish preparing")
+        rank_print("Finish preparing")
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):

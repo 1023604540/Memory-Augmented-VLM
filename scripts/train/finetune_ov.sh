@@ -4,6 +4,8 @@ export NCCL_IB_GID_INDEX=0
 export NCCL_SOCKET_IFNAME=ib0
 export NCCL_DEBUG=INFO
 # export NCCL_DEBUG_SUBSYS=ALL
+export WANDB_DISABLED=true
+
 
 LLM_VERSION="Qwen/Qwen2-7B-Instruct"
 # for 7b model we recommend bs=1, accum=2, 16 nodes, 128 gpus, lr=1e-5, warmup=0.03

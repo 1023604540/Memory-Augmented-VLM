@@ -27,10 +27,11 @@ echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
 NUM_GPUS=2
-NNODES=1
-RANK=0
-ADDR=127.0.0.1
+NNODES=$SLURM_NNODES
+RANK=$SLURM_PROCID
+ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n1)  # Master node
 PORT=12345
+
 
 
 ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --master_addr="${ADDR}" --master_port="${PORT}" \

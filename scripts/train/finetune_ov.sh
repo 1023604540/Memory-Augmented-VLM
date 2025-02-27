@@ -32,17 +32,17 @@ PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
-NUM_GPUS=8
+NUM_GPUS=4
 NNODES=$SLURM_NNODES
 RANK=$SLURM_PROCID
 ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n1)  # Master node
-PORT=12345
+PORT=12346
 
 
 
 ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --master_addr="${ADDR}" --master_port="${PORT}" \
     llava/train/train_mem.py \
-    --deepspeed scripts/zero3.json \
+    --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
     --data_path /home/hpc/b232dd/b232dd16/LLaVA-OV/scripts/train/onevision.yaml \

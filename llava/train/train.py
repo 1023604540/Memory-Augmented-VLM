@@ -45,7 +45,7 @@ from llava.train.llava_trainer import LLaVATrainer
 from llava import conversation as conversation_lib
 from llava.model import *
 from llava.mm_utils import process_highres_image, process_anyres_image, process_highres_image_crop_split, tokenizer_image_token
-from llava.utils import rank0_print, process_video_with_pyav, process_video_with_decord
+from llava.utils import rank0_print, process_video_with_pyav, process_video_with_decord, dynamic_process_video_with_decord
 
 torch.multiprocessing.set_sharing_strategy("file_system")
 
@@ -605,7 +605,7 @@ def preprocess_qwen(sources, tokenizer: transformers.PreTrainedTokenizer, has_im
                 content = conv["value"]
 
             role =  roles.get(role, role)
-            
+
             conv = [{"role" : role, "content" : content}]
             encode_id = tokenizer.apply_chat_template(conv)
             input_id += encode_id
@@ -613,9 +613,9 @@ def preprocess_qwen(sources, tokenizer: transformers.PreTrainedTokenizer, has_im
                 target += [IGNORE_INDEX] * len(encode_id)
             else:
                 target += encode_id
-        
 
-                    
+
+
         assert len(input_id) == len(target), f"{len(input_id)} != {len(target)}"
         for idx, encode_id in enumerate(input_id):
             if encode_id in unmask_tokens_idx:
@@ -690,7 +690,7 @@ def preprocess_llama3(
                 content = conv["value"]
 
             role =  roles.get(role, role)
-            
+
             conv = [{"role" : role, "content" : content}]
             # First is bos token we don't need here
             encode_id = tokenizer.apply_chat_template(conv)[1:]
@@ -699,9 +699,9 @@ def preprocess_llama3(
                 target += [IGNORE_INDEX] * len(encode_id)
             else:
                 target += encode_id
-        
 
-                    
+
+
         assert len(input_id) == len(target), f"{len(input_id)} != {len(target)}"
         for idx, encode_id in enumerate(input_id):
             if encode_id in unmask_tokens_idx:
@@ -1142,7 +1142,7 @@ class LazySupervisedDataset(Dataset):
             if type(image_file) is list:
                 image = [self.process_image(f) for f in image_file]
                 # Handling multi images
-                # overwrite to process with simple pad 
+                # overwrite to process with simple pad
                 if len(image_file) > 1:
                     image = [self.process_image(f, "pad") for f in image_file]
                     image = [[im[0], im[1], "image"] for im in image]
@@ -1170,7 +1170,7 @@ class LazySupervisedDataset(Dataset):
                         num_frames_to_sample = 10
 
                     avg_fps = 2
-                    
+
                     total_frames = len(frame_files)
                     sampled_indices = np.linspace(0, total_frames - 1, num_frames_to_sample, dtype=int)
 
@@ -1191,7 +1191,7 @@ class LazySupervisedDataset(Dataset):
                         except IOError:
                             print(f"Failed to read frame at path: {frame_path}")
                 else:
-                    video, video_time, frame_time, num_frames_to_sample = process_video_with_decord(video_file, self.data_args)
+                    video, video_time, frame_time, num_frames_to_sample = dynamic_process_video_with_decord(video_file, self.data_args)
 
                 processor = self.data_args.image_processor
                 image = processor.preprocess(video, return_tensors="pt")["pixel_values"]
@@ -1606,7 +1606,7 @@ def train(attn_implementation=None):
         model.config.faster_token_stride = model_args.faster_token_stride
         model.config.add_time_instruction = data_args.add_time_instruction
         model.config.force_sample = data_args.force_sample
-        model.config.mm_spatial_pool_stride = model_args.mm_spatial_pool_stride 
+        model.config.mm_spatial_pool_stride = model_args.mm_spatial_pool_stride
 
         ### Deciding train which part of the model
         if model_args.mm_tunable_parts is None:  # traditional way of deciding which part to train

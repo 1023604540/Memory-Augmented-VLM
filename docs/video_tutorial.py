@@ -12,6 +12,7 @@ import requests
 import copy
 import warnings
 from decord import VideoReader, cpu
+import math
 
 #import memory module
 from memory import FIFOMemory
@@ -30,6 +31,9 @@ llava_model_args = {
     "multimodal": True,
 }
 tokenizer, model, image_processor, max_length = load_pretrained_model(pretrained, None, model_name, device_map=device_map, attn_implementation="sdpa", **llava_model_args)
+
+for idx, (name, param) in enumerate(model.named_parameters()):
+    print(idx, name, param.shape)
 
 model.eval()
 
@@ -58,7 +62,7 @@ def load_full_video(video_path):
     return dense_frames  # (frames, height, width, channels)
 
 
-def load_sampled_video(video_path, sample_fps=5):
+def load_sampled_video(video_path, sample_fps=1):
     # 初始化 VideoReader 对象
     vr = VideoReader(video_path, ctx=cpu(0))
 
@@ -80,11 +84,40 @@ def load_sampled_video(video_path, sample_fps=5):
     return sampled_frames  # 返回采样的帧 (frames, height, width, channels)
 
 
+def dynamic_load_video(video_path):
+    # 初始化 VideoReader 对象
+    vr = VideoReader(video_path, ctx=cpu(0))
+
+    # 获取视频总帧数和原始帧率
+    total_frame_num = len(vr)
+    original_fps = vr.get_avg_fps()
+
+    # 计算视频时长（秒）
+    duration = total_frame_num / original_fps
+
+    if total_frame_num < 100:
+        # 如果视频总帧数不足100帧，则直接返回所有帧
+        frame_idx = list(range(total_frame_num))
+    elif duration >= 100:
+        # 长视频：每秒采样1帧
+        interval = int(original_fps)  # 每秒采一帧
+        frame_idx = list(range(0, total_frame_num, interval))
+    else:
+        # 短视频：计算每秒需要采样的帧数，以确保采样总帧数不少于100
+        effective_sample_rate = math.ceil(100 / duration)
+        # 计算采样间隔（每隔多少帧采一帧），保证至少采样每一帧
+        interval = max(1, int(original_fps / effective_sample_rate))
+        frame_idx = list(range(0, total_frame_num, interval))
+
+    # 获取采样的帧
+    sampled_frames = vr.get_batch(frame_idx).asnumpy()
+    return sampled_frames
+
 print("load video")
 # Load and process video
 video_path = "/home/hpc/b232dd/b232dd16/LLaVA-OV/docs/jobs.mp4"
 # video_frames = load_video(video_path, 32)
-video_frames = load_sampled_video(video_path)
+video_frames = dynamic_load_video(video_path)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []
 frames = image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()
@@ -129,7 +162,8 @@ conv.append_message(conv.roles[1], None)
 prompt_question = conv.get_prompt()
 
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
-image_sizes = [frame.size for frame in video_frames]
+image_sizes = [frame.size for frame in video_frames]  # (width * height * 3)
+
 
 # Generate response
 cont = model.generate(
@@ -143,3 +177,4 @@ cont = model.generate(
 )
 text_outputs = tokenizer.batch_decode(cont, skip_special_tokens=True)
 print(text_outputs[0])
+

@@ -19,19 +19,17 @@ from memory import KMeansMemory
 
 
 
-
+print("load model")
 warnings.filterwarnings("ignore")
 # Load the OneVision model
-pretrained = "lmms-lab/llava-onevision-qwen2-7b-ov"   # Use this for 7B model
-# pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-si"  #Load forever, does not work
+pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov"   # Use this for 7B model
 model_name = "llava_qwen"
 device = "cuda"
 device_map = "auto"
 llava_model_args = {
     "multimodal": True,
-    "attn_implementation": None,  ## defualt “sdpa”
 }
-tokenizer, model, image_processor, max_length = load_pretrained_model(pretrained, None, model_name, device_map=device_map,  **llava_model_args)
+tokenizer, model, image_processor, max_length = load_pretrained_model(pretrained, None, model_name, device_map=device_map, attn_implementation="sdpa", **llava_model_args)
 
 model.eval()
 
@@ -48,10 +46,10 @@ def load_video(video_path, max_frames_num):
     spare_frames = vr.get_batch(frame_idx).asnumpy()
     return spare_frames  # (frames, height, width, channels)
 
-
+print("load video")
 # Load and process video
-video_path = "jobs.mp4"
-video_frames = load_video(video_path, 16)
+video_path = "/home/hpc/b232dd/b232dd16/LLaVA-OV/docs/needle_32.mp4"
+video_frames = load_video(video_path, 32)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []
 frames = image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()

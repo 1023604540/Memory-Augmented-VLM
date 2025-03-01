@@ -1669,6 +1669,27 @@ def train(attn_implementation=None):
         trainable_params = sum(p.ds_numel if hasattr(p, "ds_numel") else p.numel() for p in model.parameters() if p.requires_grad)
         rank0_print(f"Total parameters: ~{total_params/1e6:.2f} MB)")
         rank0_print(f"Trainable parameters: ~{trainable_params/1e6:.2f} MB)")
+
+        ##########
+        def param_count_by_substr(substr):
+            return sum(
+                p.ds_numel if hasattr(p, "ds_numel") else p.numel()
+                for n, p in model.named_parameters()
+                if substr in n
+            )
+
+        for part in ["vision_tower", "vision_resampler", "mm_projector", "attention_model"]:
+            rank0_print(f"{part} params: {param_count_by_substr(part) / 1e6:.2f} M")
+
+        # Everything else goes into "language_model"
+        lm_params = sum(
+            p.ds_numel if hasattr(p, "ds_numel") else p.numel()
+            for n, p in model.named_parameters()
+            if not any(x in n for x in ["vision_tower", "vision_resampler", "mm_projector", "attention_model"])
+        )
+        rank0_print(f"language_model params: {lm_params / 1e6:.2f} M")
+        ##########
+
         if training_args.bits in [4, 8]:
             model.get_model().mm_projector.to(dtype=compute_dtype, device=training_args.device)
 

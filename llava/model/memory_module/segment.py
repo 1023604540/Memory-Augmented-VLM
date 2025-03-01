@@ -54,7 +54,7 @@ def segment(features, alpha=0.5, k=None):
 
     return boundaries
 
-def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=50):
+def adjusted_segment(features, alpha=0.5, k=None, min_distance=9, max_distance=50):
     """
     Segment a sequence of features into segments based on cosine similarity.
 

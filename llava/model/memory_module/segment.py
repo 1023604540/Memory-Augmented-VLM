@@ -89,7 +89,7 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=
 
     # Always include the last time point as a boundary
     if not boundaries or boundaries[-1] != features.shape[0] - 1:
-        boundaries.append(features.shape[0] - 1)
+        boundaries.append(features.shape[0])
     if boundaries[0] != 0:
         boundaries.insert(0, 0)
     # Remove duplicates and sort

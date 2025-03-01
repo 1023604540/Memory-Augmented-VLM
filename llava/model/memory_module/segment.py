@@ -48,13 +48,13 @@ def segment(features, alpha=0.5, k=None):
     boundaries = boundaries.tolist()
 
     if type(boundaries) == int or boundaries == [] or boundaries[-1] != features.shape[0]-1:
-        boundaries.append(features.shape[0]-1)
+        boundaries.append(features.shape[0])
 
     boundaries = sorted(set(boundaries))  # 去重并排序
 
     return boundaries
 
-def adjusted_segment(features, alpha=0.5, k=None, min_distance=9, max_distance=50):
+def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=50):
     """
     Segment a sequence of features into segments based on cosine similarity.
 

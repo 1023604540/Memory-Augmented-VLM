@@ -379,6 +379,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
                 # Apply mm_projector
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
+                print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
                 images_list[idx] = cat_segment_memory
 
             # Now process all non-video images together.

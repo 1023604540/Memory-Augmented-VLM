@@ -1650,6 +1650,7 @@ def train(attn_implementation=None):
             if "mm_mlp_adapter" in tunable_parts:
                 for p in model.get_model().mm_projector.parameters():
                     p.requires_grad = True
+            if "attention_model" in tunable_parts:
                 for p in model.get_model().attention_model.parameters():
                     p.requires_grad = True
             if "mm_vision_resampler" in tunable_parts:

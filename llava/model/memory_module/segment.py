@@ -88,7 +88,7 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=
     boundaries = boundaries.tolist()
 
     # Always include the last time point as a boundary
-    if not boundaries or boundaries[-1] != features.shape[0] - 1:
+    if not boundaries or boundaries[-1] != features.shape[0]:
         boundaries.append(features.shape[0])
     if boundaries[0] != 0:
         boundaries.insert(0, 0)

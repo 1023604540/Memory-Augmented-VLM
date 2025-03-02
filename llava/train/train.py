@@ -46,6 +46,7 @@ from llava import conversation as conversation_lib
 from llava.model import *
 from llava.mm_utils import process_highres_image, process_anyres_image, process_highres_image_crop_split, tokenizer_image_token
 from llava.utils import rank0_print, process_video_with_pyav, process_video_with_decord, dynamic_process_video_with_decord
+from deepspeed.runtime.fp16.loss_scaler import LossScaler
 
 torch.multiprocessing.set_sharing_strategy("file_system")
 
@@ -1718,6 +1719,7 @@ def train(attn_implementation=None):
     trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        torch.serialization.add_safe_globals([LossScaler])
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()

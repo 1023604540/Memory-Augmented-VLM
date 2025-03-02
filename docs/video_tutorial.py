@@ -23,7 +23,7 @@ from memory import KMeansMemory
 print("load model")
 warnings.filterwarnings("ignore")
 # Load the OneVision model
-pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/testcache/llava-onevision-google_siglip-so400m-patch14-384-Qwen_Qwen2-7B-Instruct-freezeall/checkpoint-15000"   # Use this for 7B model
+pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/testcache/llava-onevision-google_siglip-so400m-patch14-384-Qwen_Qwen2-7B-Instruct-freezeall/"   # Use this for 7B model
 # pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov"   # Use this for 7B model
 model_name = "llava_qwen"
 device = "cuda"

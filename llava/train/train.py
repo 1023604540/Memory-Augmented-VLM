@@ -1158,6 +1158,7 @@ class LazySupervisedDataset(Dataset):
             suffix = video_file.split(".")[-1]
             if not os.path.exists(video_file):
                 print("File {} not exist!".format(video_file))
+            rank0_print(f"Processing video file: {video_file}")
 
             try:
                 if "shareVideoGPTV" in video_file:

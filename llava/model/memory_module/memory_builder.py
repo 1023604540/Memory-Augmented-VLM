@@ -39,7 +39,7 @@ class NeuralTuringMachine(nn.Module):
         return output
 
 class MultimodalOpsMixin:
-    def attention(self, turing_memory, new_feature, update_ratio=0.2):
+    def attention(self, turing_memory, new_feature, update_ratio=0.4):
         """
         Update the turing_memory using attention between turing_memory and new_feature.
         """

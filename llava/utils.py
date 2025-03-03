@@ -52,7 +52,10 @@ def dynamic_process_video_with_decord(video_file, data_args):
     total_frame_num = len(vr)
     video_time = total_frame_num / vr.get_avg_fps()
     avg_fps = round(vr.get_avg_fps() / data_args.video_fps)
-    if total_frame_num < 100:
+    if total_frame_num < 10:
+        # 如果视频总帧数不足10帧，补足到10帧
+        frame_idx = list(range(total_frame_num)) + [total_frame_num - 1] * (10 - total_frame_num)
+    elif total_frame_num < 100:
         # 如果视频总帧数不足100帧，则直接返回所有帧
         frame_idx = list(range(total_frame_num))
     elif video_time >= 100:

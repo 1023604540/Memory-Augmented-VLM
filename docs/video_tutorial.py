@@ -95,8 +95,10 @@ def dynamic_load_video(video_path):
 
     # 计算视频时长（秒）
     duration = total_frame_num / original_fps
-
-    if total_frame_num < 100:
+    if total_frame_num < 10:
+        # 如果视频总帧数不足10帧，补足到10帧
+        frame_idx = list(range(total_frame_num)) + [total_frame_num - 1] * (10 - total_frame_num)
+    elif total_frame_num < 100:
         # 如果视频总帧数不足100帧，则直接返回所有帧
         frame_idx = list(range(total_frame_num))
     elif duration >= 100:

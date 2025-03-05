@@ -52,7 +52,13 @@ class MultimodalOpsMixin:
         decay = weight.sum(dim=1, keepdim=True)
         turing_memory = turing_memory * (1 - decay) + torch.mm(weight, new_feature)
         return turing_memory
-
+    def attention2(self, turing_memory, new_feature, update_ratio=0.2):  # deprecated
+        T1, D1 = turing_memory.shape
+        T2, D2 = new_feature.shape
+        assert D1 == D2, f"dimmension not match, {D1} != {D2}"
+        model = self.get_model().attention_model
+        turing_memory = model.forward(turing_memory, new_feature)
+        return turing_memory
     def compress_spatial_features(self, image_features, compress_size=1):
         """
         Compresses spatial features using a 2D pooling operation.
@@ -157,7 +163,7 @@ class MultimodalOpsMixin:
                 )
             print(f"Memory: Long {long_memory_compressed.shape}, Turing {Turing_memory_compressed.shape}, Cur {cur_memory.shape}")
             memory_feature = torch.cat([
-                Turing_memory_compressed.view(-1, 729, 1152),
+                Turing_memory_compressed.view(-1, 729, 1152),   #（9，9*9，1152）（1，729，1152）
                 long_memory_compressed.view(-1, 729, 1152),
                 cur_memory.view(-1, 729, 1152),
             ], dim=0)

@@ -384,7 +384,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
                 torch.cuda.synchronize()
                 print("After attention_model forward pass")
+
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
+                if torch.isnan(cat_segment_memory).any():
+                    raise ValueError("NaNs detected in attention_model output!")
                 rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
                 rank0_print(
                     f"[attention_model] output requires_grad={cat_segment_memory.requires_grad}, grad_fn={cat_segment_memory.grad_fn}")

@@ -5,6 +5,7 @@ export NCCL_SOCKET_IFNAME=ib0
 export NCCL_DEBUG=DEBUG
 export NCCL_DEBUG_SUBSYS=ALL  # 1 hour
 export TORCH_NCCL_TRACE_BUFFER_SIZE=33554432
+export TORCH_DISTRIBUTED_DEBUG=INFO
 
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
@@ -80,7 +81,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb \
-    --torch_compile True \
+    --torch_compile False \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --frames_upbound 0  # 32 initially

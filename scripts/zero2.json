@@ -25,10 +25,10 @@
             "device": "none",
             "pin_memory": true
         },
-        "allgather_partitions": false,
+        "allgather_partitions": true,
         "allgather_bucket_size": 2e8,
         "overlap_comm": false,
-        "reduce_scatter": false,
+        "reduce_scatter": true,
         "reduce_bucket_size": 2e8,
         "contiguous_gradients": true
     },

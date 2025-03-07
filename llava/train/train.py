@@ -47,6 +47,7 @@ from llava.model import *
 from llava.mm_utils import process_highres_image, process_anyres_image, process_highres_image_crop_split, tokenizer_image_token
 from llava.utils import rank0_print, process_video_with_pyav, process_video_with_decord, dynamic_process_video_with_decord
 from deepspeed.runtime.fp16.loss_scaler import LossScaler
+import datetime
 
 torch.multiprocessing.set_sharing_strategy("file_system")
 
@@ -1453,6 +1454,10 @@ def train(attn_implementation=None):
 
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    torch.distributed.init_process_group(
+        backend="nccl",
+        timeout=datetime.timedelta(seconds=1800)  # adjust timeout if needed
+    )
 
     if training_args.verbose_logging:
         rank0_print(f"Inspecting experiment hyperparameters:\n")
@@ -1683,10 +1688,10 @@ def train(attn_implementation=None):
         trainable_params = sum(p.ds_numel if hasattr(p, "ds_numel") else p.numel() for p in model.parameters() if p.requires_grad)
         rank0_print(f"Total parameters: ~{total_params/1e6:.2f} MB)")
         rank0_print(f"Trainable parameters: ~{trainable_params/1e6:.2f} MB)")
-        # # ADD YOUR SANITY CHECK HERE (TEMPORARILY)
-        # rank0_print("=== Sanity Check: requires_grad for all model parameters ===")
-        # for name, param in model.named_parameters():
-        #     print(f"{name}: requires_grad={param.requires_grad}")
+        # ADD YOUR SANITY CHECK HERE (TEMPORARILY)
+        rank0_print("=== Sanity Check: requires_grad for all model parameters ===")
+        for name, param in model.named_parameters():
+            rank0_print(f"{name}: requires_grad={param.requires_grad}")
         ##########
         def param_count_by_substr(substr):
             return sum(

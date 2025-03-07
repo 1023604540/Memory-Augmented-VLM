@@ -1678,7 +1678,10 @@ def train(attn_implementation=None):
         trainable_params = sum(p.ds_numel if hasattr(p, "ds_numel") else p.numel() for p in model.parameters() if p.requires_grad)
         rank0_print(f"Total parameters: ~{total_params/1e6:.2f} MB)")
         rank0_print(f"Trainable parameters: ~{trainable_params/1e6:.2f} MB)")
-
+        # ADD YOUR SANITY CHECK HERE (TEMPORARILY)
+        rank0_print("=== Sanity Check: requires_grad for all model parameters ===")
+        for name, param in model.named_parameters():
+            print(f"{name}: requires_grad={param.requires_grad}")
         ##########
         def param_count_by_substr(substr):
             return sum(

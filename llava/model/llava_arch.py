@@ -371,7 +371,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 segment_memory = []
                 encoded_features = self.encode_images(image)
-
+                encoded_features = encoded_features.requires_grad_()
+                print(
+                    f"[DEBUG] Vision output requires_grad={encoded_features.requires_grad}, grad_fn={encoded_features.grad_fn}")
                 image_segments = [encoded_features[boundaries[i]:boundaries[i+1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
                     #print(f"Image segment shape : {image_segment.shape}")
@@ -380,7 +382,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
 
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
-                print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
+                rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
                 rank0_print(
                     f"[attention_model] output requires_grad={cat_segment_memory.requires_grad}, grad_fn={cat_segment_memory.grad_fn}")
                 images_list[idx] = cat_segment_memory

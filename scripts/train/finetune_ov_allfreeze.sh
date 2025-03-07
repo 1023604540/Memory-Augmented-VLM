@@ -3,8 +3,7 @@ export NCCL_IB_DISABLE=0
 export NCCL_IB_GID_INDEX=0
 export NCCL_SOCKET_IFNAME=ib0
 export NCCL_DEBUG=DEBUG
-export NCCL_DEBUG_SUBSYS=ALL
-export NCCL_TIMEOUT=3600  # 1 hour
+export NCCL_DEBUG_SUBSYS=ALL  # 1 hour
 export TORCH_NCCL_TRACE_BUFFER_SIZE=33554432
 
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
@@ -40,7 +39,7 @@ PORT=12348
 
 
 
-ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --master_addr="${ADDR}" --master_port="${PORT}" \
+ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --master_addr="${ADDR}" --master_port="${PORT}" --timeout=1800 \
     llava/train/train_mem.py \
     --deepspeed scripts/zero3.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \

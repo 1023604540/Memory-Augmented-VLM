@@ -1515,9 +1515,14 @@ def train(attn_implementation=None):
 
     if training_args.gradient_checkpointing:
         model.gradient_checkpointing_enable()
-        # Additionally, make sure inputs have requires_grad explicitly set
-        for param in model.parameters():
-            param.requires_grad_(param.requires_grad)  # ensure parameters stay consistent
+
+        def make_inputs_require_grad(module, input, output):
+            output.requires_grad_(True)
+
+        # Register forward hook EXACTLY at the output of the vision tower:
+        last_vision_layer = model.get_model().vision_tower.vision_tower.vision_model.post_layernorm
+        last_vision_layer.register_forward_hook(make_inputs_require_grad)
+        rank0_print("Forward hook registered to post_layernorm of vision_tower.")
 
     if training_args.lora_enable:
         from peft import LoraConfig, get_peft_model

@@ -371,15 +371,18 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 segment_memory = []
                 encoded_features = self.encode_images(image)
+
                 image_segments = [encoded_features[boundaries[i]:boundaries[i+1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
                     #print(f"Image segment shape : {image_segment.shape}")
                     #print(f"Encoded segment shape : {encoded_segment.shape}")
                     segment_memory += (self.compress_temporal_features([image_segment], video_idx_in_batch, all_video=True))
                 #print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
-                # Apply mm_projector
+
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
                 print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
+                rank0_print(
+                    f"[attention_model] output requires_grad={cat_segment_memory.requires_grad}, grad_fn={cat_segment_memory.grad_fn}")
                 images_list[idx] = cat_segment_memory
 
             # Now process all non-video images together.
@@ -396,6 +399,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 for pos, enc in zip(non_video_positions, splits):
                     images_list[pos] = enc
 
+            # Apply mm_projector
             split_sizes = [image.shape[0] for image in images_list]
             projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
             image_features = torch.split(projected_feature, split_sizes)

@@ -1454,10 +1454,7 @@ def train(attn_implementation=None):
 
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-    torch.distributed.init_process_group(
-        backend="nccl",
-        timeout=datetime.timedelta(seconds=1800)  # adjust timeout if needed
-    )
+
 
     if training_args.verbose_logging:
         rank0_print(f"Inspecting experiment hyperparameters:\n")

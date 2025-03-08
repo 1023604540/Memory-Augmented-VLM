@@ -43,12 +43,12 @@ class MultimodalOpsMixin:
         super().__init__()
         self.config = config
         # Replace with GELU activation:
-        self.memory_mlp = nn.Sequential(
-            nn.Linear(1152, 1152),
-            nn.GELU(),          # <-- Use GELU here
-            nn.Linear(1152, 1152),
-        )
-        self.attention_model = NeuralTuringMachine(input_dim=1152, output_dim=1152, attention_dropout=0.1)
+        # self.memory_mlp = nn.Sequential(
+        #     nn.Linear(1152, 1152),
+        #     nn.GELU(),          # <-- Use GELU here
+        #     nn.Linear(1152, 1152),
+        # )
+        #self.attention_model = NeuralTuringMachine(input_dim=1152, output_dim=1152, attention_dropout=0.1)
     def attention(self, turing_memory, new_feature, update_ratio=0.4):
         """
         Update the turing_memory using attention between turing_memory and new_feature.

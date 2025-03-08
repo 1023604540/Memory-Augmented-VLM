@@ -32,7 +32,7 @@ PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
-NUM_GPUS=8
+NUM_GPUS=2
 NNODES=$SLURM_NNODES
 RANK=$SLURM_PROCID
 ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n1)  # Master node
@@ -48,7 +48,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --data_path /home/hpc/b232dd/b232dd16/LLaVA-OV/scripts/train/sharegpt_train.yaml \
     --image_folder /anvme/workspace/b232dd21-zyr/llava-data \
     --video_folder /anvme/workspace/b232dd16-LLaVA-OV/llava-video \
-    --mm_tunable_parts="attention_model" \
+    --mm_tunable_parts="attention_model, mm_mlp_adapter" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
     --mm_projector_type mlp2x_gelu \
@@ -77,7 +77,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --logging_steps 1 \
     --tf32 True \
     --model_max_length 32768 \
-    --gradient_checkpointing True \
+    --gradient_checkpointing False \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb \

@@ -180,7 +180,7 @@ class MultimodalOpsMixin:
 
             mem_shape = memory_feature.shape  # e.g. (frames, 729, 1152)
             memory_feature = memory_feature.view(-1, mem_shape[-1])  # Flatten (frames*729, 1152)
-            memory_feature = self.memory_mlp(memory_feature)  # MLP with GELU activation
+            memory_feature = self.get_model().memory_mlp(memory_feature)  # MLP with GELU activation
             memory_feature = memory_feature.view(*mem_shape)
             new_image_features.append(memory_feature)
         return new_image_features

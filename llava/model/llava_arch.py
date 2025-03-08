@@ -102,7 +102,11 @@ class LlavaMetaModel:
         compress_Turing_hidden_dim = getattr(config, "compress_Turing_hidden_dim", 32)
         # Now init in memory_builder
         self.attention_model = NeuralTuringMachine(self.mm_input_dim, compress_Turing_hidden_dim).to(self.device)
-
+        self.memory_mlp = nn.Sequential(
+            nn.Linear(1152, 1152),
+            nn.GELU(),
+            nn.Linear(1152, 1152),
+        ).to(self.device)
 
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)

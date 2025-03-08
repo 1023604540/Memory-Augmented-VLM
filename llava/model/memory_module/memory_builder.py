@@ -39,6 +39,16 @@ class NeuralTuringMachine(nn.Module):
         return output
 
 class MultimodalOpsMixin:
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        # Replace with GELU activation:
+        self.memory_mlp = nn.Sequential(
+            nn.Linear(1152, 1152),
+            nn.GELU(),          # <-- Use GELU here
+            nn.Linear(1152, 1152),
+        )
+        self.attention_model = NeuralTuringMachine(input_dim=1152, output_dim=1152, attention_dropout=0.1)
     def attention(self, turing_memory, new_feature, update_ratio=0.4):
         """
         Update the turing_memory using attention between turing_memory and new_feature.
@@ -153,7 +163,7 @@ class MultimodalOpsMixin:
                 dists = ((long_memory.unsqueeze(1) - key_centroids.unsqueeze(0)) ** 2).sum(dim=3).sum(dim=2).sqrt()
                 min_indices = torch.argmin(dists, dim=0)
                 key_memory = img_feature[min_indices]
-                # cur_memory = torch.cat([key_memory, cur_memory], dim=0)
+                cur_memory = torch.cat([key_memory, cur_memory], dim=0)
 
             if video_Turing_memory_length == 0 or Turing_memory.shape[0] == 0:
                 Turing_memory_compressed = Turing_memory[:0]
@@ -164,8 +174,13 @@ class MultimodalOpsMixin:
             print(f"Memory: Long {long_memory_compressed.shape}, Turing {Turing_memory_compressed.shape}, Cur {cur_memory.shape}")
             memory_feature = torch.cat([
                 Turing_memory_compressed.view(-1, 729, 1152),   #（9，9*9，1152）（1，729，1152）
-                #long_memory_compressed.view(-1, 729, 1152),
-                #cur_memory.view(-1, 729, 1152),
+                long_memory_compressed.view(-1, 729, 1152),
+                cur_memory.view(-1, 729, 1152),
             ], dim=0)
+
+            mem_shape = memory_feature.shape  # e.g. (frames, 729, 1152)
+            memory_feature = memory_feature.view(-1, mem_shape[-1])  # Flatten (frames*729, 1152)
+            memory_feature = self.memory_mlp(memory_feature)  # MLP with GELU activation
+            memory_feature = memory_feature.view(*mem_shape)
             new_image_features.append(memory_feature)
         return new_image_features

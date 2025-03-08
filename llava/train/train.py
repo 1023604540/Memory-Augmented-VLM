@@ -1671,6 +1671,8 @@ def train(attn_implementation=None):
                 rank0_print("Unfreezing attention_model")
                 for p in model.get_model().attention_model.parameters():
                     p.requires_grad = True
+                for p in model.get_model().memory_mlp.parameters():
+                    p.requires_grad = True
             if "mm_vision_resampler" in tunable_parts:
                 for p in model.get_model().vision_resampler.parameters():
                     p.requires_grad = True

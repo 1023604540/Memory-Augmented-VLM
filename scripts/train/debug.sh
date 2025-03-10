@@ -1,12 +1,14 @@
+#!/bin/bash -l
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0
 export NCCL_IB_GID_INDEX=0
 export NCCL_SOCKET_IFNAME=ib0
-export NCCL_DEBUG=DEBUG
+export NCCL_SHM_DISABLE=1
+export NCCL_P2P_DISABLE=1
+export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=ALL
 export NCCL_TIMEOUT=3600  # 1 hour
 export TORCH_NCCL_TRACE_BUFFER_SIZE=33554432
-
 
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 export http_proxy=http://proxy:80
@@ -17,8 +19,6 @@ export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 export PATH=$CUDA_HOME/bin:$PATH
 export ACCELERATE_DISABLE_NUMA_AFFINITY=1
 # export LD_LIBRARY_PATH=/apps/SPACK/0.17.0/opt/linux-almalinux8-zen/gcc-8.4.1/gcc-9.4.0-mk6zvb3mw4z5gwcrbkd2krndifycgx4q/lib/gcc/x86_64-pc-linux-gnu/9.4.0/../../../../lib64:$LD_LIBRARY_PATH
-
-
 
 LLM_VERSION="Qwen/Qwen2-7B-Instruct"
 # for 7b model we recommend bs=1, accum=2, 16 nodes, 128 gpus, lr=1e-5, warmup=0.03
@@ -36,8 +36,8 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-${VISION_MODEL_VERSION_CLEAN}-${LLM_VERSION_CLEAN}-ov_stage_am9"
-PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-si" # replace it with your last checkpoint training from single image collection
+RUN_NAME="llava-onevision-${VISION_MODEL_VERSION_CLEAN}-${LLM_VERSION_CLEAN}-testzero3"
+PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
@@ -45,8 +45,7 @@ NUM_GPUS=1
 NNODES=$SLURM_NNODES
 RANK=$SLURM_PROCID
 ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n1)  # Master node
-PORT=12346
-
+PORT=12347
 
 
 ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --master_addr="${ADDR}" --master_port="${PORT}" \
@@ -57,7 +56,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --data_path /home/vault/b232dd/b232dd21/vlm/LLaVA-NeXT/scripts/train/memory_train.yaml \
     --image_folder /anvme/workspace/b232dd21-zyr/llava-data \
     --video_folder /anvme/workspace/b232dd16-LLaVA-OV/llava-video \
-    --mm_tunable_parts="mm_vision_tower,mm_mlp_adapter,mm_language_model" \
+    --mm_tunable_parts="mm_mlp_adapter, attention_model" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
     --mm_projector_type mlp2x_gelu \
@@ -70,7 +69,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --mm_patch_merge_type spatial_unpad \
     --bf16 True \
     --run_name $RUN_NAME \
-    --output_dir /anvme/workspace/b232dd16-LLaVA-OV/checkpoints/$RUN_NAME \
+    --output_dir /anvme/workspace/b232dd16-LLaVA-OV/testcache2/$RUN_NAME \
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 4 \

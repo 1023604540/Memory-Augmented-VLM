@@ -173,8 +173,8 @@ class MultimodalOpsMixin:
                 )
             print(f"Memory: Long {long_memory_compressed.shape}, Turing {Turing_memory_compressed.shape}, Cur {cur_memory.shape}")
             memory_feature = torch.cat([
-                Turing_memory_compressed.view(-1, 729, 1152),   #（9，9*9，1152）（1，729，1152）
-                long_memory_compressed.view(-1, 729, 1152),
+                #Turing_memory_compressed.view(-1, 729, 1152),   #（9，9*9，1152）（1，729，1152）
+                #long_memory_compressed.view(-1, 729, 1152),
                 cur_memory.view(-1, 729, 1152),
             ], dim=0)
 

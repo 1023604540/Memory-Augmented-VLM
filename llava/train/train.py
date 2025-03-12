@@ -1175,6 +1175,8 @@ class LazySupervisedDataset(Dataset):
                     avg_fps = 2
 
                     total_frames = len(frame_files)
+                    if total_frames < num_frames_to_sample:
+                        num_frames_to_sample = total_frames
                     sampled_indices = np.linspace(0, total_frames - 1, num_frames_to_sample, dtype=int)
 
 

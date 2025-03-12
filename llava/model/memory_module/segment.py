@@ -120,6 +120,8 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=15, max_distance=
                     adjusted_boundaries.append(new_boundary)
         # Always add the candidate boundary.
         adjusted_boundaries.append(b)
+    if boundaries[-1] not in adjusted_boundaries:
+        adjusted_boundaries.append(boundaries[-1])
     print("boundaries after adjusted: ", adjusted_boundaries)
 
     return adjusted_boundaries

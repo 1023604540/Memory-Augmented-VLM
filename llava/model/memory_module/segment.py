@@ -54,7 +54,7 @@ def segment(features, alpha=0.5, k=None):
 
     return boundaries
 
-def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=50):
+def adjusted_segment(features, alpha=0.5, k=None, min_distance=15, max_distance=50):
     """
     Segment a sequence of features into segments based on cosine similarity.
 
@@ -102,10 +102,8 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=10, max_distance=
     if not boundaries or boundaries[0] != 0:
         boundaries.insert(0, 0)
 
-
-
     adjusted_boundaries = [boundaries[0]]
-    for idx, b in enumerate(boundaries[1:], start=1):
+    for idx, b in enumerate(boundaries[1:-1], start=1):
         gap = b - adjusted_boundaries[-1]
         if gap < min_distance:
             # Skip if too close

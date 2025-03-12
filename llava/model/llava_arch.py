@@ -378,25 +378,26 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 segment_memory = []
                 encoded_features = self.encode_images(image)
                 encoded_features = encoded_features.requires_grad_()
-                print(
-                    f"[DEBUG] Vision output requires_grad={encoded_features.requires_grad}, grad_fn={encoded_features.grad_fn}")
-                torch.cuda.synchronize()
-                print("Before attention_model forward pass")
+                # print(
+                #     f"[DEBUG] Vision output requires_grad={encoded_features.requires_grad}, grad_fn={encoded_features.grad_fn}")
+                # torch.cuda.synchronize()
+                # print("Before attention_model forward pass")
                 image_segments = [encoded_features[boundaries[i]:boundaries[i+1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
                     #print(f"Image segment shape : {image_segment.shape}")
                     #print(f"Encoded segment shape : {encoded_segment.shape}")
                     segment_memory += (self.compress_temporal_features([image_segment], video_idx_in_batch, all_video=True))
                 #print(f"Segment memory : {[x.shape for x in segment_memory if x is not None]}")
-                torch.cuda.synchronize()
-                print("After attention_model forward pass")
+                # torch.cuda.synchronize()
+                # print("After attention_model forward pass")
 
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
+                rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
                 if torch.isnan(cat_segment_memory).any():
                     raise ValueError("NaNs detected in attention_model output!")
-                rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
-                rank0_print(
-                    f"[attention_model] output requires_grad={cat_segment_memory.requires_grad}, grad_fn={cat_segment_memory.grad_fn}")
+                # rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
+                # rank0_print(
+                #     f"[attention_model] output requires_grad={cat_segment_memory.requires_grad}, grad_fn={cat_segment_memory.grad_fn}")
                 images_list[idx] = cat_segment_memory
 
             # Now process all non-video images together.

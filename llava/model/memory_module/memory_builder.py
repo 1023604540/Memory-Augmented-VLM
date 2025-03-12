@@ -49,7 +49,7 @@ class MultimodalOpsMixin:
             nn.Linear(1152, 1152),
         )
         #self.attention_model = NeuralTuringMachine(input_dim=1152, output_dim=1152, attention_dropout=0.1)
-    def attention(self, turing_memory, new_feature, update_ratio=0.4):
+    def attention(self, turing_memory, new_feature, update_ratio=0.2):
         """
         Update the turing_memory using attention between turing_memory and new_feature.
         """
@@ -104,11 +104,11 @@ class MultimodalOpsMixin:
         This method depends on configuration parameters such as:
             video_long_memory_length, video_Turing_memory_length, etc.
         """
-        video_long_memory_length = getattr(self.config, "video_long_memory_length", 9)
-        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 9)
+        video_long_memory_length = getattr(self.config, "video_long_memory_length", 3)
+        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 3)
         video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
-        compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 9)
-        compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 9)
+        compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 27)
+        compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 27)
         compress_Turing_update_ratio = getattr(self.config, "compress_Turing_update_ratio", 0.2)
         video_sample_type = getattr(self.config, "video_sample_type", "weighted_kmeans")
 
@@ -169,12 +169,16 @@ class MultimodalOpsMixin:
                 Turing_memory_compressed = Turing_memory[:0]
             else:
                 Turing_memory_compressed, _ = attention_feature(
-                    Turing_memory, video_Turing_memory_length, self.attention2, update_ratio=compress_Turing_update_ratio
+                    Turing_memory, video_Turing_memory_length, self.attention, update_ratio=compress_Turing_update_ratio
                 )
             print(f"Memory: Long {long_memory_compressed.shape}, Turing {Turing_memory_compressed.shape}, Cur {cur_memory.shape}")
+            if long_memory_compressed.shape[0] < video_long_memory_length:
+                long_memory_compressed = long_memory[:0]
+            if Turing_memory_compressed.shape[0] < video_Turing_memory_length:
+                Turing_memory_compressed = Turing_memory[:0]
             memory_feature = torch.cat([
-                #Turing_memory_compressed.view(-1, 729, 1152),   #（9，9*9，1152）（1，729，1152）
-                #long_memory_compressed.view(-1, 729, 1152),
+                Turing_memory_compressed.view(-1, 729, 1152),   #（9，9*9，1152）（1，729，1152）
+                long_memory_compressed.view(-1, 729, 1152),
                 cur_memory.view(-1, 729, 1152),
             ], dim=0)
 

@@ -175,7 +175,7 @@ cont = model.generate(
     image_sizes=image_sizes,
     do_sample=False,
     temperature=0,
-    max_new_tokens=4096,
+    max_new_tokens=1024,
     modalities=["video"],
 )
 text_outputs = tokenizer.batch_decode(cont, skip_special_tokens=True)

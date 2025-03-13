@@ -1,0 +1,100 @@
+{
+  "results": {
+    "mlvu": {
+      "alias": "mlvu",
+      "mlvu_perception_score,none": 63.33863995277413,
+      "mlvu_perception_score_stderr,none": "N/A"
+    }
+  },
+  "group_subtasks": {
+    "mlvu": []
+  },
+  "configs": {
+    "mlvu": {
+      "task": "mlvu",
+      "dataset_path": "sy1998/temp",
+      "dataset_kwargs": {
+        "token": true
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "doc_to_visual": "<function mlvu_doc_to_visual at 0x14886bfffc70>",
+      "doc_to_text": "<function mlvu_doc_to_text at 0x14886be3c280>",
+      "doc_to_target": "answer",
+      "process_results": "<function mlvu_process_results at 0x14886be3c700>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "mlvu_perception_score",
+          "aggregation": "<function mlvu_aggregate_results at 0x14886be3caf0>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 16,
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "num_beams": 1,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false
+    }
+  },
+  "versions": {
+    "mlvu": "Yaml"
+  },
+  "n-shot": {
+    "mlvu": 0
+  },
+  "higher_is_better": {
+    "mlvu": {
+      "mlvu_perception_score": true
+    }
+  },
+  "n-samples": {
+    "mlvu": {
+      "original": 2175,
+      "effective": 2175
+    }
+  },
+  "config": {
+    "model": "llava_onevision",
+    "model_args": "pretrained=lmms-lab/llava-onevision-qwen2-7b-ov,max_frames_num=32",
+    "batch_size": "1",
+    "batch_sizes": [],
+    "device": null,
+    "use_cache": null,
+    "limit": null,
+    "bootstrap_iters": 100000,
+    "gen_kwargs": "",
+    "random_seed": 0,
+    "numpy_seed": 1234,
+    "torch_seed": 1234,
+    "fewshot_seed": 1234
+  },
+  "git_hash": "20b960b",
+  "date": "20250311_074221",
+  "task_hashes": {
+    "mlvu": "9ff61a41a6e0b9f8990bffb27e6bbe9ffb6802dd89ee0846346dfee9956139fe"
+  },
+  "model_source": "llava_onevision",
+  "model_name": "lmms-lab/llava-onevision-qwen2-7b-ov",
+  "model_name_sanitized": "lmms-lab__llava-onevision-qwen2-7b-ov",
+  "system_instruction": null,
+  "system_instruction_sha": null,
+  "fewshot_as_multiturn": false,
+  "chat_template": null,
+  "chat_template_sha": null,
+  "start_time": 2211346.514906056,
+  "end_time": 2218350.533609416,
+  "total_evaluation_time_seconds": "7004.018703359645"
+}

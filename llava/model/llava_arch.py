@@ -391,6 +391,15 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # torch.cuda.synchronize()
                 # print("After attention_model forward pass")
 
+                # Key Memory Selection Module
+                cur_input_ids = input_ids[idx]
+                print(cur_input_ids)
+                query_feature = self.get_model().embed_tokens(cur_input_ids)
+                print(query_feature.shape)
+
+
+
+
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
                 rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
                 if torch.isnan(cat_segment_memory).any():
@@ -418,50 +427,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             split_sizes = [image.shape[0] for image in images_list]
             projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
             image_features = torch.split(projected_feature, split_sizes)
-
-
-
-            # for idx, image in enumerate(images_list):
-            #     # If it is not a video feature, we don't need to process it
-            #     if idx not in video_idx_in_batch:
-            #         continue
-            #     boundaries = segment(image.mean(dim=1).flatten(1,2), k=130)
-            #     print(f"boundaries:{len(boundaries)}")
-            #     selected_frames = [image[boundaries[i]] for i in range(len(boundaries) - 1)]
-            #     images_list[idx] = torch.stack(selected_frames, dim=0)
-
-
-            # concat_images = torch.cat([image for image in images_list], dim=0)  # torch.Size([frame_num, 3, 384, 384])
-            # rank_print(f"Concat images : {concat_images.shape}")
-            # split_sizes = [image.shape[0] for image in images_list]
-            # encoded_image_features = self.encode_images(concat_images)
-            # # image_features,all_faster_video_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
-            # # This is a list, each element is [num_images, patch * patch, dim]
-            # image_features = torch.split(encoded_image_features, split_sizes)  # [torch.Size([frame_num, 729, 3584])]
-            # rank_print(f"Encoded image feats : {[x.shape for x in image_features]}")
-            #
-            # # Sample maximal 32 frames as the original input
-            # sampled_image_features = []
-            # for image_feature in image_features:
-            #     sampled_image_features.append(image_feature[:32])
-            #     #sampled_image_features.append(self.uniform_sample_frames(image_feature, num_samples=32))
-            #
-            # ## Insert the hierarchical memory module here
-            #
-            # frame_memory = self.compress_temporal_features(image_features, video_idx_in_batch)
-            # rank_print(f"Frame memory : {[x.shape for x in frame_memory if x is not None]}")
-            #
-            # ## Concatenate memory module with original image features
-            # memory_features = [torch.cat((a, b), dim=0) if b is not None else a
-            #                   for a, b in zip(sampled_image_features, frame_memory)]
-            # rank_print(f"Image_feature + Frame memory : {[x.shape for x in memory_features]}")
-            #
-            # # Apply mm_projector
-            # concat_images = torch.cat([image for image in memory_features], dim=0)
-            # split_sizes = [image.shape[0] for image in memory_features]
-            # projected_features = self.get_model().mm_projector(concat_images)
-            # image_features = torch.split(projected_features, split_sizes)
-            # rank_print(f"Projected image feats : {[x.shape for x in image_features]}")
 
 
             new_image_features = []

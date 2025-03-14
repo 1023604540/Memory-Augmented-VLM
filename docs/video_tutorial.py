@@ -157,13 +157,12 @@ image_tensors.append(frames)
 # Prepare conversation input
 conv_template = "qwen_1_5"
 
-# question = f"{DEFAULT_IMAGE_TOKEN}\n tell me what is going on in this video."
-question = "tell me what is going on in this video."
+question = f"{DEFAULT_IMAGE_TOKEN}\n tell me what is going on in this video."
 conv = copy.deepcopy(conv_templates[conv_template])
 conv.append_message(conv.roles[0], question)
 conv.append_message(conv.roles[1], None)
 prompt_question = conv.get_prompt()
-
+print(prompt_question)
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
 image_sizes = [frame.size for frame in video_frames]  # (width * height * 3)
 

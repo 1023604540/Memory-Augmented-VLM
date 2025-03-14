@@ -393,8 +393,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 # Key Memory Selection Module
                 print(input_ids.shape)
-                # cur_input_ids = input_ids[idx]
-                # print(cur_input_ids)
+                cur_input_ids = input_ids[idx]
+                print(cur_input_ids)
                 # query_feature = self.get_model().embed_tokens(cur_input_ids)
                 # print(query_feature.shape)
 

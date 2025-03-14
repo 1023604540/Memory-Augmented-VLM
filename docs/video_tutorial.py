@@ -157,7 +157,7 @@ image_tensors.append(frames)
 # Prepare conversation input
 conv_template = "qwen_1_5"
 
-question = f"{DEFAULT_IMAGE_TOKEN}\nWhat is happening in the video."
+question = f"{DEFAULT_IMAGE_TOKEN}\n tell me what is going on."
 
 conv = copy.deepcopy(conv_templates[conv_template])
 conv.append_message(conv.roles[0], question)

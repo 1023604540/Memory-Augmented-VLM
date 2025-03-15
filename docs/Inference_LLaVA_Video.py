@@ -43,7 +43,7 @@ video = image_processor.preprocess(video, return_tensors="pt")["pixel_values"].c
 video = [video]
 conv_template = "qwen_1_5"  # Make sure you use correct chat template for different models
 time_instruciton = f"The video lasts for {video_time:.2f} seconds, and {len(video[0])} frames are uniformly sampled from it. These frames are located at {frame_time}.Please answer the following questions related to this video."
-question = DEFAULT_IMAGE_TOKEN + f"{time_instruciton}\nPlease describe this video in detail."
+question = DEFAULT_IMAGE_TOKEN + f"{time_instruciton}\nPlease describe this video in detail and tell me if there are clips in the video that shouldn't be there.."
 conv = copy.deepcopy(conv_templates[conv_template])
 conv.append_message(conv.roles[0], question)
 conv.append_message(conv.roles[1], None)

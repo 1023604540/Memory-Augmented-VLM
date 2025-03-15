@@ -157,7 +157,7 @@ image_tensors.append(frames)
 # Prepare conversation input
 conv_template = "qwen_1_5"
 
-question = f"{DEFAULT_IMAGE_TOKEN}\n tell me what is going on in this video."
+question = f"{DEFAULT_IMAGE_TOKEN}\n Please describe this video in detail and tell me if there are clips in the video that shouldn't be there."
 conv = copy.deepcopy(conv_templates[conv_template])
 conv.append_message(conv.roles[0], question)
 conv.append_message(conv.roles[1], None)

@@ -615,6 +615,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     selected_frames = frame_indices
 
                 print("Selected Key Frames:", selected_frames)
+                selected_image_features = image_feature[selected_frames]
+                image_features[idx] = selected_image_features
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
@@ -669,7 +671,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                             # Add hierarchical memory module
                             # frame_memory = self.compress_temporal_features(image_feature)
-                            #rank_print(f"Image feature shape one_token before flatten: {image_feature.shape}")  # [frame_num*196, 3584]
+                            rank_print(f"Image feature shape one_token before flatten: {image_feature.shape}")  # [frame_num*196, 3584]
                             image_feature = image_feature.flatten(0, 1)
                             # image_feature = torch.cat((image_feature, frame_memory[0]), dim=0)
                             #rank_print(f"Image feature shape one_token : {image_feature.shape}")  # [frame_num*196, 3584]

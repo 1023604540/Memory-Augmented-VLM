@@ -425,7 +425,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                         # Then find the next occurrence of the <|im_end|> token after the <image> token.
                         idx_im_end = tokens.index(im_end_token_id, idx_image)
                         # Extract tokens after the <image> token up to (but not including) the <|im_end|> token.
-                        query_tokens = tokens[idx_image + 1: idx_im_end]
+                        query_tokens = tokens[idx_image + 2: idx_im_end]  # Skip the <image> token and the space token.
                         query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0)
                         return query_tensor
                     except ValueError:
@@ -433,8 +433,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                         return []
                 query = extract_user_query_tokens(cur_input_ids)
                 print(f"the query is : {query}")
-                # query_feature = self.get_model().embed_tokens(cur_input_ids)
-                # print(query_feature.shape)
+                query_feature = self.get_model().embed_tokens(query)
+                print(query_feature.shape)
 
 
 

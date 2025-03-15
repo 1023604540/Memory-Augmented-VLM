@@ -391,7 +391,48 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # torch.cuda.synchronize()
                 # print("After attention_model forward pass")
 
-                # Key Memory Selection Module
+                cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
+                rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
+                if torch.isnan(cat_segment_memory).any():
+                    raise ValueError("NaNs detected in attention_model output!")
+                # rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
+                # rank0_print(
+                #     f"[attention_model] output requires_grad={cat_segment_memory.requires_grad}, grad_fn={cat_segment_memory.grad_fn}")
+                images_list[idx] = cat_segment_memory
+
+            # Now process all non-video images together.
+            if non_video_images:
+                # Record the original batch sizes of each non-video image tensor.
+                original_lengths = [img.shape[0] for img in non_video_images]
+                # Concatenate them along the batch dimension.
+                concatenated = torch.cat(non_video_images, dim=0)
+                # Encode the concatenated tensor.
+                encoded = self.encode_images(concatenated)
+                # Split the encoded tensor back into individual parts.
+                splits = torch.split(encoded, original_lengths, dim=0)
+                # Place the processed tensors back to their original positions.
+                for pos, enc in zip(non_video_positions, splits):
+                    images_list[pos] = enc
+
+            # Apply mm_projector
+            split_sizes = [image.shape[0] for image in images_list]
+            projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
+            image_features = torch.split(projected_feature, split_sizes)
+            rank_print(f"Encoded image feats : {[x.shape for x in image_features]}")  # [frame_num, 729, 3584]
+
+            new_image_features = []
+            for idx, image_feat in enumerate(image_features):
+                if idx in video_idx_in_batch:
+                    new_image_features.append(self.get_2dPool(image_feat))
+                else:
+                    new_image_features.append(image_feat)
+            # image_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
+            #rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in new_image_features]}")  # [frame_num, 196, 3584]
+            # image_features = torch.split(image_features, split_sizes, dim=0)
+            image_features = new_image_features
+
+            # Key Memory Selection Module
+            for idx, image_feature in enumerate(image_features):
                 print(input_ids.shape)
                 cur_input_ids = input_ids[idx]
                 print(cur_input_ids)
@@ -431,53 +472,66 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     except ValueError:
                         # If the expected tokens are not found, return an empty list.
                         return []
+
                 query = extract_user_query_tokens(cur_input_ids)
                 print(f"the query is : {query}")
                 query_feature = self.get_model().embed_tokens(query)
                 print(query_feature.shape)  # [1, n, 3584]
 
+                def compute_frame_score(frame_feature, query_embedding, reduction='max'):
+                    """
+                    计算单个frame与query之间的相似度。
 
+                    参数:
+                        frame_feature: tensor, 形状为 (196, 3584)
+                        query_embedding: tensor, 形状为 (token_num, 3584)
+                        reduction: str, 归约方式，可以选择 'max' 或 'mean'
 
+                    返回:
+                        score: float, 该frame与query的相似度分数
+                    """
+                    # 对frame的patch特征进行归一化 (在最后一维)
+                    frame_norm = F.normalize(frame_feature, dim=-1)  # (196, 3584)
+                    # 对query的token特征进行归一化
+                    query_norm = F.normalize(query_embedding, dim=-1)  # (token_num, 3584)
 
-                cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
-                rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
-                if torch.isnan(cat_segment_memory).any():
-                    raise ValueError("NaNs detected in attention_model output!")
-                # rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
-                # rank0_print(
-                #     f"[attention_model] output requires_grad={cat_segment_memory.requires_grad}, grad_fn={cat_segment_memory.grad_fn}")
-                images_list[idx] = cat_segment_memory
+                    # 计算余弦相似度矩阵，结果形状为 (196, token_num)
+                    # 每个元素表示某个patch与某个token之间的相似度
+                    sim_matrix = torch.matmul(frame_norm, query_norm.T)
 
-            # Now process all non-video images together.
-            if non_video_images:
-                # Record the original batch sizes of each non-video image tensor.
-                original_lengths = [img.shape[0] for img in non_video_images]
-                # Concatenate them along the batch dimension.
-                concatenated = torch.cat(non_video_images, dim=0)
-                # Encode the concatenated tensor.
-                encoded = self.encode_images(concatenated)
-                # Split the encoded tensor back into individual parts.
-                splits = torch.split(encoded, original_lengths, dim=0)
-                # Place the processed tensors back to their original positions.
-                for pos, enc in zip(non_video_positions, splits):
-                    images_list[pos] = enc
+                    # 根据归约方式将 (196, token_num) 的相似度矩阵化为单一分数
+                    if reduction == 'max':
+                        score = sim_matrix.max()  # 取所有patch和token中的最大值
+                    elif reduction == 'mean':
+                        score = sim_matrix.mean()  # 取平均值
+                    else:
+                        raise ValueError("Unknown reduction method: choose 'max' or 'mean'")
 
-            # Apply mm_projector
-            split_sizes = [image.shape[0] for image in images_list]
-            projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
-            image_features = torch.split(projected_feature, split_sizes)
-            rank_print(f"Encoded image feats : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
+                    return score.item()
 
-            new_image_features = []
-            for idx, image_feat in enumerate(image_features):
-                if idx in video_idx_in_batch:
-                    new_image_features.append(self.get_2dPool(image_feat))
-                else:
-                    new_image_features.append(image_feat)
-            # image_features = self.encode_multimodals(concat_images, video_idx_in_batch, split_sizes)
-            #rank_print(f"Encoded image feats after 2dPool : {[x.shape for x in new_image_features]}")  # [frame_num, 196, 3584]
-            # image_features = torch.split(image_features, split_sizes, dim=0)
-            image_features = new_image_features
+                def compute_all_frame_scores(image_features, query_embedding, reduction='max'):
+                    """
+                    对每一帧进行相似度计算，返回 (frame_index, score) 的列表。
+
+                    参数:
+                        image_features: tensor, 形状为 (frame_num, 196, 3584)
+                        query_embedding: tensor, 形状为 (token_num, 3584)
+                        reduction: str, 归约方式 ('max' 或 'mean')
+
+                    返回:
+                        frame_scores: list of tuple, 每个元素为 (frame_index, score)
+                    """
+                    frame_scores = []
+                    for idx, frame_feature in enumerate(image_features):
+                        score = compute_frame_score(frame_feature, query_embedding, reduction)
+                        frame_scores.append((idx, score))
+                    return frame_scores
+
+                scores = compute_all_frame_scores(image_feature, query_feature, reduction='max')
+                print("Frame Scores:")
+                for idx, score in scores:
+                    print(f"Frame {idx}: score = {score}")
+
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

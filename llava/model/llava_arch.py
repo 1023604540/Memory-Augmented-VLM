@@ -434,9 +434,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             image_features = new_image_features
 
             # Key Memory Selection Module
-            for idx, image_feature in enumerate(image_features):
+            for index, image_feature in enumerate(image_features):
                 print(input_ids.shape)
-                cur_input_ids = input_ids[idx]
+                cur_input_ids = input_ids[index]
                 print(cur_input_ids)
 
                 ############################## Conversation Template
@@ -616,7 +616,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 print("Selected Key Frames:", selected_frames)
                 selected_image_features = image_feature[selected_frames]
-                image_features[idx] = selected_image_features
+                print(index)
+                image_features[index] = selected_image_features
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

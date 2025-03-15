@@ -426,7 +426,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                         idx_im_end = tokens.index(im_end_token_id, idx_image)
                         # Extract tokens after the <image> token up to (but not including) the <|im_end|> token.
                         query_tokens = tokens[idx_image + 2: idx_im_end]  # Skip the <image> token and the space token.
-                        query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0)
+                        query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
                         return query_tensor
                     except ValueError:
                         # If the expected tokens are not found, return an empty list.

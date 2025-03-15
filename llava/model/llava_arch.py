@@ -583,38 +583,38 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 for idx, score in scores:
                     print(f"Frame {idx}: score = {score}")
-                    # -------------------- 关键帧挑选部分 --------------------
-                    # 将 (frame_index, score) 分离为两个列表
-                    frame_score_values = [score for frame_idx, score in scores]
-                    frame_indices = [frame_idx for frame_idx, score in scores]
+                # -------------------- 关键帧挑选部分 --------------------
+                # 将 (frame_index, score) 分离为两个列表
+                frame_score_values = [score for frame_idx, score in scores]
+                frame_indices = [frame_idx for frame_idx, score in scores]
 
-                    # 如果帧数超过阈值，则进行关键帧挑选，否则全部保留
-                    if len(frame_score_values) >= max_num_frames:
-                        # 归一化分数到 [0,1] 区间
-                        score_arr = np.array(frame_score_values)
-                        normalized_scores = (score_arr - np.min(score_arr)) / (np.max(score_arr) - np.min(score_arr))
+                # 如果帧数超过阈值，则进行关键帧挑选，否则全部保留
+                if len(frame_score_values) >= max_num_frames:
+                    # 归一化分数到 [0,1] 区间
+                    score_arr = np.array(frame_score_values)
+                    normalized_scores = (score_arr - np.min(score_arr)) / (np.max(score_arr) - np.min(score_arr))
 
-                        # 构造初始的分数字典，深度为0
-                        initial_score_dict = dict(score=normalized_scores.tolist(), depth=0)
-                        # 同时传入所有帧对应的索引列表
-                        selected_score_dicts, selected_frame_indices = meanstd(len(normalized_scores),
-                                                                               [initial_score_dict],
-                                                                               max_num_frames,
-                                                                               [frame_indices],
-                                                                               t1, t2, all_depth)
+                    # 构造初始的分数字典，深度为0
+                    initial_score_dict = dict(score=normalized_scores.tolist(), depth=0)
+                    # 同时传入所有帧对应的索引列表
+                    selected_score_dicts, selected_frame_indices = meanstd(len(normalized_scores),
+                                                                           [initial_score_dict],
+                                                                           max_num_frames,
+                                                                           [frame_indices],
+                                                                           t1, t2, all_depth)
 
-                        # 根据每个分割段的深度决定挑选的帧数
-                        selected_frames = []
-                        for seg, seg_indices in zip(selected_score_dicts, selected_frame_indices):
-                            f_num = int(max_num_frames / (2 ** seg['depth']))
-                            # 从该段中挑选得分最高的 f_num 个帧
-                            topk_indices = heapq.nlargest(f_num, range(len(seg['score'])), seg['score'].__getitem__)
-                            selected_frames.extend([seg_indices[i] for i in topk_indices])
-                        selected_frames.sort()
-                    else:
-                        selected_frames = frame_indices
+                    # 根据每个分割段的深度决定挑选的帧数
+                    selected_frames = []
+                    for seg, seg_indices in zip(selected_score_dicts, selected_frame_indices):
+                        f_num = int(max_num_frames / (2 ** seg['depth']))
+                        # 从该段中挑选得分最高的 f_num 个帧
+                        topk_indices = heapq.nlargest(f_num, range(len(seg['score'])), seg['score'].__getitem__)
+                        selected_frames.extend([seg_indices[i] for i in topk_indices])
+                    selected_frames.sort()
+                else:
+                    selected_frames = frame_indices
 
-                    print("Selected Key Frames:", selected_frames)
+                print("Selected Key Frames:", selected_frames)
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

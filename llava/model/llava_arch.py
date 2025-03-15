@@ -466,7 +466,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             split_sizes = [image.shape[0] for image in images_list]
             projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
             image_features = torch.split(projected_feature, split_sizes)
-
+            rank_print(f"Encoded image feats : {[x.shape for x in image_features]}")  # [frame_num, 196, 3584]
 
             new_image_features = []
             for idx, image_feat in enumerate(image_features):

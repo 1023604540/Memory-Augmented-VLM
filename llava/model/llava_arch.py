@@ -432,7 +432,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                         # If the expected tokens are not found, return an empty list.
                         return []
                 query = extract_user_query_tokens(cur_input_ids)
-                print(f"the query is : {query}")
+                print(f"the query is : {query}, shape is : {query.shape}")
                 query_feature = self.get_model().embed_tokens(query)
                 print(query_feature.shape)
 

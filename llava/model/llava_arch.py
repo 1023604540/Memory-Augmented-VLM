@@ -579,7 +579,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 max_num_frames = 32
                 t1 = 0.8
                 t2 = -100
-                all_depth = 5
+                all_depth = 3
 
                 for idx, score in scores:
                     print(f"Frame {idx}: score = {score}")

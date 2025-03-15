@@ -576,7 +576,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     all_split_fn = no_split_fn + all_split_fn
 
                     return all_split_score, all_split_fn
-                max_num_frames = 32
+                max_num_frames = 16
                 t1 = 0.8
                 t2 = -100
                 all_depth = 3

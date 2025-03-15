@@ -32,6 +32,7 @@ import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
 from llava.model.memory_module.segment import segment, adjusted_segment
 import heapq
+import numpy as np
 
 
 ################################################################

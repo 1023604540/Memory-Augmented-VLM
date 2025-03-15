@@ -395,6 +395,44 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(input_ids.shape)
                 cur_input_ids = input_ids[idx]
                 print(cur_input_ids)
+
+                ############################## Conversation Template
+                # < | im_start | > system
+                # You are a helpful assistant. < | im_end | >
+                # < | im_start | > user
+                # < image >
+                # tell me what is going on in this video. < | im_end | >
+                # < | im_start | > assistant
+                ##############################
+                IM_END_TOKEN_ID = 151645  # "<|im_end|>"
+                IMAGE_TOKEN_ID = -200  # "<image>"
+
+                def extract_user_query_tokens(input_ids, image_token_id=IMAGE_TOKEN_ID,
+                                              im_end_token_id=IM_END_TOKEN_ID):
+                    """
+                    Extract tokens from the user message that come after the <image> token
+                    and before the next <|im_end|> token.
+                    """
+                    # Ensure we work with a list of ints.
+                    if isinstance(input_ids, torch.Tensor):
+                        tokens = input_ids.tolist()
+                    else:
+                        tokens = input_ids
+
+                    try:
+                        # Find the first occurrence of the <image> token.
+                        idx_image = tokens.index(image_token_id)
+                        # Then find the next occurrence of the <|im_end|> token after the <image> token.
+                        idx_im_end = tokens.index(im_end_token_id, idx_image)
+                        # Extract tokens after the <image> token up to (but not including) the <|im_end|> token.
+                        query_tokens = tokens[idx_image + 1: idx_im_end]
+                        query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0)
+                        return query_tensor
+                    except ValueError:
+                        # If the expected tokens are not found, return an empty list.
+                        return []
+                query = extract_user_query_tokens(cur_input_ids)
+                print(query)
                 # query_feature = self.get_model().embed_tokens(cur_input_ids)
                 # print(query_feature.shape)
 

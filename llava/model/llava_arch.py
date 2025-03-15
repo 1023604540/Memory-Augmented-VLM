@@ -31,6 +31,7 @@ from llava.utils import rank0_print, rank_print
 import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
 from llava.model.memory_module.segment import segment, adjusted_segment
+import heapq
 
 
 ################################################################
@@ -529,9 +530,90 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 scores = compute_all_frame_scores(image_feature, query_feature.squeeze(0), reduction='mean')
                 print("Frame Scores:")
+
+                def meanstd(len_scores, dic_scores, n, fns, t1, t2, all_depth):
+                    split_scores = []
+                    split_fn = []
+                    no_split_scores = []
+                    no_split_fn = []
+                    i = 0
+                    for dic_score, fn in zip(dic_scores, fns):
+                        # normalized_data = (score - np.min(score)) / (np.max(score) - np.min(score))
+                        score = dic_score['score']
+                        depth = dic_score['depth']
+                        mean = np.mean(score)
+                        std = np.std(score)
+
+                        top_n = heapq.nlargest(n, range(len(score)), score.__getitem__)
+                        top_score = [score[t] for t in top_n]
+                        # print(f"split {i}: ",len(score))
+                        i += 1
+                        mean_diff = np.mean(top_score) - mean
+                        if mean_diff > t1 and std > t2:
+                            no_split_scores.append(dic_score)
+                            no_split_fn.append(fn)
+                        elif depth < all_depth:
+                            # elif len(score)>(len_scores/n)*2 and len(score) >= 8:
+                            score1 = score[:len(score) // 2]
+                            score2 = score[len(score) // 2:]
+                            fn1 = fn[:len(score) // 2]
+                            fn2 = fn[len(score) // 2:]
+                            split_scores.append(dict(score=score1, depth=depth + 1))
+                            split_scores.append(dict(score=score2, depth=depth + 1))
+                            split_fn.append(fn1)
+                            split_fn.append(fn2)
+                        else:
+                            no_split_scores.append(dic_score)
+                            no_split_fn.append(fn)
+                    if len(split_scores) > 0:
+                        all_split_score, all_split_fn = meanstd(len_scores, split_scores, n, split_fn, t1, t2,
+                                                                all_depth)
+                    else:
+                        all_split_score = []
+                        all_split_fn = []
+                    all_split_score = no_split_scores + all_split_score
+                    all_split_fn = no_split_fn + all_split_fn
+
+                    return all_split_score, all_split_fn
+                max_num_frames = 64
+                t1 = 0.8
+                t2 = -100
+                all_depth = 5
+
                 for idx, score in scores:
                     print(f"Frame {idx}: score = {score}")
+                    # -------------------- 关键帧挑选部分 --------------------
+                    # 将 (frame_index, score) 分离为两个列表
+                    frame_score_values = [score for frame_idx, score in scores]
+                    frame_indices = [frame_idx for frame_idx, score in scores]
 
+                    # 如果帧数超过阈值，则进行关键帧挑选，否则全部保留
+                    if len(frame_score_values) >= max_num_frames:
+                        # 归一化分数到 [0,1] 区间
+                        score_arr = np.array(frame_score_values)
+                        normalized_scores = (score_arr - np.min(score_arr)) / (np.max(score_arr) - np.min(score_arr))
+
+                        # 构造初始的分数字典，深度为0
+                        initial_score_dict = dict(score=normalized_scores.tolist(), depth=0)
+                        # 同时传入所有帧对应的索引列表
+                        selected_score_dicts, selected_frame_indices = meanstd(len(normalized_scores),
+                                                                               [initial_score_dict],
+                                                                               max_num_frames,
+                                                                               [frame_indices],
+                                                                               t1, t2, all_depth)
+
+                        # 根据每个分割段的深度决定挑选的帧数
+                        selected_frames = []
+                        for seg, seg_indices in zip(selected_score_dicts, selected_frame_indices):
+                            f_num = int(max_num_frames / (2 ** seg['depth']))
+                            # 从该段中挑选得分最高的 f_num 个帧
+                            topk_indices = heapq.nlargest(f_num, range(len(seg['score'])), seg['score'].__getitem__)
+                            selected_frames.extend([seg_indices[i] for i in topk_indices])
+                        selected_frames.sort()
+                    else:
+                        selected_frames = frame_indices
+
+                    print("Selected Key Frames:", selected_frames)
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

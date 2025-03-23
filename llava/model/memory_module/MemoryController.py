@@ -23,6 +23,7 @@ class EpisodicMemoryController:
         Returns either a single context vector or a list of top-k memory vectors.
         """
         #  Zr =(Z_q@M†+ξ)M
+        query_vec = query_vec.to(self.mem_keys.dtype)
         memory_inv = torch.linalg.pinv(self.mem_keys)
         temp = query_vec @ memory_inv
         temp_add_noise = self.add_noise(temp, sigma=0.1)

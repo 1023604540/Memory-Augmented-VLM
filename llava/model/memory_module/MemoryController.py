@@ -29,7 +29,7 @@ class EpisodicMemoryController:
         print(f"memory inverse: {memory_inv.shape}")
         temp = query_vec @ memory_inv
         print(f"temp: {temp.shape}")
-        temp_add_noise = self.add_noise(temp, sigma=0.1)
+        temp_add_noise = self.add_noise(temp, sigma=0.001)
         print(f"temp add noise: {temp_add_noise.shape}")
         Z = temp_add_noise @ self.mem_keys
         #print(f"retrieved memory: {Z.shape}")
@@ -41,7 +41,7 @@ class EpisodicMemoryController:
             new_memory = new_memory.flatten(0, 1)
         if old_memory.dim() == 3:
             old_memory = old_memory.flatten(0, 1)
-        Z = self.add_noise(new_memory, sigma=0.1)
+        Z = self.add_noise(new_memory, sigma=0.001)
         M0_inverse = torch.linalg.pinv(old_memory)
         Temp = new_memory @ M0_inverse
         Temp_inverse = torch.linalg.pinv(Temp)

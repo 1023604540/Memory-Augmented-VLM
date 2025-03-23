@@ -377,9 +377,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
                 #print(f"boundaries:{len(boundaries)}")
                 #print(f"boundaries:{boundaries}")
-
-                memory = EpisodicMemoryController(mem_slots=32, mem_dim=image.shape[-1])
                 encoded_features = self.encode_images(image)
+                image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
+                for image_segment in image_segments:
+                    # print(f"Image segment shape : {image_segment.shape}")
+                    memory = EpisodicMemoryController(mem_slots=32, mem_dim=image.shape[-1])
+                    memory.write_memory(image_segment)
+
 
                 # rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
                 # rank0_print(
@@ -423,7 +427,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             for index, image_feature in enumerate(image_features):
                 print(input_ids.shape)
                 cur_input_ids = input_ids[index]
-                print(cur_input_ids)
+                print(f"cur_input_ids: shape {cur_input_ids.shape}, content {cur_input_ids}")
 
                 ############################## Conversation Template
                 # < | im_start | > system
@@ -455,8 +459,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                         idx_im_end = tokens.index(im_end_token_id, idx_image)
                         # Extract tokens after the <image> token up to (but not including) the <|im_end|> token.
                         query_tokens = tokens[idx_image + 2: idx_im_end]  # Skip the <image> token and the space token.
-                        query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
-                        return query_tensor
+                        #query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
+                        return query_tokens
                     except ValueError:
                         # If the expected tokens are not found, return an empty list.
                         return []
@@ -465,6 +469,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(f"the query is : {query}")
                 query_feature = self.get_model().embed_tokens(query)
                 print(query_feature.shape)  # [1, n, 3584]
+                memory.retrieve_memory(query_feature)
+                print(f"Retrieved_Memory: {memory.mem_keys.shape}")
 
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

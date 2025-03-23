@@ -16,27 +16,31 @@ class EpisodicMemoryController:
         # self.cov_inv = np.eye(mem_dim) * alpha  (if using advanced update rules)
 
 
-    def retrieve_memory(self, memory, query_vec):
+    def retrieve_memory(self, query_vec):
         """
         Retrieve memory relevant to the given query vector.
         Returns either a single context vector or a list of top-k memory vectors.
         """
-        memory_inv = torch.linalg.pinv(memory)
+        #  Zr =(Z_q@M†+ξ)M
+        memory_inv = torch.linalg.pinv(self.mem_keys)
         temp = query_vec @ memory_inv
         temp_add_noise = self.add_noise(temp, sigma=0.1)
-        Z = temp_add_noise @ memory
+        Z = temp_add_noise @ self.mem_keys
+        print(f"retrieved memory: {Z.shape}")
         return Z
+
     def integrate(self, old_memory, new_memory):
         # M^ =(ZξM0†)†Zξ
         if new_memory.dim() == 3:
-            new_vector = new_memory.flatten(0, 1)
+            new_memory = new_memory.flatten(0, 1)
         if old_memory.dim() == 3:
-            old_vectors = old_memory.flatten(0, 1)
-        Z = self.add_noise(new_vector, sigma=0.1)
-        M0_inverse = torch.linalg.pinv(old_vectors)
-        Temp = new_vector @ M0_inverse
+            old_memory = old_memory.flatten(0, 1)
+        Z = self.add_noise(new_memory, sigma=0.1)
+        M0_inverse = torch.linalg.pinv(old_memory)
+        Temp = new_memory @ M0_inverse
         Temp_inverse = torch.linalg.pinv(Temp)
         M_hat = Temp_inverse @ Z
+        print(f"integrated memory: {M_hat.shape}")
         return M_hat
 
     def add_noise(self, x, sigma):

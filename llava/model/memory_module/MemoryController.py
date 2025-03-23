@@ -28,7 +28,7 @@ class EpisodicMemoryController:
         temp = query_vec @ memory_inv
         temp_add_noise = self.add_noise(temp, sigma=0.1)
         Z = temp_add_noise @ self.mem_keys
-        print(f"retrieved memory: {Z.shape}")
+        #print(f"retrieved memory: {Z.shape}")
         return Z
 
     def integrate(self, old_memory, new_memory):

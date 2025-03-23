@@ -470,8 +470,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(f"the query is : {query}")
                 query_feature = self.get_model().embed_tokens(query)
                 print(query_feature.shape)  # [1, n, 3584]
-                memory.retrieve_memory(query_feature)
-                print(f"Retrieved_Memory: {memory.mem_keys.shape}")
+                retrieved_memory = memory.retrieve_memory(query_feature)
+                print(f"retrieved_memory: {retrieved_memory.shape}")
+                print(f"Memory in the bank: {memory.mem_keys.shape}")
 
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

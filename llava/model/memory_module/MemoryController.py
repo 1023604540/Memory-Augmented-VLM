@@ -51,7 +51,7 @@ class EpisodicMemoryController:
         Add isotropic Gaussian noise with std=sigma to each element in X.
         """
         if sigma > 0.0:
-            return x + sigma * torch.randn_like(X)
+            return x + sigma * torch.randn_like(x)
         else:
             return x
 

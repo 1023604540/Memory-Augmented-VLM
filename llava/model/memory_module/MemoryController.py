@@ -65,14 +65,14 @@ class EpisodicMemoryController:
         input_len = len(episode_vec)
         if input_len <= self.capacity - self.next_idx:
             for idx in range(input_len):
-                self.mem_keys[self.next_idx + idx] = episode_vec[idx].copy()
-                self.mem_vals[self.next_idx + idx] = episode_vec[idx].copy()
+                self.mem_keys[self.next_idx + idx] = episode_vec[idx]
+                self.mem_vals[self.next_idx + idx] = episode_vec[idx]
             self.next_idx += input_len
         else:
             cur_len = self.capacity - self.next_idx
             for idx in range(cur_len):
-                self.mem_keys[self.next_idx + idx] = episode_vec[idx].copy()
-                self.mem_vals[self.next_idx + idx] = episode_vec[idx].copy()
+                self.mem_keys[self.next_idx + idx] = episode_vec[idx]
+                self.mem_vals[self.next_idx + idx] = episode_vec[idx]
             self.next_idx = self.capacity
             self.integrate(self.mem_keys, episode_vec[cur_len:])
         return

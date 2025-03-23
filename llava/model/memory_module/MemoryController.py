@@ -41,7 +41,8 @@ class EpisodicMemoryController:
         Temp_inverse = torch.linalg.pinv(Temp)
         M_hat = Temp_inverse @ Z
         print(f"integrated memory: {M_hat.shape}")
-        return M_hat
+        self.mem_keys = M_hat
+        return
 
     def add_noise(self, x, sigma):
         """
@@ -74,5 +75,6 @@ class EpisodicMemoryController:
                 self.mem_vals[self.next_idx + idx] = episode_vec[idx].copy()
             self.next_idx = self.capacity
             self.integrate(self.mem_keys, episode_vec[cur_len:])
+        return
 
         # End of write_memory

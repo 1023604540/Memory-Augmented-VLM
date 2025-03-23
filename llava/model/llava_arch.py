@@ -379,10 +379,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #print(f"boundaries:{boundaries}")
                 encoded_features = self.encode_images(image)
                 image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
-                for image_segment in image_segments:
-                    # print(f"Image segment shape : {image_segment.shape}")
-                    memory = EpisodicMemoryController(mem_slots=32, mem_dim=image.shape[-1])
-                    memory.write_memory(image_segment)
+
 
 
                 # rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")

@@ -419,10 +419,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
             image_features = new_image_features # [frame_num, 196, 3584]
 
-            # memory = EpisodicMemoryController(mem_slots=32, mem_dim=image_features[0].shape[-1])
-            # for idx, image_feature in enumerate(image_features):
-            #     print(f"image_feature to be written:{image_feature.shape}")
-            #     memory.write_memory(image_feature)
+            memory = EpisodicMemoryController(mem_slots=32, mem_dim=image_features[0].shape[-1])
+            for idx, image_feature in enumerate(image_features):
+                print(f"image_feature to be written:{image_feature.shape}")
+                memory.write_memory(image_feature)
 
             # Key Memory Selection Module
             for index, image_feature in enumerate(image_features):

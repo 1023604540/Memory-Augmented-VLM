@@ -24,9 +24,13 @@ class EpisodicMemoryController:
         """
         #  Zr =(Z_q@M†+ξ)M
         query_vec = query_vec.to(self.mem_keys.dtype)
+        print(f"query vector: {query_vec.shape}")
         memory_inv = torch.linalg.pinv(self.mem_keys)
+        print(f"memory inverse: {memory_inv.shape}")
         temp = query_vec @ memory_inv
+        print(f"temp: {temp.shape}")
         temp_add_noise = self.add_noise(temp, sigma=0.1)
+        print(f"temp add noise: {temp_add_noise.shape}")
         Z = temp_add_noise @ self.mem_keys
         #print(f"retrieved memory: {Z.shape}")
         return Z

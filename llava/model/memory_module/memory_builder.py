@@ -156,13 +156,15 @@ class MultimodalOpsMixin:
                 long_memory_compressed, weight, step_long_indices = compress_fn(long_memory, video_long_memory_length)
 
                 sorted_indices = torch.argsort(weight, descending=True)
-                key_centroids = long_memory[sorted_indices]
+                key_centroids = long_memory_compressed[sorted_indices]
                 key_length = 3
                 if key_centroids.shape[0] > key_length:
                     key_centroids = key_centroids[:key_length]
                 dists = ((long_memory.unsqueeze(1) - key_centroids.unsqueeze(0)) ** 2).sum(dim=3).sum(dim=2).sqrt()
                 min_indices = torch.argmin(dists, dim=0)
-                key_memory = img_feature[min_indices]
+                min_indices_sorted, _ = torch.sort(min_indices)
+                print(f"Min indices sorted: {min_indices_sorted}")
+                key_memory = img_feature[min_indices_sorted]
                 cur_memory = torch.cat([key_memory, cur_memory], dim=0)
 
             if video_Turing_memory_length == 0 or Turing_memory.shape[0] == 0:
@@ -180,7 +182,7 @@ class MultimodalOpsMixin:
                 Turing_memory_compressed.view(-1, 729, 1152),   #（9，9*9，1152）（1，729，1152）
                 long_memory_compressed.view(-1, 729, 1152),
                 cur_memory.view(-1, 729, 1152),
-            ], dim=0)
+            ], dim=0).to(dtype=img_feature.dtype)
 
             mem_shape = memory_feature.shape  # e.g. (frames, 729, 1152)
             memory_feature = memory_feature.view(-1, mem_shape[-1])  # Flatten (frames*729, 1152)

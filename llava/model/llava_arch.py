@@ -369,12 +369,12 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_images.append(image)
                     non_video_positions.append(idx)
                     continue
-
+                
+                segment_memory = []
                 encoded_features = self.encode_images(image)
                 encoded_features = encoded_features.requires_grad_()
                 segment_memory = self.compress_temporal_features([encoded_features], video_idx_in_batch, all_video=True)
                 cat_segment_memory = torch.cat([image for image in segment_memory], dim=0)
-                rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
                 if torch.isnan(cat_segment_memory).any():
                     raise ValueError("NaNs detected in attention_model output!")
                 images_list[idx] = cat_segment_memory

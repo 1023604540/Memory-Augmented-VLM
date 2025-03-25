@@ -370,7 +370,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_positions.append(idx)
                     continue
                 
-                segment_memory = []
                 encoded_features = self.encode_images(image)
                 encoded_features = encoded_features.requires_grad_()
                 segment_memory = self.compress_temporal_features([encoded_features], video_idx_in_batch, all_video=True)

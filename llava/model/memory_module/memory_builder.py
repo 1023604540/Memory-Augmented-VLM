@@ -104,8 +104,8 @@ class MultimodalOpsMixin:
         This method depends on configuration parameters such as:
             video_long_memory_length, video_Turing_memory_length, etc.
         """
-        video_long_memory_length = getattr(self.config, "video_long_memory_length", 3)
-        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 3)
+        video_long_memory_length = getattr(self.config, "video_long_memory_length", 10)
+        video_Turing_memory_length = getattr(self.config, "video_Turing_memory_length", 10)
         video_current_memory_length = getattr(self.config, "video_current_memory_length", 1)
         compress_long_memory_size = getattr(self.config, "compress_long_memory_size", 27)
         compress_Turing_memory_size = getattr(self.config, "compress_Turing_memory_size", 27)
@@ -157,13 +157,12 @@ class MultimodalOpsMixin:
 
                 sorted_indices = torch.argsort(weight, descending=True)
                 key_centroids = long_memory_compressed[sorted_indices]
-                key_length = 3
+                key_length = 10
                 if key_centroids.shape[0] > key_length:
                     key_centroids = key_centroids[:key_length]
                 dists = ((long_memory.unsqueeze(1) - key_centroids.unsqueeze(0)) ** 2).sum(dim=3).sum(dim=2).sqrt()
                 min_indices = torch.argmin(dists, dim=0)
                 min_indices_sorted, _ = torch.sort(min_indices)
-                print(f"Min indices sorted: {min_indices_sorted}")
                 key_memory = img_feature[min_indices_sorted]
                 cur_memory = torch.cat([key_memory, cur_memory], dim=0)
 
@@ -173,7 +172,6 @@ class MultimodalOpsMixin:
                 Turing_memory_compressed, _ = attention_feature(
                     Turing_memory, video_Turing_memory_length, self.attention, update_ratio=compress_Turing_update_ratio
                 )
-            print(f"Memory: Long {long_memory_compressed.shape}, Turing {Turing_memory_compressed.shape}, Cur {cur_memory.shape}")
             if long_memory_compressed.shape[0] < video_long_memory_length:
                 long_memory_compressed = long_memory[:0]
             if Turing_memory_compressed.shape[0] < video_Turing_memory_length:

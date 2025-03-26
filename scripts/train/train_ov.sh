@@ -18,4 +18,4 @@ export ACCELERATE_DISABLE_NUMA_AFFINITY=1
 module load python
 conda activate llava
 module load gcc/9.4.0
-bash scripts/train/finetune_ov.sh
+bash scripts/train/finetune_ov_0.5b.sh

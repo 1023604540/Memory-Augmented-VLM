@@ -11,7 +11,7 @@ export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
 
 
-LLM_VERSION="Qwen/Qwen2-7B-Instruct"
+LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"
 # for 7b model we recommend bs=1, accum=2, 16 nodes, 128 gpus, lr=1e-5, warmup=0.03
 # for 72b model we recommend bs=1, accum=1, 32 nodes, 256 gpus, lr=1e-5, warmup=0.03
 LLM_VERSION_CLEAN="${LLM_VERSION//\//_}"
@@ -20,7 +20,7 @@ VISION_MODEL_VERSION_CLEAN="${VISION_MODEL_VERSION//\//_}"
 
 ############### Pretrain ################
 
-BASE_RUN_NAME="llavanext-google_siglip-so400m-patch14-384-Qwen_Qwen2-7B-Instruct-mlp2x_gelu-pretrain_blip558k_plain"
+BASE_RUN_NAME="llavanext-google_siglip-so400m-patch14-384-Qwen_Qwen2-0.5B-Instruct-mlp2x_gelu-pretrain_blip558k_plain"
 echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 ############### Finetune ################
@@ -28,7 +28,7 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
 RUN_NAME="llava-onevision-${VISION_MODEL_VERSION_CLEAN}-${LLM_VERSION_CLEAN}-memory_adapter_no_compression_no_segment"
-PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov" # replace it with your last checkpoint training from single image collection
+PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 

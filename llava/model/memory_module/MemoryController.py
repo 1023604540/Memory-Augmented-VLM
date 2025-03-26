@@ -22,25 +22,22 @@ class EpisodicMemoryController:
         Retrieve memory relevant to the given query vector.
         Returns either a single context vector or a list of top-k memory vectors.
         """
-        #  Zr =(Z_q@M†+ξ)M
+        # Zr =(Z_q@M†+ξ)M
         query_vec = query_vec.to(self.mem_keys.dtype)
         print(f"query vector: {query_vec.shape}")
         memory_inv = torch.linalg.pinv(self.mem_keys)
-        print(f"memory inverse: {memory_inv.shape}")
+        print(f"memory psuedo inverse: {memory_inv.shape}")
         temp = query_vec @ memory_inv
         print(f"temp: {temp.shape}")
         temp_add_noise = self.add_noise(temp, sigma=0.001)
         print(f"temp add noise: {temp_add_noise.shape}")
         Z = temp_add_noise @ self.mem_keys
-        #print(f"retrieved memory: {Z.shape}")
         return Z
 
     def integrate(self, old_memory, new_memory):
         # M^ =(ZξM0†)†Zξ
         if new_memory.dim() == 3:
             new_memory = new_memory.flatten(0, 1)
-        if old_memory.dim() == 3:
-            old_memory = old_memory.flatten(0, 1)
         Z = self.add_noise(new_memory, sigma=0.001)
         M0_inverse = torch.linalg.pinv(old_memory)
         Temp = new_memory @ M0_inverse
@@ -82,5 +79,3 @@ class EpisodicMemoryController:
             self.next_idx = self.capacity
             self.integrate(self.mem_keys, episode_vec[cur_len:])
         return
-
-        # End of write_memory

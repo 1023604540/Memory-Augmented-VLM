@@ -31,7 +31,6 @@ device = "cuda"
 device_map = "auto"
 llava_model_args = {
     "multimodal": True,
-    attn_implementation: "sdpa",
 }
 tokenizer, model, image_processor, max_length = load_pretrained_model(pretrained, None, model_name, device_map=device_map, attn_implementation="sdpa", **llava_model_args)
 

@@ -16,7 +16,6 @@ class EpisodicMemoryController:
         # Optionally, an initial covariance or other needed for least-squares updates
         # self.cov_inv = np.eye(mem_dim) * alpha  (if using advanced update rules)
 
-
     def retrieve_memory(self, query_vec):
         """
         Retrieve memory relevant to the given query vector.
@@ -42,15 +41,19 @@ class EpisodicMemoryController:
         if old_memory.dim() == 3:
             old_memory = old_memory.flatten(0, 1)
         Z = self.add_noise(new_memory, sigma=0.001)
+        print(f"old_memory: {old_memory.shape}")
         M0_inverse = torch.linalg.pinv(old_memory)
+        print(f"old_memory inverse: {M0_inverse.shape}")
         Temp = new_memory @ M0_inverse
+        print(f"Temp: {Temp.shape}")
         Temp_inverse = torch.linalg.pinv(Temp)
+        print(f"Temp inverse: {Temp_inverse.shape}")
         M_hat = Temp_inverse @ Z
         print(f"integrated memory: {M_hat.shape}")
         self.mem_keys = M_hat
         return
 
-    def add_noise(self, x, sigma):
+    def add_noise(self, x, sigma=0.001):
         """
         Add isotropic Gaussian noise with std=sigma to each element in X.
         """

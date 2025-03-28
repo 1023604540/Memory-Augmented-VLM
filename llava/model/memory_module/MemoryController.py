@@ -4,11 +4,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 class EpisodicMemoryController:
-    def __init__(self, mem_slots=32, mem_patch=196, mem_dim=1024, device='cpu'):
+    def __init__(self, mem_slots=32, mem_patch=196, mem_dim=1024, device='cpu', dtype=torch.float16):
         # Initialize memory matrices (keys and values could be same in this simple case)
         self.device = device
-        self.mem_keys = torch.zeros((mem_slots, mem_patch, mem_dim), device=self.device)
-        self.mem_vals = torch.zeros((mem_slots, mem_patch, mem_dim), device=self.device)
+        self.mem_keys = torch.zeros((mem_slots, mem_patch, mem_dim), device=self.device, dtype=dtype)
+        self.mem_vals = torch.zeros((mem_slots, mem_patch, mem_dim), device=self.device, dtype=dtype)
         self.capacity = mem_slots
         self.mem_dim = mem_dim
         # Track number of written slots or a pointer for FIFO

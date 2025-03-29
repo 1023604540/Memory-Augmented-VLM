@@ -163,7 +163,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         L = self.model.memory_proj_layers
         print("L =", L)
         Dh = D // H
-        T = memory_readout.shape(0)  # n memory token
+        T = memory_readout.shape[0]  # n memory token
 
         # # Allocate per-layer projections if not yet done
         # if not hasattr(self, "memory_key_projs"):

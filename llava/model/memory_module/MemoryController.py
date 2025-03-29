@@ -20,10 +20,7 @@ class EpisodicMemoryController:
         # self.cov_inv = np.eye(mem_dim) * alpha  (if using advanced update rules)
 
     def retrieve_memory(self, query_vec):
-        """
-        Retrieve memory relevant to the given query vector.
-        Returns either a single context vector or a list of top-k memory vectors.
-        """
+        # Zr = (Zq*M† + noise)M
         original_dtype = query_vec.dtype
         query_vec = query_vec.to(self.compute_dtype)  # (Nq, D)
         memory_inv = torch.linalg.pinv(self.mem_keys)  # (D, N*P)

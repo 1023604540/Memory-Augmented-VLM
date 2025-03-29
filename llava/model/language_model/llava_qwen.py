@@ -137,6 +137,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, inputs_embeds=None, **kwargs):
         images = kwargs.pop("images", None)
         image_sizes = kwargs.pop("image_sizes", None)
+        attention_mask = kwargs.get("attention_mask", None)
 
         inputs = super().prepare_inputs_for_generation(input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs)
         if images is not None:
@@ -146,8 +147,15 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         print("inputs coming")
         if self.model.memory_readout_cache is not None:
             memory_readout = self.model.memory_readout_cache  # [D]
-            memory_readout = memory_readout.to(dtype=self.dtype)
+            T_mem = memory_readout.shape[0]  # Number of memory tokens
+            B = input_ids.shape[0]
             print("memory_readout", memory_readout)
+            # ✅ Extend attention mask
+            if attention_mask is not None:
+                memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+                attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+                inputs["attention_mask"] = attention_mask
+
             past_key_values = self.inject_memory_as_kv(memory_readout)
             print("past_key_values", past_key_values)
             inputs["past_key_values"] = past_key_values
@@ -173,7 +181,6 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #     self.memory_value_projs = nn.ModuleList([
         #         nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
         #     ])
-
         past_key_values = []
         for i in range(L):
             print("shape of memory_readout", memory_readout.shape)

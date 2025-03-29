@@ -189,6 +189,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         D = memory_readout.size(-1)
         H = self.config.num_attention_heads
         L = self.model.memory_proj_layers
+        L = self.config.num_hidden_layers
         print("L =", L)
         Dh = D // H
         T = memory_readout.shape[0]  # n memory token

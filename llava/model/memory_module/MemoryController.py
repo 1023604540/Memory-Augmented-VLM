@@ -47,16 +47,11 @@ class EpisodicMemoryController:
         if old_memory.dim() == 3:
             old_memory = old_memory.flatten(0, 1)
 
-        Z = self.add_noise(new_memory, sigma=0.001)
-        print(f"old_memory: {old_memory.shape}")
-        M0_inverse = torch.linalg.pinv(old_memory)
-        print(f"old_memory inverse: {M0_inverse.shape}")
-        Temp = new_memory @ M0_inverse
-        print(f"Temp: {Temp.shape}")
-        Temp_inverse = torch.linalg.pinv(Temp)
-        print(f"Temp inverse: {Temp_inverse.shape}")
-        M_hat = Temp_inverse @ Z
-        print(f"integrated memory: {M_hat.shape}")
+        Z = self.add_noise(new_memory, sigma=0.001)  # (N*P, D)
+        M0_inverse = torch.linalg.pinv(old_memory)  # (D, N*P)
+        Temp = new_memory @ M0_inverse  # (N*P, N*P)
+        Temp_inverse = torch.linalg.pinv(Temp)  # (N*P, N*P)
+        M_hat = Temp_inverse @ Z  # (N*P, D)
         self.mem_keys = M_hat
         return
 
@@ -82,6 +77,7 @@ class EpisodicMemoryController:
             return
 
         input_len = len(episode_vec)
+        print(f"input_len: {input_len}")
         available_space = self.capacity - self.next_idx
 
         if input_len <= available_space:

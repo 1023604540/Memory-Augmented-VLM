@@ -137,12 +137,46 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, inputs_embeds=None, **kwargs):
         images = kwargs.pop("images", None)
         image_sizes = kwargs.pop("image_sizes", None)
+
         inputs = super().prepare_inputs_for_generation(input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs)
         if images is not None:
             inputs["images"] = images
         if image_sizes is not None:
             inputs["image_sizes"] = image_sizes
+
+        if hasattr(self.model, "memory_readout_cache") and self.model.memory_readout_cache is not None:
+            memory_readout = self.model.memory_readout_cache  # [D]
+            past_key_values = self.inject_memory_as_kv(memory_readout)
+            inputs["past_key_values"] = past_key_values
+            # Clear cache after use
+            self.model.memory_readout_cache = None
+
         return inputs
+
+    def inject_memory_as_kv(self, memory_readout):
+        B = 1
+        D = memory_readout.size(-1)
+        H = self.config.num_attention_heads
+        L = self.config.num_hidden_layers
+        Dh = D // H
+        T = 1  # 1 memory token
+
+        # Allocate per-layer projections if not yet done
+        if not hasattr(self, "memory_key_projs"):
+            self.memory_key_projs = nn.ModuleList([
+                nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
+            ])
+            self.memory_value_projs = nn.ModuleList([
+                nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
+            ])
+
+        past_key_values = []
+        for i in range(L):
+            key = self.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
+            value = self.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
+            past_key_values.append((key, value))
+
+        return past_key_values
 
 
 AutoConfig.register("llava_qwen", LlavaQwenConfig)

@@ -110,6 +110,15 @@ class LlavaMetaModel:
             nn.GELU(),
             nn.Linear(1152, 1152),
         ).to(self.device)
+        LLM_hidden_dim = getattr(config, "LLM_hidden_dim", 896)
+        L = getattr(config, "injected_layers", 10)
+        self.memory_key_projs = nn.ModuleList([
+            nn.Linear(LLM_hidden_dim, LLM_hidden_dim) for _ in range(L)
+        ])
+        self.memory_value_projs = nn.ModuleList([
+            nn.Linear(LLM_hidden_dim, LLM_hidden_dim) for _ in range(L)
+        ])
+        self.memory_readout_cache = None
 
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
@@ -473,7 +482,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 retrieved_memory = memory.retrieve_memory(query_feature)
                 print(f"retrieved_memory: {retrieved_memory.shape}")
                 print(f"Memory in the bank: {memory.mem_keys.shape}")
-                image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D）
+                # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
+                self.memory_readout_cache = retrieved_memory.detach()
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

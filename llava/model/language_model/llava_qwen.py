@@ -143,10 +143,11 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             inputs["images"] = images
         if image_sizes is not None:
             inputs["image_sizes"] = image_sizes
-        print("this is inputs", inputs)
+        print("inputs coming")
         if self.model.memory_readout_cache is not None:
             memory_readout = self.model.memory_readout_cache  # [D]
             past_key_values = self.inject_memory_as_kv(memory_readout)
+            print("past_key_values", past_key_values)
             inputs["past_key_values"] = past_key_values
             # Clear cache after use
             self.model.memory_readout_cache = None

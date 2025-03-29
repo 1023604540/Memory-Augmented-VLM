@@ -157,11 +157,13 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         return inputs
 
     def inject_memory_as_kv(self, memory_readout):
+        B = 1
         D = memory_readout.size(-1)
         H = self.config.num_attention_heads
         L = self.model.memory_proj_layers
+        print("L =", L)
         Dh = D // H
-        T = 1  # 1 memory token
+        T = memory_readout.shape(0)  # n memory token
 
         # # Allocate per-layer projections if not yet done
         # if not hasattr(self, "memory_key_projs"):
@@ -175,8 +177,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         past_key_values = []
         for i in range(L):
             print("shape of memory_readout", memory_readout.shape)
-            key = self.model.memory_key_projs[i](memory_readout).view(-1, H, T, Dh)
-            value = self.model.memory_value_projs[i](memory_readout).view(-1, H, T, Dh)
+            key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
+            value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
             print("key shape", key.shape)
             past_key_values.append((key, value))
 

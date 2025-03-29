@@ -153,19 +153,19 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             T_mem = memory_readout.shape[0]  # memory tokens
             B = input_ids.shape[0]
 
-            # === 1. Expand attention mask ===
-            if attention_mask is not None:
-                memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-                attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
-                inputs["attention_mask"] = attention_mask
-
-            # === 2. Expand position_ids ===
-            if position_ids is not None:
-                start_pos = T_mem
-                memory_pos = torch.arange(start_pos, start_pos + input_ids.shape[1], dtype=position_ids.dtype,
-                                          device=position_ids.device)
-                memory_pos = memory_pos.unsqueeze(0).expand(B, -1)
-                inputs["position_ids"] = memory_pos
+            # # === 1. Expand attention mask ===
+            # if attention_mask is not None:
+            #     memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+            #     attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+            #     inputs["attention_mask"] = attention_mask
+            #
+            # # === 2. Expand position_ids ===
+            # if position_ids is not None:
+            #     start_pos = T_mem
+            #     memory_pos = torch.arange(start_pos, start_pos + input_ids.shape[1], dtype=position_ids.dtype,
+            #                               device=position_ids.device)
+            #     memory_pos = memory_pos.unsqueeze(0).expand(B, -1)
+            #     inputs["position_ids"] = memory_pos
 
             # === 3. Inject past_key_values ===
             past_key_values = self.inject_memory_as_kv(memory_readout)
@@ -184,49 +184,50 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
 
         return inputs
 
+    # def inject_memory_as_kv(self, memory_readout):
+    #     B = 1
+    #     D = memory_readout.size(-1)
+    #     H = self.config.num_attention_heads
+    #     L = self.model.memory_proj_layers
+    #     print("L =", L)
+    #     Dh = D // H
+    #     T = memory_readout.shape[0]  # n memory token
+    #
+    #     past_key_values = []
+    #     for i in range(L):
+    #         print("shape of memory_readout", memory_readout.shape)
+    #         key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
+    #         value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
+    #         print("key shape", key.shape)
+    #         past_key_values.append((key, value))
+    #
+    #     return past_key_values
+
     def inject_memory_as_kv(self, memory_readout):
         B = 1
         D = memory_readout.size(-1)
         H = self.config.num_attention_heads
-        L = self.model.memory_proj_layers
-        L = self.config.num_hidden_layers
-        print("L =", L)
+        L = self.config.num_hidden_layers  # number of Transformer layers
         Dh = D // H
-        T = memory_readout.shape[0]  # n memory token
+        T = memory_readout.shape[0]  # number of memory tokens
 
-        # # Allocate per-layer projections if not yet done
-        # if not hasattr(self, "memory_key_projs"):
-        #     self.memory_key_projs = nn.ModuleList([
-        #         nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
-        #     ])
-        #     self.memory_value_projs = nn.ModuleList([
-        #         nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
-        #     ])
-        past_key_values = []
+        legacy_kv = []
         for i in range(L):
-            print("shape of memory_readout", memory_readout.shape)
+            # Suppose you already have memory_key_projs[i], memory_value_projs[i]
             key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
             value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
-            print("key shape", key.shape)
-            past_key_values.append((key, value))
-        # # old format
-        # legacy_kv = []
-        # for i in range(L):
-        #     key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
-        #     value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
-        #     legacy_kv.append((key, value))
-        #
-        # cache = Cache(
-        #     past_key_values=legacy_kv,
-        #     is_valid=False,
-        #     has_compatible_format=False,
-        #     has_indexed_inputs=True,
-        #     cache_size=T,
-        # )
-        # return cache
-        # ✅ Convert to proper Cache object
-        # return Cache.from_legacy_cache(legacy_kv, has_indexed_inputs=True)
-        return past_key_values
+            legacy_kv.append((key, value))
+
+        # Build a Qwen Cache that includes all T memory tokens for each layer
+        # and sets the “cache_size” to T.
+        cache = Cache(
+            past_key_values=legacy_kv,
+            is_valid=True,  # Mark it as valid
+            has_compatible_format=True,  # Qwen wants to skip transformations
+            has_indexed_inputs=False,  # We are giving all tokens at once
+            cache_size=T,
+        )
+        return cache
 
 
 AutoConfig.register("llava_qwen", LlavaQwenConfig)

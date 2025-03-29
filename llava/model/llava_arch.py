@@ -484,7 +484,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(f"Memory in the bank: {memory.mem_keys.shape}")
                 # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
                 self.get_model().memory_readout_cache = retrieved_memory.detach()
-
+                print(retrieved_memory)
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")

@@ -30,7 +30,7 @@ from transformers import Qwen2Config, Qwen2Model, Qwen2ForCausalLM
 
 # from .qwen.modeling_qwen import QWenLMHeadModel, QWenModel
 # from .qwen.configuration_qwen import QWenConfig
-
+from transformers.cache_utils import Cache
 
 class LlavaQwenConfig(Qwen2Config):
     model_type = "llava_qwen"
@@ -201,15 +201,23 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #     self.memory_value_projs = nn.ModuleList([
         #         nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
         #     ])
-        past_key_values = []
+        # past_key_values = []
+        # for i in range(L):
+        #     print("shape of memory_readout", memory_readout.shape)
+        #     key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
+        #     value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
+        #     print("key shape", key.shape)
+        #     past_key_values.append((key, value))
+        # old format
+        legacy_kv = []
         for i in range(L):
-            print("shape of memory_readout", memory_readout.shape)
             key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
             value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
-            print("key shape", key.shape)
-            past_key_values.append((key, value))
+            legacy_kv.append((key, value))
 
-        return past_key_values
+        # ✅ Convert to proper Cache object
+        return Cache.from_legacy_cache(legacy_kv, has_indexed_inputs=True)
+        # return past_key_values
 
 
 AutoConfig.register("llava_qwen", LlavaQwenConfig)

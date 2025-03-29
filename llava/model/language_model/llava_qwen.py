@@ -164,14 +164,14 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         Dh = D // H
         T = 1  # 1 memory token
 
-        # Allocate per-layer projections if not yet done
-        if not hasattr(self, "memory_key_projs"):
-            self.memory_key_projs = nn.ModuleList([
-                nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
-            ])
-            self.memory_value_projs = nn.ModuleList([
-                nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
-            ])
+        # # Allocate per-layer projections if not yet done
+        # if not hasattr(self, "memory_key_projs"):
+        #     self.memory_key_projs = nn.ModuleList([
+        #         nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
+        #     ])
+        #     self.memory_value_projs = nn.ModuleList([
+        #         nn.Linear(D, D).to(memory_readout.device) for _ in range(L)
+        #     ])
 
         past_key_values = []
         for i in range(L):

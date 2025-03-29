@@ -175,6 +175,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
 
         past_key_values = []
         for i in range(L):
+            print("shape of memory_readout", memory_readout.shape)
             key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
             value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
             past_key_values.append((key, value))

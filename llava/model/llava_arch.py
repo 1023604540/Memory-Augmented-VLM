@@ -111,7 +111,7 @@ class LlavaMetaModel:
             nn.Linear(1152, 1152),
         ).to(self.device)
         LLM_hidden_dim = getattr(config, "LLM_hidden_dim", 896)
-        self.memory_proj_layers = getattr(config, "injected_layers", 10)
+        self.memory_proj_layers = getattr(config, "injected_layers", 24)
         self.memory_key_projs = nn.ModuleList([
             nn.Linear(LLM_hidden_dim, LLM_hidden_dim).to(dtype=self.dtype,
                                                          device=self.device) for _ in range(self.memory_proj_layers)

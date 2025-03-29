@@ -146,6 +146,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         print("inputs coming")
         if self.model.memory_readout_cache is not None:
             memory_readout = self.model.memory_readout_cache  # [D]
+            memory_readout = memory_readout.to(dtype=self.dtype)
+            print("memory_readout", memory_readout)
             past_key_values = self.inject_memory_as_kv(memory_readout)
             print("past_key_values", past_key_values)
             inputs["past_key_values"] = past_key_values

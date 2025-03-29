@@ -25,16 +25,11 @@ class EpisodicMemoryController:
         Returns either a single context vector or a list of top-k memory vectors.
         """
         original_dtype = query_vec.dtype
-        query_vec = query_vec.to(self.compute_dtype)
-
-        print(f"query vector: {query_vec.shape}")
-        memory_inv = torch.linalg.pinv(self.mem_keys)
-        print(f"memory inverse: {memory_inv.shape}")
-        temp = query_vec @ memory_inv
-        print(f"temp: {temp.shape}")
-        temp_add_noise = self.add_noise(temp, sigma=0.001)
-        print(f"temp add noise: {temp_add_noise.shape}")
-        Z = temp_add_noise @ self.mem_keys
+        query_vec = query_vec.to(self.compute_dtype)  # (Nq, D)
+        memory_inv = torch.linalg.pinv(self.mem_keys)  # (D, N*P)
+        temp = query_vec @ memory_inv  # (Nq, N*P)
+        temp_add_noise = self.add_noise(temp, sigma=0.001)  # (Nq, N*P)
+        Z = temp_add_noise @ self.mem_keys  # (Nq, D)
         return Z.to(original_dtype)
 
     def integrate(self, old_memory, new_memory):
@@ -77,7 +72,6 @@ class EpisodicMemoryController:
             return
 
         input_len = len(episode_vec)
-        print(f"input_len: {input_len}")
         available_space = self.capacity - self.next_idx
 
         if input_len <= available_space:

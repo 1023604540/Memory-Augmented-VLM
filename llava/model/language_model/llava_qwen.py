@@ -159,7 +159,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
     def inject_memory_as_kv(self, memory_readout):
         D = memory_readout.size(-1)
         H = self.config.num_attention_heads
-        L = self.config.num_hidden_layers
+        L = self.model.memory_proj_layers
         Dh = D // H
         T = 1  # 1 memory token
 

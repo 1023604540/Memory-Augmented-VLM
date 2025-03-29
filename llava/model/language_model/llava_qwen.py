@@ -215,8 +215,16 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
             legacy_kv.append((key, value))
 
+        cache = Cache(
+            past_key_values=legacy_kv,
+            is_valid=False,
+            has_compatible_format=False,
+            has_indexed_inputs=True,
+            cache_size=T,
+        )
+        return cache
         # ✅ Convert to proper Cache object
-        return Cache.from_legacy_cache(legacy_kv, has_indexed_inputs=True)
+        # return Cache.from_legacy_cache(legacy_kv, has_indexed_inputs=True)
         # return past_key_values
 
 

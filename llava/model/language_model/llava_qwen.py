@@ -220,7 +220,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
 
         # Build a Qwen Cache that includes all T memory tokens for each layer
         # and sets the “cache_size” to T.
-        cache = Cache(
+        cache = Cache.from_legacy_cache(
             past_key_values=legacy_kv,
             is_valid=True,  # Mark it as valid
             has_compatible_format=True,  # Qwen wants to skip transformations

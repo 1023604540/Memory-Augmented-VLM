@@ -175,7 +175,10 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             # Qwen2 supports `cache_position` kwarg to align KV cache
             inputs["cache_position"] = torch.arange(T_mem, T_mem + input_ids.shape[1],
                                                     device=input_ids.device).unsqueeze(0)
-
+            for i, (k, v) in enumerate(past_key_values):
+                print(f"Layer {i}: key shape {k.shape}, value shape {v.shape}")
+            print("Expanded attention mask:", inputs["attention_mask"].shape)
+            print("cache_position:", inputs.get("cache_position", None))
             # ✅ Clear cache
             self.model.memory_readout_cache = None
 

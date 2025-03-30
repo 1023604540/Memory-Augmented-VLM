@@ -194,7 +194,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         D = memory_readout.size(-1)
         H = self.config.num_key_value_heads  # number of attention heads is 14, kv heads is 2
         L = self.config.num_hidden_layers  # number of Transformer layers
-        Dh = D // H
+        Dh = 64
         T = memory_readout.shape[0]  # number of memory tokens
 
         cache = DynamicCache()

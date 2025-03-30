@@ -217,11 +217,14 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
             value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
             # Store the prefill manually
-            cache.update(
-                key_states=key,
-                value_states=value,
-                layer_idx=i
-            )
+            # cache.update(
+            #     key_states=key,
+            #     value_states=value,
+            #     layer_idx=i
+            # )
+            cache.key_cache[i] = key
+            cache.value_cache[i] = value
+        cache.cache_size = T
 
         return cache
 

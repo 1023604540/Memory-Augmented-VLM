@@ -150,7 +150,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         # if old_cache is not None:
         #     for layer_idx, (key, value) in enumerate(old_cache):
         #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
-
+        inputs["position_ids"] = None
+        inputs["cache_position"] = None
         #Inject memory into past_key_values
         if self.model.memory_readout_cache is not None:
             memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)

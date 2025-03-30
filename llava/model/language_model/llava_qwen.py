@@ -216,6 +216,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         for i in range(L):
             key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
             value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
+            print("memory_readout:", memory_readout.shape)
+            print("key shape", key.shape)
             cache.update(
                 key_states=key,
                 value_states=value,

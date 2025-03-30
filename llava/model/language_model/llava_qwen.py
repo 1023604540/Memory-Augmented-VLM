@@ -143,22 +143,22 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         if past_key_values is not None:
             for layer_idx, (key, value) in enumerate(past_key_values):
                 print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
-        # if self.model.memory_readout_cache is not None:
-        #     memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
-        #     T_mem = memory_readout.shape[0]  # memory tokens
-        #     B = input_ids.shape[0]
-        #
-        #     # # === 1. Expand attention mask ===
-        #     # if attention_mask is not None:
-        #     #     memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-        #     #     attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
-        #     #     inputs["attention_mask"] = attention_mask
-        #
-        #     # === 3. Inject past_key_values ===
-        #     past_key_values = self.inject_memory_as_kv(memory_readout)
-        #     # inputs["past_key_values"] = past_key_values
-        #
-        #     self.model.memory_readout_cache = None
+        if self.model.memory_readout_cache is not None:
+            memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
+            T_mem = memory_readout.shape[0]  # memory tokens
+            B = input_ids.shape[0]
+
+            # # === 1. Expand attention mask ===
+            # if attention_mask is not None:
+            #     memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+            #     attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+            #     inputs["attention_mask"] = attention_mask
+
+            # === 3. Inject past_key_values ===
+            past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
+            # inputs["past_key_values"] = past_key_values
+
+            self.model.memory_readout_cache = None
 
         inputs = super().prepare_inputs_for_generation(input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs)
         if images is not None:
@@ -212,31 +212,93 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         return inputs
 
     #
-    def inject_memory_as_kv(self, memory_readout, ):
-        B = 1
-        D = memory_readout.size(-1)
-        H = self.config.num_key_value_heads  # number of attention heads is 14, kv heads is 2
-        L = self.config.num_hidden_layers  # number of Transformer layers
-        Dh = 64
-        T = memory_readout.shape[0]  # number of memory tokens
+    # def inject_memory_as_kv(self, memory_readout, ):
+    #     B = 1
+    #     D = memory_readout.size(-1)
+    #     H = self.config.num_key_value_heads  # number of attention heads is 14, kv heads is 2
+    #     L = self.config.num_hidden_layers  # number of Transformer layers
+    #     Dh = 64
+    #     T = memory_readout.shape[0]  # number of memory tokens
+    #
+    #     cache = DynamicCache()
+    #
+    #     for i in range(L):
+    #         key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
+    #         key = key.permute(0, 2, 1, 3).contiguous()
+    #         value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
+    #         value = value.permute(0, 2, 1, 3).contiguous()
+    #         # print("memory_readout:", memory_readout.shape)
+    #         # print("key shape", key.shape)
+    #         cache.update(
+    #             key_states=key,
+    #             value_states=value,
+    #             layer_idx=i
+    #         )
+    #
+    #
+    #     return cache
+    def inject_memory_as_kv(
+        self,
+        memory_readout: torch.Tensor,
+        past_key_values: Optional[DynamicCache] = None
+    ) -> DynamicCache:
+        """
+        Inject memory tokens into an existing past_key_values cache
+        (rather than creating a fresh cache from scratch).
+        """
 
-        cache = DynamicCache()
+        B = 1  # or read from batch size
+        T = memory_readout.size(0)  # number of memory tokens
+        H = self.config.num_key_value_heads
+        L = self.config.num_hidden_layers
+        Dh = 64  # per-head hidden size (check your actual config if it's always 64)
 
+        # If there's no existing cache, create a fresh one.
+        # Otherwise we'll merge with the old one.
+        if past_key_values is None:
+            past_key_values = DynamicCache()
+
+        # We'll create a new DynamicCache to hold the merged results,
+        # though you could also modify 'past_key_values' in place if you prefer.
+        new_cache = DynamicCache()
+
+        # For each layer, take old key/value + new memory key/value => cat them
         for i in range(L):
-            key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
-            key = key.permute(0, 2, 1, 3).contiguous()
-            value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
-            value = value.permute(0, 2, 1, 3).contiguous()
-            # print("memory_readout:", memory_readout.shape)
-            # print("key shape", key.shape)
-            cache.update(
-                key_states=key,
-                value_states=value,
+            # 1) Get old key/value if they exist
+            # past_key_values.get_layer(i) returns (old_key, old_value)
+            # shapes often: [B, H, old_seq_len, Dh]
+            old_key, old_value = past_key_values.get_layer(i)
+
+            if old_key is None or old_value is None:
+                # If there's no old cache for layer i, we just treat them as empty.
+                # For shape consistency, define them as zero-length on dim=2:
+                old_key = torch.empty(
+                    B, H, 0, Dh, dtype=memory_readout.dtype, device=memory_readout.device
+                )
+                old_value = torch.empty_like(old_key)
+
+            # 2) Project the memory tokens into key/value
+            # The shapes from your existing code: [B, T, H, Dh], then permute -> [B, H, T, Dh]
+            mem_key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
+            mem_key = mem_key.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
+            mem_value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
+            mem_value = mem_value.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
+
+            # 3) Concatenate memory + old on the seq_len dimension (dim=2).
+            # Decide if memory goes first or last. Typically you want "memory first,"
+            # so the final shape is [B, H, T + old_seq_len, Dh].
+            # Or if you prefer old tokens first, just reverse the cat order.
+            new_key = torch.cat([mem_key, old_key], dim=2)
+            new_value = torch.cat([mem_value, old_value], dim=2)
+
+            # 4) Update new_cache with the merged [B, H, T+old_seq_len, Dh]
+            new_cache.update(
+                key_states=new_key,
+                value_states=new_value,
                 layer_idx=i
             )
 
-
-        return cache
+        return new_cache
 
 
 

@@ -140,6 +140,12 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         attention_mask = kwargs.get("attention_mask", None)
         position_ids = kwargs.get("position_ids", None)
 
+        print("before past_key_values")
+        if past_key_values is not None:
+            for layer_idx, (key, value) in enumerate(past_key_values):
+                print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
+        print("after past_key_values")
+
         if past_key_values is not None:
             if self.model.memory_readout_cache is not None:
                 memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
@@ -251,11 +257,6 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         H = self.config.num_key_value_heads
         L = self.config.num_hidden_layers
         Dh = 64  # typical dimension per head for Qwen; confirm from your config
-
-        # If old_cache is None, create an empty structure so we can fill it in.
-        # Typically old_cache is a list of tuples: [(key0, value0), (key1, value1), ...]
-        if old_cache is None:
-            old_cache = [(None, None) for _ in range(L)]
 
         new_cache = []
 

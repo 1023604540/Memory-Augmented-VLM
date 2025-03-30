@@ -147,9 +147,9 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             inputs["image_sizes"] = image_sizes
         print("inputs coming")
         old_cache = inputs.get("past_key_values", None)
-        if old_cache is not None:
-            for layer_idx, (key, value) in enumerate(old_cache):
-                print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
+        # if old_cache is not None:
+        #     for layer_idx, (key, value) in enumerate(old_cache):
+        #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
 
         #Inject memory into past_key_values
         if self.model.memory_readout_cache is not None:
@@ -203,8 +203,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         for i in range(L):
             key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
             value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
-            print("memory_readout:", memory_readout.shape)
-            print("key shape", key.shape)
+            # print("memory_readout:", memory_readout.shape)
+            # print("key shape", key.shape)
             cache.update(
                 key_states=key,
                 value_states=value,

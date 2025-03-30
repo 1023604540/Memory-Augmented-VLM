@@ -222,7 +222,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         # and sets the “cache_size” to T.
 
         # Create an empty cache:
-        cache = Cache()
+        cache = InjectedCache()
         # Then assign the relevant fields:
         cache.past_key_values = legacy_kv  # The older Cache class often has this field
         cache.is_valid = True
@@ -234,7 +234,15 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
 
         return cache
 
+class InjectedCache(Cache):
+    def get_max_length(self):
+        # Return however many tokens are in your "past" memory block
+        return self.cache_size
 
+    def get_usable_length(self, seq_length: int) -> int:
+        # Usually you'd return how many tokens are effectively in the "past".
+        # If you want to treat the entire `cache_size` as used, just do:
+        return self.cache_size
 
 AutoConfig.register("llava_qwen", LlavaQwenConfig)
 AutoModelForCausalLM.register(LlavaQwenConfig, LlavaQwenForCausalLM)

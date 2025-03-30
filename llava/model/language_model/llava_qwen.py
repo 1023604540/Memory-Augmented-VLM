@@ -218,30 +218,25 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
             legacy_kv.append((key, value))
 
-        # Build a Qwen Cache that includes all T memory tokens for each layer
-        # and sets the “cache_size” to T.
-
-        # Create an empty cache:
-        cache = InjectedCache()
-        # Then assign the relevant fields:
-        cache.past_key_values = legacy_kv  # The older Cache class often has this field
-        cache.is_valid = True
-        cache.is_cross = False
-        cache.is_encoder_decoder = False
-        cache.has_compatible_format = True
-        cache.has_indexed_inputs = False
-        cache.cache_size = T  # number of “past” tokens
-
+        # Build the Qwen Cache
+        cache = Cache.from_legacy_cache(
+            legacy_cache=legacy_kv,
+            is_valid=True,
+            has_compatible_format=True,
+            has_indexed_inputs=False,
+            cache_size=T,
+        )
         return cache
 
-class InjectedCache(Cache):
-    def get_max_length(self):
-        # Return however many tokens are in your "past" memory block
-        return self.cache_size
-
-    def get_usable_length(self, seq_length: int, layer_idx=None) -> int:
-        # You can ignore layer_idx if your logic is layer-agnostic, or use it if each layer is different
-        return self.cache_size
+#
+# class InjectedCache(Cache):
+#     def get_max_length(self):
+#         # Return however many tokens are in your "past" memory block
+#         return self.cache_size
+#
+#     def get_usable_length(self, seq_length: int, layer_idx=None) -> int:
+#         # You can ignore layer_idx if your logic is layer-agnostic, or use it if each layer is different
+#         return self.cache_size
 
 
 AutoConfig.register("llava_qwen", LlavaQwenConfig)

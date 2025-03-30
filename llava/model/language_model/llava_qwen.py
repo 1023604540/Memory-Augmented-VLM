@@ -141,7 +141,9 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         cache_position = kwargs.get("cache_position", None)
         print(f"attention_mask coming, {attention_mask.shape}")
         print(f"cache_position coming, {cache_position.shape}")
-        print(f"past_kv_shape: {past_key_values[0][0].shape}")
+        if past_key_values is not None:
+            print(f"past_kv_shape: {past_key_values[0][0].shape} ")
+
 
         # print(kwargs)
         # print("before")

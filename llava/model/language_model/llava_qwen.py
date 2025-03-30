@@ -168,6 +168,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 start_pos = T_mem
                 memory_pos = torch.arange(start_pos, start_pos + input_ids.shape[1], dtype=position_ids.dtype,
                                           device=position_ids.device)
+                print("memory_pos:", memory_pos.shape)
                 memory_pos = memory_pos.unsqueeze(0).expand(B, -1)
                 inputs["position_ids"] = memory_pos
 

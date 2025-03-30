@@ -139,7 +139,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         image_sizes = kwargs.pop("image_sizes", None)
         attention_mask = kwargs.get("attention_mask", None)
         position_ids = kwargs.get("position_ids", None)
-        print(**kwargs)
+        print(kwargs)
         print("before")
         if past_key_values is not None:
             for layer_idx, (key, value) in enumerate(past_key_values):

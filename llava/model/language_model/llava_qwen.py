@@ -30,7 +30,7 @@ from transformers import Qwen2Config, Qwen2Model, Qwen2ForCausalLM
 
 # from .qwen.modeling_qwen import QWenLMHeadModel, QWenModel
 # from .qwen.configuration_qwen import QWenConfig
-from transformers.cache_utils import Cache
+from transformers.cache_utils import Cache, DynamicCache
 
 class LlavaQwenConfig(Qwen2Config):
     model_type = "llava_qwen"
@@ -211,21 +211,18 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         Dh = D // H
         T = memory_readout.shape[0]  # number of memory tokens
 
-        legacy_kv = []
+        cache = DynamicCache()
+
         for i in range(L):
-            # Suppose you already have memory_key_projs[i], memory_value_projs[i]
             key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
             value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
-            legacy_kv.append((key, value))
+            # Store the prefill manually
+            cache.update(
+                key_states=key,
+                value_states=value,
+                layer_idx=i
+            )
 
-        # Build the Qwen Cache
-        cache = Cache.from_legacy_cache(
-            legacy_cache=legacy_kv,
-            is_valid=True,
-            has_compatible_format=True,
-            has_indexed_inputs=False,
-            cache_size=T,
-        )
         return cache
 
 #

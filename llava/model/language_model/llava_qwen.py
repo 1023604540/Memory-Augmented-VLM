@@ -139,6 +139,22 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         image_sizes = kwargs.pop("image_sizes", None)
         attention_mask = kwargs.get("attention_mask", None)
         position_ids = kwargs.get("position_ids", None)
+        if self.model.memory_readout_cache is not None:
+            memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
+            T_mem = memory_readout.shape[0]  # memory tokens
+            B = input_ids.shape[0]
+
+            # # === 1. Expand attention mask ===
+            # if attention_mask is not None:
+            #     memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+            #     attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+            #     inputs["attention_mask"] = attention_mask
+
+            # === 3. Inject past_key_values ===
+            past_key_values = self.inject_memory_as_kv(memory_readout)
+            # inputs["past_key_values"] = past_key_values
+
+            self.model.memory_readout_cache = None
 
         inputs = super().prepare_inputs_for_generation(input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs)
         if images is not None:
@@ -153,7 +169,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
         # inputs["position_ids"] = None
         # inputs["cache_position"] = None
-        # #Inject memory into past_key_values
+        #Inject memory into past_key_values
         # if self.model.memory_readout_cache is not None:
         #     memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
         #     T_mem = memory_readout.shape[0]  # memory tokens

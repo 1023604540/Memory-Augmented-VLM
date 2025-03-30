@@ -146,7 +146,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         if image_sizes is not None:
             inputs["image_sizes"] = image_sizes
         print("inputs coming")
-        old_cache = inputs.get("past_key_values", None)
+        print(input_ids)
+        # old_cache = inputs.get("past_key_values", None)
         # if old_cache is not None:
         #     for layer_idx, (key, value) in enumerate(old_cache):
         #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")

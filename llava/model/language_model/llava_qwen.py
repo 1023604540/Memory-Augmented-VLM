@@ -163,6 +163,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
                 attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
                 inputs["attention_mask"] = attention_mask
+            inputs["position_ids"] = None
+            inputs["cache_position"] = None
             #
             # # === 2. Expand position_ids ===
             # if position_ids is None:
@@ -179,9 +181,9 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
 
             # === 4. Manually update cache position ===
             # Qwen2 supports `cache_position` kwarg to align KV cache
-            inputs["cache_position"] = torch.arange(T_mem, T_mem + input_ids.shape[1],
-                                                    device=input_ids.device).unsqueeze(0)
-            # for i, (k, v) in enumerate(past_key_values):
+            # inputs["cache_position"] = torch.arange(T_mem, T_mem + input_ids.shape[1],
+            #                                         device=input_ids.device).unsqueeze(0)
+            # # for i, (k, v) in enumerate(past_key_values):
             #     print(f"Layer {i}: key shape {k.shape}, value shape {v.shape}")
             # print("Expanded attention mask:", inputs["attention_mask"].shape)
             # print("cache_position:", inputs.get("cache_position", None))

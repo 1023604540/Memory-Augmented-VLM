@@ -146,7 +146,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         if image_sizes is not None:
             inputs["image_sizes"] = image_sizes
         print("inputs coming")
-
+        old_cache = inputs.get("past_key_values", None)
+        print("old_cache", old_cache)
         # Inject memory into past_key_values
         if self.model.memory_readout_cache is not None:
             memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
@@ -203,7 +204,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
     #
     #     return past_key_values
 
-    def inject_memory_as_kv(self, memory_readout):
+    def inject_memory_as_kv(self, memory_readout, ):
         B = 1
         D = memory_readout.size(-1)
         H = self.config.num_attention_heads

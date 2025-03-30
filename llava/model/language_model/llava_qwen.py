@@ -239,10 +239,10 @@ class InjectedCache(Cache):
         # Return however many tokens are in your "past" memory block
         return self.cache_size
 
-    def get_usable_length(self, seq_length: int) -> int:
-        # Usually you'd return how many tokens are effectively in the "past".
-        # If you want to treat the entire `cache_size` as used, just do:
+    def get_usable_length(self, seq_length: int, layer_idx: int) -> int:
+        # You can ignore layer_idx if your logic is layer-agnostic, or use it if each layer is different
         return self.cache_size
+
 
 AutoConfig.register("llava_qwen", LlavaQwenConfig)
 AutoModelForCausalLM.register(LlavaQwenConfig, LlavaQwenForCausalLM)

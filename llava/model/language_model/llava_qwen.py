@@ -138,6 +138,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         images = kwargs.pop("images", None)
         image_sizes = kwargs.pop("image_sizes", None)
         attention_mask = kwargs.get("attention_mask", None)
+        print(f"attention_mask coming, {attention_mask.shape}")
         position_ids = kwargs.get("position_ids", None)
         print(kwargs)
         print("before")
@@ -153,6 +154,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #
         #         # === 1. Expand attention mask ===
         #         if attention_mask is not None:
+        #
         #             memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
         #             kwargs["attention_mask"] = torch.cat([memory_mask, attention_mask], dim=1)
         #

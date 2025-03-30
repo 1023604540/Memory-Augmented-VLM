@@ -135,6 +135,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         return super().generate(position_ids=position_ids, attention_mask=attention_mask, inputs_embeds=inputs_embeds, **kwargs)
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, inputs_embeds=None, **kwargs):
+        print(self._seen_tokens)
         images = kwargs.pop("images", None)
         image_sizes = kwargs.pop("image_sizes", None)
         attention_mask = kwargs.get("attention_mask", None)

@@ -142,14 +142,14 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         cache_position = kwargs.get("cache_position", None)
         print(f"attention_mask coming, {attention_mask.shape}")
 
-        print(f"cache_position coming, {cache_position}")
+        print(f"cache_position coming, {cache_position.shape}")
 
-        print(kwargs)
-        print("before")
-        if past_key_values is not None:
-            for layer_idx, (key, value) in enumerate(past_key_values):
-                print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
-        print("after")
+        # print(kwargs)
+        # print("before")
+        # if past_key_values is not None:
+        #     for layer_idx, (key, value) in enumerate(past_key_values):
+        #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
+        # print("after")
         # if past_key_values is not None:
         #     if self.model.memory_readout_cache is not None:
         #         memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)

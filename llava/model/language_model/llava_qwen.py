@@ -221,23 +221,16 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         # Build a Qwen Cache that includes all T memory tokens for each layer
         # and sets the “cache_size” to T.
 
-        # Create an empty Cache:
+        # Create an empty cache:
         cache = Cache()
-
-        # Add each (key, value) pair to the Cache:
-        for layer_idx, (k_i, v_i) in enumerate(legacy_kv):
-            cache.add(
-                layer_idx=layer_idx,
-                key=k_i,
-                value=v_i,
-                is_cross=False,  # Typically False for self-attention
-            )
-
-        # Mark the Cache as valid, set the size, etc.
+        # Then assign the relevant fields:
+        cache.past_key_values = legacy_kv  # The older Cache class often has this field
         cache.is_valid = True
+        cache.is_cross = False
+        cache.is_encoder_decoder = False
         cache.has_compatible_format = True
-        cache.has_indexed_inputs = False  # We are passing a final block
-        cache.cache_size = T
+        cache.has_indexed_inputs = False
+        cache.cache_size = T  # number of “past” tokens
 
         return cache
         return cache

@@ -151,67 +151,67 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             for layer_idx, (key, value) in enumerate(old_cache):
                 print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
 
-        # Inject memory into past_key_values
-        # if self.model.memory_readout_cache is not None:
-        #     memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
-        #     T_mem = memory_readout.shape[0]  # memory tokens
-        #     B = input_ids.shape[0]
-        #
-        #     # === 1. Expand attention mask ===
-        #     if attention_mask is not None:
-        #         memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-        #         attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
-        #         inputs["attention_mask"] = attention_mask
-        #
-        #     # # === 2. Expand position_ids ===
-        #     # if position_ids is not None:
-        #     #     start_pos = T_mem
-        #     #     memory_pos = torch.arange(start_pos, start_pos + input_ids.shape[1], dtype=position_ids.dtype,
-        #     #                               device=position_ids.device)
-        #     #     memory_pos = memory_pos.unsqueeze(0).expand(B, -1)
-        #     #     inputs["position_ids"] = memory_pos
-        #
-        #     # === 3. Inject past_key_values ===
-        #     past_key_values = self.inject_memory_as_kv(memory_readout)
-        #     inputs["past_key_values"] = past_key_values
-        #
-        #     # === 4. Manually update cache position ===
-        #     # Qwen2 supports `cache_position` kwarg to align KV cache
-        #     inputs["cache_position"] = torch.arange(T_mem, T_mem + input_ids.shape[1],
-        #                                             device=input_ids.device).unsqueeze(0)
-        #     # for i, (k, v) in enumerate(past_key_values):
-        #     #     print(f"Layer {i}: key shape {k.shape}, value shape {v.shape}")
-        #     # print("Expanded attention mask:", inputs["attention_mask"].shape)
-        #     # print("cache_position:", inputs.get("cache_position", None))
-        #     # ✅ Clear cache
-        #     self.model.memory_readout_cache = None
+        #Inject memory into past_key_values
+        if self.model.memory_readout_cache is not None:
+            memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
+            T_mem = memory_readout.shape[0]  # memory tokens
+            B = input_ids.shape[0]
+
+            # === 1. Expand attention mask ===
+            if attention_mask is not None:
+                memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+                attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+                inputs["attention_mask"] = attention_mask
+
+            # # === 2. Expand position_ids ===
+            # if position_ids is not None:
+            #     start_pos = T_mem
+            #     memory_pos = torch.arange(start_pos, start_pos + input_ids.shape[1], dtype=position_ids.dtype,
+            #                               device=position_ids.device)
+            #     memory_pos = memory_pos.unsqueeze(0).expand(B, -1)
+            #     inputs["position_ids"] = memory_pos
+
+            # === 3. Inject past_key_values ===
+            past_key_values = self.inject_memory_as_kv(memory_readout)
+            inputs["past_key_values"] = past_key_values
+
+            # === 4. Manually update cache position ===
+            # Qwen2 supports `cache_position` kwarg to align KV cache
+            inputs["cache_position"] = torch.arange(T_mem, T_mem + input_ids.shape[1],
+                                                    device=input_ids.device).unsqueeze(0)
+            # for i, (k, v) in enumerate(past_key_values):
+            #     print(f"Layer {i}: key shape {k.shape}, value shape {v.shape}")
+            # print("Expanded attention mask:", inputs["attention_mask"].shape)
+            # print("cache_position:", inputs.get("cache_position", None))
+            # ✅ Clear cache
+            self.model.memory_readout_cache = None
 
         return inputs
 
     #
-    # def inject_memory_as_kv(self, memory_readout, ):
-    #     B = 1
-    #     D = memory_readout.size(-1)
-    #     H = self.config.num_attention_heads
-    #     L = self.config.num_hidden_layers  # number of Transformer layers
-    #     Dh = D // H
-    #     T = memory_readout.shape[0]  # number of memory tokens
-    #
-    #     cache = DynamicCache()
-    #
-    #     for i in range(L):
-    #         key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
-    #         value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
-    #         print("memory_readout:", memory_readout.shape)
-    #         print("key shape", key.shape)
-    #         cache.update(
-    #             key_states=key,
-    #             value_states=value,
-    #             layer_idx=i
-    #         )
-    #
-    #
-    #     return cache
+    def inject_memory_as_kv(self, memory_readout, ):
+        B = 1
+        D = memory_readout.size(-1)
+        H = self.config.num_key_value_heads  # number of attention heads is 14, kv heads is 2
+        L = self.config.num_hidden_layers  # number of Transformer layers
+        Dh = D // H
+        T = memory_readout.shape[0]  # number of memory tokens
+
+        cache = DynamicCache()
+
+        for i in range(L):
+            key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
+            value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
+            print("memory_readout:", memory_readout.shape)
+            print("key shape", key.shape)
+            cache.update(
+                key_states=key,
+                value_states=value,
+                layer_idx=i
+            )
+
+
+        return cache
 
 
 

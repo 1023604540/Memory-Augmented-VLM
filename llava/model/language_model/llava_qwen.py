@@ -186,7 +186,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         ).unsqueeze(0)  # shape [1, T]
 
         # 3) Concatenate along dim=1 to get shape [1, N+T]
-        inputs["position_ids"] = torch.cat([position_ids, new_positions], dim=1)
+        inputs["position_ids"] = torch.cat([inputs["position_ids"], new_positions], dim=1)
         # old_cache = inputs.get("past_key_values", None)
         print("position_ids going", {inputs["position_ids"]})
         # inputs["position_ids"] = None

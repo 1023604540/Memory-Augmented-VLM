@@ -152,34 +152,34 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
         # print("after")
 
-        if past_key_values is not None:
-            if self.model.memory_readout_cache is not None:
-                print("Memory readout injecting")
-                memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
-                T_mem = memory_readout.shape[0]  # memory tokens
-                B = input_ids.shape[0]
-
-                # === 1. Expand attention mask ===
-                if attention_mask is not None:
-
-                    memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-                    new_attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
-                    print(f"new_attention_mask shape, {new_attention_mask.shape}")
-                    kwargs["attention_mask"] = new_attention_mask
-
-                # === 2. Expand cache_position ===
-                if cache_position is not None:
-                    # 1) Find the last position value, e.g. 12572
-                    last_pos_val = cache_position[0].item() + T_mem
-                    new_cache_position = torch.tensor([last_pos_val])
-                    print(f"new_cache_position shape, {new_cache_position.shape}")
-                    kwargs["cache_position"] = new_cache_position
-
-                # === 3. Inject past_key_values ===
-                past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
-                # inputs["past_key_values"] = past_key_values
-
-                self.model.memory_readout_cache = None
+        # if past_key_values is not None:
+        #     if self.model.memory_readout_cache is not None:
+        #         print("Memory readout injecting")
+        #         memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
+        #         T_mem = memory_readout.shape[0]  # memory tokens
+        #         B = input_ids.shape[0]
+        #
+        #         # === 1. Expand attention mask ===
+        #         if attention_mask is not None:
+        #
+        #             memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+        #             new_attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+        #             print(f"new_attention_mask shape, {new_attention_mask.shape}")
+        #             kwargs["attention_mask"] = new_attention_mask
+        #
+        #         # === 2. Expand cache_position ===
+        #         if cache_position is not None:
+        #             # 1) Find the last position value, e.g. 12572
+        #             last_pos_val = cache_position[0].item() + T_mem
+        #             new_cache_position = torch.tensor([last_pos_val])
+        #             print(f"new_cache_position shape, {new_cache_position.shape}")
+        #             kwargs["cache_position"] = new_cache_position
+        #
+        #         # === 3. Inject past_key_values ===
+        #         past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
+        #         # inputs["past_key_values"] = past_key_values
+        #
+        #         self.model.memory_readout_cache = None
 
         # print("before past_key_values")
         # if past_key_values is not None:

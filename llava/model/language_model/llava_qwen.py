@@ -145,7 +145,6 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             for layer_idx, (key, value) in enumerate(past_key_values):
                 print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
         print("after")
-
         if past_key_values is not None:
             if self.model.memory_readout_cache is not None:
                 memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
@@ -175,8 +174,21 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             inputs["image_sizes"] = image_sizes
         print(f"inputs coming, {input_ids.shape}")
         print("position_ids coming", {inputs["position_ids"]})
-        # old_cache = inputs.get("past_key_values", None)
+        # 1) Find the last position value, e.g. 12572
+        last_pos_val = inputs["position_ids"][0, -1].item()  # scalar
+        T = 8
+        # 2) Build a new range [last_pos_val+1, ..., last_pos_val+T]
+        new_positions = torch.arange(
+            last_pos_val + 1,
+            last_pos_val + 1 + T,
+            device=inputs["position_ids"].device,
+            dtype=inputs["position_ids"].dtype
+        ).unsqueeze(0)  # shape [1, T]
 
+        # 3) Concatenate along dim=1 to get shape [1, N+T]
+        inputs["position_ids"] = torch.cat([position_ids, new_positions], dim=1)
+        # old_cache = inputs.get("past_key_values", None)
+        print("position_ids going", {inputs["position_ids"]})
         # inputs["position_ids"] = None
         # inputs["cache_position"] = None
         #Inject memory into past_key_values

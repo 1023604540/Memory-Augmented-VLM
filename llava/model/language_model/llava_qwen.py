@@ -233,7 +233,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         cache.cache_size = T  # number of “past” tokens
 
         return cache
-        return cache
+
 
 
 AutoConfig.register("llava_qwen", LlavaQwenConfig)

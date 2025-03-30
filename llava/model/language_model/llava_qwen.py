@@ -164,7 +164,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 inputs["attention_mask"] = attention_mask
 
             # === 2. Expand position_ids ===
-            if position_ids is not None:
+            if position_ids is None:
                 start_pos = T_mem
                 memory_pos = torch.arange(start_pos, start_pos + input_ids.shape[1], dtype=position_ids.dtype,
                                           device=position_ids.device)

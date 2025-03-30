@@ -110,14 +110,15 @@ class LlavaMetaModel:
             nn.GELU(),
             nn.Linear(1152, 1152),
         ).to(self.device)
-        LLM_hidden_dim = getattr(config, "kv_hidden_dim", 896/7)
+        LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
+        kv_hidden_dim = getattr(config, "kv_hidden_dim", 128)
         self.memory_proj_layers = getattr(config, "injected_layers", 24)
         self.memory_key_projs = nn.ModuleList([
-            nn.Linear(LLM_hidden_dim, LLM_hidden_dim).to(dtype=self.dtype,
+            nn.Linear(LLM_hidden_dim, kv_hidden_dim).to(dtype=self.dtype,
                                                          device=self.device) for _ in range(self.memory_proj_layers)
         ])
         self.memory_value_projs = nn.ModuleList([
-            nn.Linear(LLM_hidden_dim, LLM_hidden_dim).to(dtype=self.dtype,
+            nn.Linear(LLM_hidden_dim, kv_hidden_dim).to(dtype=self.dtype,
                                                          device=self.device) for _ in range(self.memory_proj_layers)
         ])
         self.memory_readout_cache = None

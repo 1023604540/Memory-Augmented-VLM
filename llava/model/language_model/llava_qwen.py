@@ -150,45 +150,45 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         # if old_cache is not None:
         #     for layer_idx, (key, value) in enumerate(old_cache):
         #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
-        inputs["position_ids"] = None
-        inputs["cache_position"] = None
-        #Inject memory into past_key_values
-        if self.model.memory_readout_cache is not None:
-            memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
-            T_mem = memory_readout.shape[0]  # memory tokens
-            B = input_ids.shape[0]
-
-            # === 1. Expand attention mask ===
-            if attention_mask is not None:
-                memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-                attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
-                inputs["attention_mask"] = attention_mask
-            # inputs["position_ids"] = None
-            # inputs["cache_position"] = None
-            #
-            # # === 2. Expand position_ids ===
-            # if position_ids is None:
-            #     start_pos = T_mem
-            #     memory_pos = torch.arange(start_pos, start_pos + input_ids.shape[1], dtype=self.dtype,
-            #                               device=self.device)
-            #     print("memory_pos:", memory_pos.shape)
-            #     memory_pos = memory_pos.unsqueeze(0).expand(B, -1)
-            #     inputs["position_ids"] = memory_pos
-
-            # === 3. Inject past_key_values ===
-            past_key_values = self.inject_memory_as_kv(memory_readout)
-            inputs["past_key_values"] = past_key_values
-
-            # === 4. Manually update cache position ===
-            # Qwen2 supports `cache_position` kwarg to align KV cache
-            # inputs["cache_position"] = torch.arange(T_mem, T_mem + input_ids.shape[1],
-            #                                         device=input_ids.device).unsqueeze(0)
-            # # for i, (k, v) in enumerate(past_key_values):
-            #     print(f"Layer {i}: key shape {k.shape}, value shape {v.shape}")
-            # print("Expanded attention mask:", inputs["attention_mask"].shape)
-            # print("cache_position:", inputs.get("cache_position", None))
-            # ✅ Clear cache
-            self.model.memory_readout_cache = None
+        # inputs["position_ids"] = None
+        # inputs["cache_position"] = None
+        # #Inject memory into past_key_values
+        # if self.model.memory_readout_cache is not None:
+        #     memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
+        #     T_mem = memory_readout.shape[0]  # memory tokens
+        #     B = input_ids.shape[0]
+        #
+        #     # === 1. Expand attention mask ===
+        #     if attention_mask is not None:
+        #         memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+        #         attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+        #         inputs["attention_mask"] = attention_mask
+        #     # inputs["position_ids"] = None
+        #     # inputs["cache_position"] = None
+        #     #
+        #     # # === 2. Expand position_ids ===
+        #     # if position_ids is None:
+        #     #     start_pos = T_mem
+        #     #     memory_pos = torch.arange(start_pos, start_pos + input_ids.shape[1], dtype=self.dtype,
+        #     #                               device=self.device)
+        #     #     print("memory_pos:", memory_pos.shape)
+        #     #     memory_pos = memory_pos.unsqueeze(0).expand(B, -1)
+        #     #     inputs["position_ids"] = memory_pos
+        #
+        #     # === 3. Inject past_key_values ===
+        #     past_key_values = self.inject_memory_as_kv(memory_readout)
+        #     inputs["past_key_values"] = past_key_values
+        #
+        #     # === 4. Manually update cache position ===
+        #     # Qwen2 supports `cache_position` kwarg to align KV cache
+        #     # inputs["cache_position"] = torch.arange(T_mem, T_mem + input_ids.shape[1],
+        #     #                                         device=input_ids.device).unsqueeze(0)
+        #     # # for i, (k, v) in enumerate(past_key_values):
+        #     #     print(f"Layer {i}: key shape {k.shape}, value shape {v.shape}")
+        #     # print("Expanded attention mask:", inputs["attention_mask"].shape)
+        #     # print("cache_position:", inputs.get("cache_position", None))
+        #     # ✅ Clear cache
+        #     self.model.memory_readout_cache = None
 
         return inputs
 

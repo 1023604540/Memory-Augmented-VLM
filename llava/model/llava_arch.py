@@ -438,9 +438,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
             # Key Memory Selection Module
             for index, image_feature in enumerate(image_features):
-                print(input_ids.shape)
+                # print(input_ids.shape)
                 cur_input_ids = input_ids[index]
-                print(f"cur_input_ids: shape {cur_input_ids.shape}, content {cur_input_ids}")
+                # print(f"cur_input_ids: shape {cur_input_ids.shape}, content {cur_input_ids}")
 
                 ############################## Conversation Template
                 # < | im_start | > system
@@ -481,13 +481,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 query = extract_user_query_tokens(cur_input_ids)
                 print(f"the query is : {query}")
                 query_feature = self.get_model().embed_tokens(query)
-                print(query_feature.shape)  # [1, n, 3584]
+                # print(query_feature.shape)  # [1, n, 3584]
                 retrieved_memory = memory.retrieve_memory(query_feature)
                 print(f"retrieved_memory: {retrieved_memory.shape}")
                 print(f"Memory in the bank: {memory.mem_keys.shape}")
                 # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
                 self.get_model().memory_readout_cache = retrieved_memory.detach()
-                print(retrieved_memory)
+                # print(retrieved_memory)
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")

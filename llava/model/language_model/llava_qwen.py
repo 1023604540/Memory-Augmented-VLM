@@ -149,6 +149,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         old_cache = inputs.get("past_key_values", None)
         if old_cache is not None:
             # old_cache[0] is (k0, v0). So old_cache[0][0] is k0
+            print(len(old_cache[0]))
             print("old_cache[0][0].shape =", old_cache[0][0].shape)  # key for layer 0
             print("old_cache[0][1].shape =", old_cache[0][1].shape)  # value for layer 0
 

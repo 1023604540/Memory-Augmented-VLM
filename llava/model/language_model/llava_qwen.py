@@ -153,12 +153,12 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             T_mem = memory_readout.shape[0]  # memory tokens
             B = input_ids.shape[0]
 
-            # # === 1. Expand attention mask ===
-            # if attention_mask is not None:
-            #     memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-            #     attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
-            #     inputs["attention_mask"] = attention_mask
-            #
+            # === 1. Expand attention mask ===
+            if attention_mask is not None:
+                memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+                attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+                inputs["attention_mask"] = attention_mask
+
             # # === 2. Expand position_ids ===
             # if position_ids is not None:
             #     start_pos = T_mem

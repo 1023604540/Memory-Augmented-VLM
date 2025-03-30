@@ -239,7 +239,7 @@ class InjectedCache(Cache):
         # Return however many tokens are in your "past" memory block
         return self.cache_size
 
-    def get_usable_length(self, seq_length: int, layer_idx: int) -> int:
+    def get_usable_length(self, seq_length: int, layer_idx=None) -> int:
         # You can ignore layer_idx if your logic is layer-agnostic, or use it if each layer is different
         return self.cache_size
 

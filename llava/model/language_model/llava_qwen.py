@@ -140,7 +140,9 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         attention_mask = kwargs.get("attention_mask", None)
         position_ids = kwargs.get("position_ids", None)
 
-        print(past_key_values)
+        if past_key_values is not None:
+            for layer_idx, (key, value) in enumerate(past_key_values):
+                print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
         # if self.model.memory_readout_cache is not None:
         #     memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
         #     T_mem = memory_readout.shape[0]  # memory tokens
@@ -166,9 +168,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         print(f"inputs coming, {input_ids.shape}")
         print("position_ids coming", {inputs["position_ids"]})
         # old_cache = inputs.get("past_key_values", None)
-        # if old_cache is not None:
-        #     for layer_idx, (key, value) in enumerate(old_cache):
-        #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
+
         # inputs["position_ids"] = None
         # inputs["cache_position"] = None
         #Inject memory into past_key_values

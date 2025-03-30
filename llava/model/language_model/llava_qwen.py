@@ -192,7 +192,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         print(f"inputs coming, {input_ids.shape}")
         print("position_ids coming", {inputs["position_ids"]})
         a = inputs["position_ids"]
-        print(a.shape)
+        print("position_ids shape", a.shape)
 
         # if past_key_values is not None:
         #     if self.model.memory_readout_cache is not None:
@@ -211,7 +211,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #         inputs["position_ids"] = torch.cat([inputs["position_ids"], new_positions], dim=1)
         #         self.model.memory_readout_cache = None
         # old_cache = inputs.get("past_key_values", None)
-        print("position_ids going", {inputs["position_ids"]})
+
 
 
         return inputs

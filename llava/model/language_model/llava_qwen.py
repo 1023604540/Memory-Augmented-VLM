@@ -139,29 +139,29 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         image_sizes = kwargs.pop("image_sizes", None)
         attention_mask = kwargs.get("attention_mask", None)
         position_ids = kwargs.get("position_ids", None)
-
+        print(**kwargs)
         print("before")
         if past_key_values is not None:
             for layer_idx, (key, value) in enumerate(past_key_values):
                 print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
         print("after")
-        if past_key_values is not None:
-            if self.model.memory_readout_cache is not None:
-                memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
-                T_mem = memory_readout.shape[0]  # memory tokens
-                B = input_ids.shape[0]
-
-                # === 1. Expand attention mask ===
-                if attention_mask is not None:
-                    memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-                    kwargs["attention_mask"] = torch.cat([memory_mask, attention_mask], dim=1)
-
-
-                # === 3. Inject past_key_values ===
-                past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
-                # inputs["past_key_values"] = past_key_values
-
-                #self.model.memory_readout_cache = None
+        # if past_key_values is not None:
+        #     if self.model.memory_readout_cache is not None:
+        #         memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
+        #         T_mem = memory_readout.shape[0]  # memory tokens
+        #         B = input_ids.shape[0]
+        #
+        #         # === 1. Expand attention mask ===
+        #         if attention_mask is not None:
+        #             memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+        #             kwargs["attention_mask"] = torch.cat([memory_mask, attention_mask], dim=1)
+        #
+        #
+        #         # === 3. Inject past_key_values ===
+        #         past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
+        #         # inputs["past_key_values"] = past_key_values
+        #
+        #         #self.model.memory_readout_cache = None
         print("before past_key_values")
         if past_key_values is not None:
             for layer_idx, (key, value) in enumerate(past_key_values):
@@ -174,6 +174,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             inputs["image_sizes"] = image_sizes
         print(f"inputs coming, {input_ids.shape}")
         print("position_ids coming", {inputs["position_ids"]})
+
         if past_key_values is not None:
             if self.model.memory_readout_cache is not None:
             # 1) Find the last position value, e.g. 12572

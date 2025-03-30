@@ -214,8 +214,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         cache = DynamicCache()
 
         for i in range(L):
-            key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
-            value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
+            key = self.model.memory_key_projs[i](memory_readout).view(B, H, T, Dh)
+            value = self.model.memory_value_projs[i](memory_readout).view(B, H, T, Dh)
             print("memory_readout:", memory_readout.shape)
             print("key shape", key.shape)
             cache.update(

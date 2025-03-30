@@ -154,7 +154,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 # === 1. Expand attention mask ===
                 if attention_mask is not None:
                     memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-                    kwargs.attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+                    kwargs["attention_mask"] = torch.cat([memory_mask, attention_mask], dim=1)
 
 
                 # === 3. Inject past_key_values ===

@@ -139,11 +139,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         image_sizes = kwargs.pop("image_sizes", None)
         attention_mask = kwargs.get("attention_mask", None)
         position_ids = kwargs.get("position_ids", None)
-        print("before past_key_values")
-        if past_key_values is not None:
-            for layer_idx, (key, value) in enumerate(past_key_values):
-                print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
-        print("after past_key_values")
+
         if past_key_values is not None:
             if self.model.memory_readout_cache is not None:
                 memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
@@ -161,7 +157,11 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 # inputs["past_key_values"] = past_key_values
 
                 self.model.memory_readout_cache = None
-
+        print("before past_key_values")
+        if past_key_values is not None:
+            for layer_idx, (key, value) in enumerate(past_key_values):
+                print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
+        print("after past_key_values")
         inputs = super().prepare_inputs_for_generation(input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs)
         if images is not None:
             inputs["images"] = images

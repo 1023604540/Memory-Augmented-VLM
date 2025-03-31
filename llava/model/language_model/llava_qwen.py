@@ -200,10 +200,10 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         print("position_ids coming", {inputs["position_ids"]})
         a = inputs["position_ids"]
         print("position_ids shape", a.shape)
-        if past_key_values is not None and a.shape[-1]>1:
-            new_positions = kwargs["cache_position"][0].item()
-            new_positions_ids = torch.tensor([new_positions])
-            inputs["position_ids"] = new_positions_ids
+        # if past_key_values is not None and a.shape[-1]>1:
+        #     new_positions = kwargs["cache_position"][0].item()
+        #     new_positions_ids = torch.tensor([new_positions])
+        #     inputs["position_ids"] = new_positions_ids
         print("position_ids going", {inputs["position_ids"]})
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 

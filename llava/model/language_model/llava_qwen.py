@@ -168,7 +168,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             if attention_mask is not None:
                 memory_mask = torch.ones(b, self.T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
                 new_attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
-                print(f"new_attention_mask shape, {new_attention_mask.shape}")
+                # print(f"new_attention_mask shape, {new_attention_mask.shape}")
                 kwargs["attention_mask"] = new_attention_mask.to(dtype=self.dtype, device=self.device)
 
             # === 3. Expand cache_position ===
@@ -176,7 +176,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 # Find the last position value, e.g. 12572
                 last_pos_val = cache_position[0].item() + self.T_mem
                 new_cache_position = torch.tensor([last_pos_val])
-                print(f"new_cache_position shape, {new_cache_position.shape}")
+                # print(f"new_cache_position shape, {new_cache_position.shape}")
                 kwargs["cache_position"] = new_cache_position.to(dtype=self.dtype, device=self.device)
 
         # print("before past_key_values")

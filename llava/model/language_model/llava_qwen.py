@@ -187,6 +187,9 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
         # print("after past_key_values")
 
+        print("attention_mask going", kwargs["attention_mask"].shape)
+        print("cache_position going", kwargs["cache_position"].shape, kwargs["cache_position"])
+
         inputs = super().prepare_inputs_for_generation(input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs)
         if images is not None:
             inputs["images"] = images

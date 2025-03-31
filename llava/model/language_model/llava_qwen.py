@@ -157,26 +157,24 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             if self.model.memory_readout_cache is not None:
                 print("Memory readout injecting")
                 memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
-                T_mem = memory_readout.shape[0]  # memory tokens
-                B = input_ids.shape[0]
+                self.T_mem = memory_readout.shape[0]  # memory tokens
 
-
-                # === 3. Inject past_key_values ===
+                # === 1. Inject past_key_values ===
                 past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
 
                 self.model.memory_readout_cache = None
-            # === 1. Expand attention mask ===
+            # === 2. Expand attention mask ===
             B = 1  # batch size, or read from memory_readout if needed
-            T_mem = 8  # number of memory tokens
+            T_mem = self.T_mem  # number of memory tokens
             if attention_mask is not None:
                 memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
                 new_attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
                 print(f"new_attention_mask shape, {new_attention_mask.shape}")
                 kwargs["attention_mask"] = new_attention_mask
 
-            # === 2. Expand cache_position ===
+            # === 3. Expand cache_position ===
             if cache_position is not None:
-                # 1) Find the last position value, e.g. 12572
+                # Find the last position value, e.g. 12572
                 last_pos_val = cache_position[0].item() + T_mem
                 new_cache_position = torch.tensor([last_pos_val])
                 print(f"new_cache_position shape, {new_cache_position.shape}")
@@ -200,31 +198,9 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         print("position_ids coming", {inputs["position_ids"]})
         a = inputs["position_ids"]
         print("position_ids shape", a.shape)
-        # if past_key_values is not None and a.shape[-1]>1:
-        #     new_positions = kwargs["cache_position"][0].item()
-        #     new_positions_ids = torch.tensor([new_positions])
-        #     inputs["position_ids"] = new_positions_ids
+
         print("position_ids going", {inputs["position_ids"]})
         print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
-        # if past_key_values is not None:
-        #     if self.model.memory_readout_cache is not None:
-        #     # 1) Find the last position value, e.g. 12572
-        #         last_pos_val = inputs["position_ids"][0, -1].item()  # scalar
-        #         T = 8
-        #         # 2) Build a new range [last_pos_val+1, ..., last_pos_val+T]
-        #         new_positions = torch.arange(
-        #             last_pos_val + 1,
-        #             last_pos_val + 1 + T,
-        #             device=inputs["position_ids"].device,
-        #             dtype=inputs["position_ids"].dtype
-        #         ).unsqueeze(0)  # shape [1, T]
-        #
-        #         # 3) Concatenate along dim=1 to get shape [1, N+T]
-        #         inputs["position_ids"] = torch.cat([inputs["position_ids"], new_positions], dim=1)
-        #         self.model.memory_readout_cache = None
-        # old_cache = inputs.get("past_key_values", None)
-
 
 
         return inputs

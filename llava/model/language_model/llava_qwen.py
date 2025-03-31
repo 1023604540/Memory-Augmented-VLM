@@ -167,6 +167,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 self.model.memory_readout_cache = None
             # === 1. Expand attention mask ===
             if attention_mask is not None:
+                B = 1  # batch size, or read from memory_readout if needed
+                T_mem = 8  # number of memory tokens
                 memory_mask = torch.ones(B, T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
                 new_attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
                 print(f"new_attention_mask shape, {new_attention_mask.shape}")

@@ -1669,11 +1669,11 @@ def train(attn_implementation=None):
                 rank0_print("Unfreezing mm_mlp_adapter")
                 for p in model.get_model().mm_projector.parameters():
                     p.requires_grad = True
-            if "attention_model" in tunable_parts:
-                rank0_print("Unfreezing attention_model")
-                for p in model.get_model().attention_model.parameters():
+            if "larimar_model" in tunable_parts:
+                rank0_print("Unfreezing larimar_weights")
+                for p in model.get_model().memory_key_projs.parameters():
                     p.requires_grad = True
-                for p in model.get_model().memory_mlp.parameters():
+                for p in model.get_model().memory_value_projs.parameters():
                     p.requires_grad = True
             if "mm_vision_resampler" in tunable_parts:
                 for p in model.get_model().vision_resampler.parameters():

@@ -169,7 +169,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 memory_mask = torch.ones(b, self.T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
                 new_attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
                 print(f"new_attention_mask shape, {new_attention_mask.shape}")
-                kwargs["attention_mask"] = new_attention_mask
+                kwargs["attention_mask"] = new_attention_mask.to(dtype=self.dtype, device=self.device)
 
             # === 3. Expand cache_position ===
             if cache_position is not None:
@@ -177,7 +177,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 last_pos_val = cache_position[0].item() + self.T_mem
                 new_cache_position = torch.tensor([last_pos_val])
                 print(f"new_cache_position shape, {new_cache_position.shape}")
-                kwargs["cache_position"] = new_cache_position
+                kwargs["cache_position"] = new_cache_position.to(dtype=self.dtype, device=self.device)
 
         # print("before past_key_values")
         # if past_key_values is not None:
@@ -185,21 +185,19 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
         # print("after past_key_values")
 
-        print("attention_mask going", kwargs["attention_mask"].shape)
-        print("cache_position going", kwargs["cache_position"].shape, kwargs["cache_position"])
+        # print("attention_mask going", kwargs["attention_mask"].shape)
+        # print("cache_position going", kwargs["cache_position"].shape, kwargs["cache_position"])
 
         inputs = super().prepare_inputs_for_generation(input_ids, past_key_values=past_key_values, inputs_embeds=inputs_embeds, **kwargs)
         if images is not None:
             inputs["images"] = images
         if image_sizes is not None:
             inputs["image_sizes"] = image_sizes
-        print(f"inputs coming, {input_ids.shape}")
-        print("position_ids coming", {inputs["position_ids"]})
-        a = inputs["position_ids"]
-        print("position_ids shape", a.shape)
-
-        print("position_ids going", {inputs["position_ids"]})
-        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        # print(f"inputs coming, {input_ids.shape}")
+        # print("position_ids", {inputs["position_ids"]})
+        # a = inputs["position_ids"]
+        # print("position_ids shape", a.shape)
+        # print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 
         return inputs

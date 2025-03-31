@@ -139,10 +139,10 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         image_sizes = kwargs.pop("image_sizes", None)
         attention_mask = kwargs.get("attention_mask", None)
         cache_position = kwargs.get("cache_position", None)
-        print(f"attention_mask coming, {attention_mask.shape}")
-        print(f"cache_position coming, {cache_position.shape}, {cache_position}")
-        if past_key_values is not None:
-            print(f"past_kv_shape: {past_key_values[0][0].shape} ")
+        # print(f"attention_mask coming, {attention_mask.shape}")
+        # print(f"cache_position coming, {cache_position.shape}, {cache_position}")
+        # if past_key_values is not None:
+        #     print(f"past_kv_shape: {past_key_values[0][0].shape} ")
 
 
 

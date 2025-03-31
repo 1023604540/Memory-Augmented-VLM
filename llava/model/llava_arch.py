@@ -101,15 +101,15 @@ class LlavaMetaModel:
             if "unpad" in getattr(config, "mm_patch_merge_type", ""):
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
-        self.mm_input_dim = getattr(config, "ntm_hidden_size", 1152)
-        compress_Turing_hidden_dim = getattr(config, "compress_Turing_hidden_dim", 32)
-        # Now init in memory_builder
-        self.attention_model = NeuralTuringMachine(self.mm_input_dim, compress_Turing_hidden_dim).to(self.device)
-        self.memory_mlp = nn.Sequential(
-            nn.Linear(1152, 1152),
-            nn.GELU(),
-            nn.Linear(1152, 1152),
-        ).to(self.device)
+        # self.mm_input_dim = getattr(config, "ntm_hidden_size", 1152)
+        # compress_Turing_hidden_dim = getattr(config, "compress_Turing_hidden_dim", 32)
+        # # Now init in memory_builder
+        # self.attention_model = NeuralTuringMachine(self.mm_input_dim, compress_Turing_hidden_dim).to(self.device)
+        # self.memory_mlp = nn.Sequential(
+        #     nn.Linear(1152, 1152),
+        #     nn.GELU(),
+        #     nn.Linear(1152, 1152),
+        # ).to(self.device)
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
         kv_hidden_dim = getattr(config, "kv_hidden_dim", 128)
         self.memory_proj_layers = getattr(config, "injected_layers", 24)
@@ -386,11 +386,11 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_images.append(image)
                     non_video_positions.append(idx)
                     continue
-                boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
+                # boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
                 #print(f"boundaries:{len(boundaries)}")
                 #print(f"boundaries:{boundaries}")
                 encoded_features = self.encode_images(image)
-                image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
+                # image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 # for image_segment in image_segments:
                 #     # print(f"Image segment shape : {image_segment.shape}")
                 #     memory = EpisodicMemoryController(mem_slots=32, mem_dim=image_segment.shape[-1])

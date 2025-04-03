@@ -434,7 +434,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             split_sizes = [image.shape[0] for image in images_list]
             projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
             image_features = torch.split(projected_feature, split_sizes)
-            rank_print(f"Encoded image feats : {[x.shape for x in image_features]}")  # [frame_num, 729, 3584]
+            rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}")  # [frame_num, 729, 3584]
 
             new_image_features = []
             for idx, image_feat in enumerate(image_features):
@@ -493,7 +493,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                         return []
 
                 query = extract_user_query_tokens(cur_input_ids)
-                print(f"the query is : {query}")
+                # print(f"the query is : {query}")
                 query_feature = self.get_model().embed_tokens(query)
                 # print(query_feature.shape)  # [1, n, 3584]
                 retrieved_memory = memory.retrieve_memory(query_feature)
@@ -501,6 +501,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(f"Memory in the bank: {memory.mem_keys.shape}")
                 # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
                 self.get_model().memory_readout_cache = retrieved_memory.detach()
+                print(f"image_features[index] shape: {image_feature.shape}")
                 # print(retrieved_memory)
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

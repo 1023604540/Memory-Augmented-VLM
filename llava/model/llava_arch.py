@@ -501,6 +501,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(f"Memory in the bank: {memory.mem_keys.shape}")
                 # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
                 self.get_model().memory_readout_cache = retrieved_memory.detach()
+                image_feature_size = image_feature.shape[0]
+                selected_indices = torch.randperm(image_feature_size)[:32]
+                print(f"selected_indices: {selected_indices}")
+                image_features[index] = image_feature[selected_indices]
                 print(f"image_features[index] shape: {image_feature.shape}")
                 # print(retrieved_memory)
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

@@ -502,7 +502,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
                 self.get_model().memory_readout_cache = retrieved_memory.detach()
                 image_feature_size = image_feature.shape[0]
-                selected_indices = indices = torch.linspace(0, image_feature_size - 1, steps=32).long()
+                selected_indices = torch.linspace(0, image_feature_size - 1, steps=32).long()
                 print(f"selected_indices: {selected_indices}")
                 image_features[index] = image_feature[selected_indices]
                 print(f"image_features[index] shape: {image_features[index].shape}")

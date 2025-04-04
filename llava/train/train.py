@@ -1703,14 +1703,14 @@ def train(attn_implementation=None):
                 if substr in n
             )
 
-        for part in ["vision_tower", "vision_resampler", "mm_projector", "attention_model"]:
+        for part in ["vision_tower", "vision_resampler", "mm_projector", "memory_key_projs", "memory_value_projs"]:
             rank0_print(f"{part} params: {param_count_by_substr(part) / 1e6:.2f} M")
 
         # Everything else goes into "language_model"
         lm_params = sum(
             p.ds_numel if hasattr(p, "ds_numel") else p.numel()
             for n, p in model.named_parameters()
-            if not any(x in n for x in ["vision_tower", "vision_resampler", "mm_projector", "attention_model"])
+            if not any(x in n for x in ["vision_tower", "vision_resampler", "mm_projector", "memory_value_projs", "memory_key_projs"])
         )
         rank0_print(f"language_model params: {lm_params / 1e6:.2f} M")
         ##########

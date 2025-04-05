@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import time
 
 class EpisodicMemoryController:
     def __init__(self, mem_slots=32, mem_patch=196, mem_dim=1024, device='cpu', dtype=torch.float16):
@@ -31,6 +32,7 @@ class EpisodicMemoryController:
 
     def integrate(self, old_memory, new_memory):
         # M^ =(ZξM0†)†Zξ
+        write_time = time.time()
         old_memory = old_memory.to(self.compute_dtype)
         new_memory = new_memory.to(self.compute_dtype)
 
@@ -40,10 +42,15 @@ class EpisodicMemoryController:
             old_memory = old_memory.flatten(0, 1)
 
         Z = self.add_noise(new_memory, sigma=0.001)  # (N*P, D)
+        print(f"1, {time.time()-write_time}")
         M0_inverse = torch.linalg.pinv(old_memory)  # (D, N*P)
+        print(f"2, {time.time()-write_time}")
         Temp = new_memory @ M0_inverse  # (N*P, N*P)
+        print(f"3, {time.time()-write_time}")
         Temp_inverse = torch.linalg.pinv(Temp)  # (N*P, N*P)
+        print(f"4, {time.time()-write_time}")
         M_hat = Temp_inverse @ Z  # (N*P, D)
+        print(f"5, {time.time()-write_time}")
         self.mem_keys = M_hat
         return
 

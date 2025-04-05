@@ -449,7 +449,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
             image_features = new_image_features # [frame_num, 196, 3584]
             #print(f"before_memory_init = {time.time() - start}")
-            memory = EpisodicMemoryController(mem_slots=32, mem_dim=image_features[0].shape[-1], device=self.device, dtype=image_features[0].dtype)
+            memory = EpisodicMemoryController(mem_slots=32, mem_patch=196, mem_dim=image_features[0].shape[-1], device=self.device, dtype=image_features[0].dtype)
             for idx, image_feature in enumerate(image_features):
                 print(f"image_feature to be written:{image_feature.shape}")
                 #print(f"before_write_time = {time.time() - start}")

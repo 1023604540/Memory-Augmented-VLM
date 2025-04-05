@@ -88,10 +88,10 @@ class EpisodicMemoryController:
             for idx in range(available_space):
                 self.mem_keys[self.next_idx + idx] = episode_vec[idx]
                 self.mem_vals[self.next_idx + idx] = episode_vec[idx]
-            print(f"mid, {time.time() - write_time}")
+            # print(f"mid, {time.time() - write_time}")
             self.next_idx = self.capacity
             self.integrate(self.mem_keys, episode_vec[available_space:])
-        print(f"end, {time.time() - write_time}")
+        # print(f"end, {time.time() - write_time}")
         return
 
         # End of write_memory

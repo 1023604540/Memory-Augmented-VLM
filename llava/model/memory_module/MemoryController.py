@@ -42,14 +42,15 @@ class EpisodicMemoryController:
             old_memory = old_memory.flatten(0, 1)
 
         Z = self.add_noise(new_memory, sigma=0.001)  # (N*P, D)
-        print(f"1, {time.time()-write_time}")
+        print(f"1, {time.time()-write_time}, z shape: {Z.shape}")
         M0_inverse = torch.linalg.pinv(old_memory)  # (D, N*P)
         print(f"2, {time.time()-write_time}")
         Temp = new_memory @ M0_inverse  # (N*P, N*P)
         print(f"3, {time.time()-write_time}")
-        Temp_inverse = torch.linalg.pinv(Temp)  # (N*P, N*P)
-        print(f"4, {time.time()-write_time}")
-        M_hat = Temp_inverse @ Z  # (N*P, D)
+        # Temp_inverse = torch.linalg.pinv(Temp)  # (N*P, N*P)
+        M_hat = torch.linalg.lstsq(Temp, Z).solution
+        print(f"4, {time.time()-write_time}, M_hat shape: {M_hat.shape}")
+        #M_hat = Temp_inverse @ Z  # (N*P, D)
         print(f"5, {time.time()-write_time}")
         self.mem_keys = M_hat
         return

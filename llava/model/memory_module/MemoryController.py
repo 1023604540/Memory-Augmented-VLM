@@ -6,7 +6,7 @@ import numpy as np
 import time
 
 class EpisodicMemoryController:
-    def __init__(self, mem_slots=32, mem_patch=196, mem_dim=1024, device='cpu', dtype=torch.float16):
+    def __init__(self, mem_slots=32, mem_patch=196, mem_dim=896, device='cpu', dtype=torch.float16):
         # Initialize memory matrices (keys and values could be same in this simple case)
         self.device = device
         self.original_dtype = dtype
@@ -24,8 +24,9 @@ class EpisodicMemoryController:
         # Zr = (Zq*M† + noise)M
         original_dtype = query_vec.dtype
         query_vec = query_vec.to(self.compute_dtype)  # (Nq, D)
-        print(f"Memory to be inversed: {self.mem_keys.shape}")
-        memory_inv = torch.linalg.pinv(self.mem_keys)  # (D, N*P)
+        cur_memory = self.mem_keys[:self.next_idx].flatten(0, 1)  # (N*P, D)
+        print(f"Memory to be inversed: {cur_memory}")
+        memory_inv = torch.linalg.pinv(cur_memory)  # (D, N*P)
         temp = query_vec @ memory_inv  # (Nq, N*P)
         temp_add_noise = self.add_noise(temp, sigma=0.001)  # (Nq, N*P)
         Z = temp_add_noise @ self.mem_keys  # (Nq, D)
@@ -52,7 +53,7 @@ class EpisodicMemoryController:
         # print(f"4, {time.time()-write_time}, M_hat shape: {M_hat.shape}")
         #M_hat = Temp_inverse @ Z  # (N*P, D)
         # print(f"5, {time.time()-write_time}")
-        self.mem_keys = M_hat
+        self.mem_keys = M_hat.view(self.capacity, self.mem_patch, self.mem_dim)
         return
 
     def add_noise(self, x, sigma=0.001):

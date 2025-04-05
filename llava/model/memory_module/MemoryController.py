@@ -14,6 +14,7 @@ class EpisodicMemoryController:
         self.mem_keys = torch.zeros((mem_slots, mem_patch, mem_dim), device=device, dtype=self.compute_dtype)
         self.mem_vals = torch.zeros((mem_slots, mem_patch, mem_dim), device=device, dtype=self.compute_dtype)
         self.capacity = mem_slots
+        self.mem_patch = mem_patch
         self.mem_dim = mem_dim
         # Track number of written slots or a pointer for FIFO
         self.next_idx = 0

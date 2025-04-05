@@ -32,7 +32,6 @@ class EpisodicMemoryController:
 
     def integrate(self, old_memory, new_memory):
         # M^ =(ZξM0†)†Zξ
-        write_time = time.time()
         old_memory = old_memory.to(self.compute_dtype)
         new_memory = new_memory.to(self.compute_dtype)
 
@@ -42,16 +41,16 @@ class EpisodicMemoryController:
             old_memory = old_memory.flatten(0, 1)
 
         Z = self.add_noise(new_memory, sigma=0.001)  # (N*P, D)
-        print(f"1, {time.time()-write_time}, z shape: {Z.shape}")
+        # print(f"1, {time.time()-write_time}, z shape: {Z.shape}")
         M0_inverse = torch.linalg.pinv(old_memory)  # (D, N*P)
-        print(f"2, {time.time()-write_time}, M0_inverse shape: {M0_inverse.shape}")
+        # print(f"2, {time.time()-write_time}, M0_inverse shape: {M0_inverse.shape}")
         Temp = new_memory @ M0_inverse  # (N*P, N*P)
-        print(f"3, {time.time()-write_time}")
+        # print(f"3, {time.time()-write_time}")
         # Temp_inverse = torch.linalg.pinv(Temp)  # (N*P, N*P)
         M_hat = torch.linalg.lstsq(Temp, Z).solution
-        print(f"4, {time.time()-write_time}, M_hat shape: {M_hat.shape}")
+        # print(f"4, {time.time()-write_time}, M_hat shape: {M_hat.shape}")
         #M_hat = Temp_inverse @ Z  # (N*P, D)
-        print(f"5, {time.time()-write_time}")
+        # print(f"5, {time.time()-write_time}")
         self.mem_keys = M_hat
         return
 
@@ -68,6 +67,7 @@ class EpisodicMemoryController:
         """
         Write a new episode vector into memory (with distributed update if needed).
         """
+        write_time = time.time()
         episode_vec = episode_vec.to(self.compute_dtype)
 
         if self.next_idx >= self.capacity:
@@ -88,9 +88,10 @@ class EpisodicMemoryController:
             for idx in range(available_space):
                 self.mem_keys[self.next_idx + idx] = episode_vec[idx]
                 self.mem_vals[self.next_idx + idx] = episode_vec[idx]
-
+            print(f"mid, {time.time() - write_time}")
             self.next_idx = self.capacity
             self.integrate(self.mem_keys, episode_vec[available_space:])
+        print(f"end, {time.time() - write_time}")
         return
 
         # End of write_memory

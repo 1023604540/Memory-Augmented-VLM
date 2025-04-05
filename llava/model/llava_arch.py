@@ -441,20 +441,20 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             new_image_features = []
             for idx, image_feat in enumerate(image_features):
                 if idx in video_idx_in_batch:
-                    print(f"before_2dpool = {time.time() - start}")
+                    #print(f"before_2dpool = {time.time() - start}")
                     new_image_features.append(self.get_2dPool(image_feat))
-                    print(f"after_2dpool = {time.time() - start}")
+                    #print(f"after_2dpool = {time.time() - start}")
                 else:
                     new_image_features.append(image_feat)
 
             image_features = new_image_features # [frame_num, 196, 3584]
-            print(f"before_memory_init = {time.time() - start}")
+            #print(f"before_memory_init = {time.time() - start}")
             memory = EpisodicMemoryController(mem_slots=32, mem_dim=image_features[0].shape[-1], device=self.device, dtype=image_features[0].dtype)
             for idx, image_feature in enumerate(image_features):
                 print(f"image_feature to be written:{image_feature.shape}")
-                print(f"before_write_time = {time.time() - start}")
+                #print(f"before_write_time = {time.time() - start}")
                 memory.write_memory(image_feature)
-                print(f"after_write_time = {time.time() - start}")
+                #print(f"after_write_time = {time.time() - start}")
 
             # Key Memory Selection Module
             for index, image_feature in enumerate(image_features):
@@ -503,15 +503,18 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 query_feature = self.get_model().embed_tokens(query)
                 # print(query_feature.shape)  # [1, n, 3584]
                 retrieved_memory = memory.retrieve_memory(query_feature)
-                print(f"retrieved_memory: {retrieved_memory.shape}, after retrieve_time = {time.time() - start}")
-                print(f"Memory in the bank: {memory.mem_keys.shape}")
+                #print(f"retrieved_memory: {retrieved_memory.shape}, after retrieve_time = {time.time() - start}")
+                #print(f"Memory in the bank: {memory.mem_keys.shape}")
                 # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
                 self.get_model().memory_readout_cache = retrieved_memory.detach()
                 image_feature_size = image_feature.shape[0]
-                selected_indices = torch.linspace(0, image_feature_size - 1, steps=32).long()
-                print(f"selected_indices: {selected_indices}, after select_time = {time.time() - start}")
-                image_features[index] = image_feature[selected_indices]
-                print(f"image_features[index] shape: {image_features[index].shape}")
+                if image_feature_size > 32:
+                    selected_indices = torch.linspace(0, image_feature_size - 1, steps=32).long()
+                    print(f"selected_indices: {selected_indices}")
+                    image_features[index] = image_feature[selected_indices]
+                else:
+                    print(f"selected_indices not needed: {image_feature_size}")
+                # print(f"image_features[index] shape: {image_features[index].shape}")
                 # print(retrieved_memory)
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

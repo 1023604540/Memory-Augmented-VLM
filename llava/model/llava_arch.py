@@ -518,8 +518,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     image_features[index] = image_feature[selected_indices]
                 else:
                     print(f"selected_indices not needed: {image_feature_size}")
-                if torch.isnan(image_feature).any():
-                    print(f"NaN detected in image_feature: {image_feature}")
+                # if torch.isnan(image_feature).any():
+                #     print(f"NaN detected in image_feature: {image_feature}")
                 # print(f"image_features[index] shape: {image_features[index].shape}")
                 # print(retrieved_memory)
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

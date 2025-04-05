@@ -24,6 +24,7 @@ class EpisodicMemoryController:
         # Zr = (Zq*M† + noise)M
         original_dtype = query_vec.dtype
         query_vec = query_vec.to(self.compute_dtype)  # (Nq, D)
+        rank_print(f"Memory to be inversed: {self.mem_keys.shape}")
         memory_inv = torch.linalg.pinv(self.mem_keys)  # (D, N*P)
         temp = query_vec @ memory_inv  # (Nq, N*P)
         temp_add_noise = self.add_noise(temp, sigma=0.001)  # (Nq, N*P)
@@ -67,7 +68,7 @@ class EpisodicMemoryController:
         """
         Write a new episode vector into memory (with distributed update if needed).
         """
-        write_time = time.time()
+        # write_time = time.time()
         episode_vec = episode_vec.to(self.compute_dtype)
 
         if self.next_idx >= self.capacity:

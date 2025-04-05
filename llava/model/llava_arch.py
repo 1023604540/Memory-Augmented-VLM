@@ -501,7 +501,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 query = extract_user_query_tokens(cur_input_ids)
                 rank_print(f"the query is : {query}")
                 query_feature = self.get_model().embed_tokens(query)
-                rank_print(query_feature.shape)  # [1, n, 3584]
+                rank_print(f"query shape: {query_feature.shape}")  # [n, 3584]
                 retrieved_memory = memory.retrieve_memory(query_feature)
                 if torch.isnan(retrieved_memory).any():
                     print(f"NaN detected in retrieved_memory: {retrieved_memory}")

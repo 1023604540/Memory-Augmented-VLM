@@ -34,6 +34,7 @@ from llava.model.memory_module.segment import segment, adjusted_segment
 import heapq
 import numpy as np
 from llava.model.memory_module.MemoryController import EpisodicMemoryController
+import time
 
 
 ################################################################
@@ -364,7 +365,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
 
     def prepare_inputs_labels_for_multimodal(self, input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities=["image"], image_sizes=None):
-
+        start = time.time()
         vision_tower = self.get_vision_tower()
         # rank_print(modalities)
         if vision_tower is None or images is None or input_ids.shape[1] == 1:
@@ -404,6 +405,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #print(f"boundaries:{len(boundaries)}")
                 #print(f"boundaries:{boundaries}")
                 encoded_features = self.encode_images(image)
+                print(f"after encoding time: {time.time() - start}")
                 # image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 # for image_segment in image_segments:
                 #     # print(f"Image segment shape : {image_segment.shape}")
@@ -434,7 +436,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             split_sizes = [image.shape[0] for image in images_list]
             projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
             image_features = torch.split(projected_feature, split_sizes)
-            rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}")  # [frame_num, 729, 3584]
+            rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]
 
             new_image_features = []
             for idx, image_feat in enumerate(image_features):
@@ -449,6 +451,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             for idx, image_feature in enumerate(image_features):
                 print(f"image_feature to be written:{image_feature.shape}")
                 memory.write_memory(image_feature)
+                print(f"after_write_time = {time.time() - start}")
 
             # Key Memory Selection Module
             for index, image_feature in enumerate(image_features):
@@ -497,13 +500,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 query_feature = self.get_model().embed_tokens(query)
                 # print(query_feature.shape)  # [1, n, 3584]
                 retrieved_memory = memory.retrieve_memory(query_feature)
-                print(f"retrieved_memory: {retrieved_memory.shape}")
+                print(f"retrieved_memory: {retrieved_memory.shape}, after retrieve_time = {time.time() - start}")
                 print(f"Memory in the bank: {memory.mem_keys.shape}")
                 # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
                 self.get_model().memory_readout_cache = retrieved_memory.detach()
                 image_feature_size = image_feature.shape[0]
                 selected_indices = torch.linspace(0, image_feature_size - 1, steps=32).long()
-                print(f"selected_indices: {selected_indices}")
+                print(f"selected_indices: {selected_indices}, after select_time = {time.time() - start}")
                 image_features[index] = image_feature[selected_indices]
                 print(f"image_features[index] shape: {image_features[index].shape}")
                 # print(retrieved_memory)
@@ -787,7 +790,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             position_ids[:, :split_position] += left_add
             position_ids[:, split_position:] += right_add
         # import pdb; pdb.set_trace()
-        rank_print("Finish preparing")
+        rank_print(f"Finish preparing time {time.time() - start}")
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):

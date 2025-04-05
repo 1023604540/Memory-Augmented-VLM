@@ -441,7 +441,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             new_image_features = []
             for idx, image_feat in enumerate(image_features):
                 if idx in video_idx_in_batch:
+                    print(f"before_2dpool = {time.time() - start}")
                     new_image_features.append(self.get_2dPool(image_feat))
+                    print(f"after_2dpool = {time.time() - start}")
                 else:
                     new_image_features.append(image_feat)
 

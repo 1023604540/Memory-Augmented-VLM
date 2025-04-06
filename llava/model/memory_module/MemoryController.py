@@ -27,10 +27,8 @@ class EpisodicMemoryController:
         query_vec = query_vec.to(self.compute_dtype)  # (Nq, D)
         cur_memory = self.mem_keys[:self.next_idx].flatten(0, 1)  # (N*P, D)
         try:
-            # Try computing the pseudoinverse with regularization
-            reg = 1e-4
-            eye = torch.eye(cur_memory.shape[1], device=cur_memory.device, dtype=cur_memory.dtype)
-            memory_inv = torch.linalg.pinv(cur_memory + reg * eye)
+            # Try computing the pseudoinverse
+            memory_inv = torch.linalg.pinv(cur_memory)
         except Exception as e:
             print(f"[Warning] Failed to compute pseudoinverse: {e}, Memory to be inversed: {cur_memory.shape} ")
             print("[Info] Falling back to zero memory response.")

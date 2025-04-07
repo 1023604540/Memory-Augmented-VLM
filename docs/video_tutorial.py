@@ -121,7 +121,7 @@ print("load video")
 # Load and process video
 video_path = "docs/needle_32.mp4"
 # video_frames = load_video(video_path, 64)
-video_frames = load_video(video_path, 19)
+video_frames = load_video(video_path, 128)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []
 frames = image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()
@@ -158,7 +158,7 @@ image_tensors.append(frames)
 # Prepare conversation input
 conv_template = "qwen_1_5"
 
-question = f"{DEFAULT_IMAGE_TOKEN}\n Tell me what is the man doing in the video?"
+question = f"{DEFAULT_IMAGE_TOKEN}\n What is the content of this video?"
 conv = copy.deepcopy(conv_templates[conv_template])
 conv.append_message(conv.roles[0], question)
 conv.append_message(conv.roles[1], None)

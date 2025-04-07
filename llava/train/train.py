@@ -159,6 +159,14 @@ class TrainingArguments(transformers.TrainingArguments):
     lora_bias: str = "none"
     mm_projector_lr: Optional[float] = None
     mm_vision_tower_lr: Optional[float] = None
+    memory_transformer_lr: Optional[float] = field(
+        default=None,
+        metadata={"help": "LR for the recurrent_memory_transformer module."},
+    )
+    memory_key_value_lr: Optional[float] = field(
+        default=None,
+        metadata={"help": "LR for memory_key_projs/memory_value_projs modules."},
+    )
     group_by_varlen: bool = field(default=False)
     group_by_modality_length: bool = field(default=False)
     group_by_modality_length_auto: bool = field(default=False)
@@ -1707,14 +1715,14 @@ def train(attn_implementation=None):
                 if substr in n
             )
 
-        for part in ["vision_tower", "vision_resampler", "mm_projector", "memory_key_projs", "memory_value_projs"]:
+        for part in ["vision_tower", "vision_resampler", "mm_projector", "memory_key_projs", "memory_value_projs", "recurrent_memory_transformer"]:
             rank0_print(f"{part} params: {param_count_by_substr(part) / 1e6:.2f} M")
 
         # Everything else goes into "language_model"
         lm_params = sum(
             p.ds_numel if hasattr(p, "ds_numel") else p.numel()
             for n, p in model.named_parameters()
-            if not any(x in n for x in ["vision_tower", "vision_resampler", "mm_projector", "memory_value_projs", "memory_key_projs"])
+            if not any(x in n for x in ["vision_tower", "vision_resampler", "mm_projector", "memory_value_projs", "memory_key_projs", "recurrent_memory_transformer"])
         )
         rank0_print(f"language_model params: {lm_params / 1e6:.2f} M")
         ##########

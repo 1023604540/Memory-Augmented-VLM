@@ -33,7 +33,7 @@ from llava.model.memory_module.memory_builder import NeuralTuringMachine, Multim
 from llava.model.memory_module.segment import segment, adjusted_segment
 import heapq
 import numpy as np
-from llava.model.memory_module.MemoryController import EpisodicMemoryController
+from llava.model.memory_module.MemoryController import TransformerProjector
 import time
 
 
@@ -102,25 +102,16 @@ class LlavaMetaModel:
             if "unpad" in getattr(config, "mm_patch_merge_type", ""):
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
-        # self.mm_input_dim = getattr(config, "ntm_hidden_size", 1152)
-        # compress_Turing_hidden_dim = getattr(config, "compress_Turing_hidden_dim", 32)
-        # # Now init in memory_builder
-        # self.attention_model = NeuralTuringMachine(self.mm_input_dim, compress_Turing_hidden_dim).to(self.device)
-        # self.memory_mlp = nn.Sequential(
-        #     nn.Linear(1152, 1152),
-        #     nn.GELU(),
-        #     nn.Linear(1152, 1152),
-        # ).to(self.device)
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
         kv_hidden_dim = getattr(config, "kv_hidden_dim", 128)
         self.memory_proj_layers = getattr(config, "injected_layers", 24)
         self.memory_key_projs = nn.ModuleList([
             nn.Linear(LLM_hidden_dim, kv_hidden_dim).to(dtype=self.dtype,
-                                                         device=self.device) for _ in range(self.memory_proj_layers)
+                                                        device=self.device) for _ in range(self.memory_proj_layers)
         ])
         self.memory_value_projs = nn.ModuleList([
             nn.Linear(LLM_hidden_dim, kv_hidden_dim).to(dtype=self.dtype,
-                                                         device=self.device) for _ in range(self.memory_proj_layers)
+                                                        device=self.device) for _ in range(self.memory_proj_layers)
         ])
 
         def print_grad(grad):
@@ -137,6 +128,21 @@ class LlavaMetaModel:
             proj.bias.register_hook(print_grad)
 
         self.memory_readout_cache = None
+        self.recurrent_memory_transformer = TransformerProjector().to(self.device)
+
+        def print_grad(grad):
+            print("Gradient:", grad)
+
+        # Register hooks for memory_key_projs
+        for proj in self.memory_key_projs:
+            proj.weight.register_hook(print_grad)
+            proj.bias.register_hook(print_grad)
+
+        # Register hooks for memory_value_projs
+        for proj in self.memory_value_projs:
+            proj.weight.register_hook(print_grad)
+            proj.bias.register_hook(print_grad)
+
 
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
@@ -254,6 +260,7 @@ def unpad_image(tensor, original_size):
 
 
 class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
+
 
     @abstractmethod
     def get_model(self):
@@ -401,38 +408,32 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_images.append(image)
                     non_video_positions.append(idx)
                     continue
-                # boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
-                #print(f"boundaries:{len(boundaries)}")
-                #print(f"boundaries:{boundaries}")
-                # Encode image feature separately in case of large frame number
-                if image.shape[0] > 200:
-                    image_encode_seg = []
-                    start = 0
-                    for stop in range(200, image.shape[0], 200):
-                        encoded_chunk = self.encode_images(image[start:stop])
-                        image_encode_seg.append(encoded_chunk)
-                        start = stop
 
-                    # Handle any leftover slice
-                    if start < image.shape[0]:
-                        encoded_chunk = self.encode_images(image[start:])
-                        image_encode_seg.append(encoded_chunk)
+                # Init recurrent memory module
+                boundaries = adjusted_segment(image.mean(dim=1).flatten(1, 2))
 
-                    encoded_features = torch.cat(image_encode_seg, dim=0)
-                else:
-                    encoded_features = self.encode_images(image)
-                # print(f"after encoding time: {time.time() - start}")
-                # image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
-                # for image_segment in image_segments:
-                #     # print(f"Image segment shape : {image_segment.shape}")
-                #     memory = EpisodicMemoryController(mem_slots=32, mem_dim=image_segment.shape[-1])
-                #     memory.write_memory(image_segment)
+                recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
+                # Clear the memory cache to avoid memory leak across videos
+                updated_image_segment = None
+                recurrent_model.memory_cache = []
+                encoded_features = self.encode_images(image)
+                print(f"Encoded features shape : {encoded_features.shape}, {encoded_features[0].shape}")
+                encoded_features = encoded_features.requires_grad_()
 
+                image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
+                for image_segment in image_segments:
+                    print(f"Image segment shape : {image_segment.shape}")
+                    self.get_model().memory_readout_cache, updated_image_segment = recurrent_model(image_segment)
+                    print(f"Recurrent memory shape : {updated_image_segment.shape}")
 
-                # rank0_print(f"cat_segment_memory shape : {cat_segment_memory.shape}")
+                # if torch.isnan(recurrent_memory).any():
+                #    raise ValueError("NaNs detected in recurrent_memory!")
+                # if torch.isnan(updated_image_segment).any():
+                #    raise ValueError("NaNs detected in updated_image_segment!")
+
                 # rank0_print(
-                #     f"[attention_model] output requires_grad={cat_segment_memory.requires_grad}, grad_fn={cat_segment_memory.grad_fn}")
-                images_list[idx] = encoded_features
+                #     f"[updated_image_segment] output requires_grad={updated_image_segment.requires_grad}, grad_fn={updated_image_segment.grad_fn}")
+                images_list[idx] = updated_image_segment
 
             # Now process all non-video images together.
             if non_video_images:
@@ -464,80 +465,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     new_image_features.append(image_feat)
 
             image_features = new_image_features # [frame_num, 196, 3584]
-            #print(f"before_memory_init = {time.time() - start}")
-            memory = EpisodicMemoryController(mem_slots=32, mem_patch=196, mem_dim=image_features[0].shape[-1], device=self.device, dtype=image_features[0].dtype)
-            for idx, image_feature in enumerate(image_features):
-                print(f"image_feature to be written:{image_feature.shape}")
-                #print(f"before_write_time = {time.time() - start}")
-                memory.write_memory(image_feature)
-                #print(f"after_write_time = {time.time() - start}")
 
-            # Key Memory Selection Module
-            for index, image_feature in enumerate(image_features):
-                # print(input_ids.shape)
-                cur_input_ids = input_ids[index]
-                # print(f"cur_input_ids: shape {cur_input_ids.shape}, content {cur_input_ids}")
-
-                ############################## Conversation Template
-                # < | im_start | > system
-                # You are a helpful assistant. < | im_end | >
-                # < | im_start | > user
-                # < image >
-                # tell me what is going on in this video. < | im_end | >
-                # < | im_start | > assistant
-                ##############################
-                IM_END_TOKEN_ID = 151645  # "<|im_end|>"
-                IMAGE_TOKEN_ID = -200  # "<image>"
-
-                def extract_user_query_tokens(input_ids, image_token_id=IMAGE_TOKEN_ID,
-                                              im_end_token_id=IM_END_TOKEN_ID):
-                    """
-                    Extract tokens from the user message that come after the <image> token
-                    and before the next <|im_end|> token.
-                    """
-                    # Ensure we work with a list of ints.
-                    if isinstance(input_ids, torch.Tensor):
-                        tokens = input_ids.tolist()
-                    else:
-                        tokens = input_ids
-
-                    try:
-                        # Find the first occurrence of the <image> token.
-                        idx_image = tokens.index(image_token_id)
-                        # Then find the next occurrence of the <|im_end|> token after the <image> token.
-                        idx_im_end = tokens.index(im_end_token_id, idx_image)
-                        # Extract tokens after the <image> token up to (but not including) the <|im_end|> token.
-                        query_tokens = tokens[idx_image + 2: idx_im_end]  # Skip the <image> token and the space token.
-                        query_tensor = torch.tensor(query_tokens, dtype=torch.long).to(self.device)
-                        return query_tensor
-                    except ValueError:
-                        # If the expected tokens are not found, return an empty list.
-                        return []
-
-                query = extract_user_query_tokens(cur_input_ids)
-                rank_print(f"the query is : {query}")
-                query_feature = self.get_model().embed_tokens(query)
-                rank_print(f"query shape: {query_feature.shape}")  # [n, 3584]
-                retrieved_memory = memory.retrieve_memory(query_feature)
-                if torch.isnan(retrieved_memory).any():
-                    print(f"NaN detected in retrieved_memory: {retrieved_memory}")
-
-                print(f"retrieved_memory: {retrieved_memory.shape}")
-
-                #print(f"Memory in the bank: {memory.mem_keys.shape}")
-                # image_features[index] = retrieved_memory.unsqueeze(0)  # Should be （N, P, D)
-                self.get_model().memory_readout_cache = retrieved_memory.detach()
-                image_feature_size = image_feature.shape[0]
-                if image_feature_size > 32:
-                    selected_indices = torch.linspace(0, image_feature_size - 1, steps=32).long()
-                    print(f"selected_indices: {selected_indices}")
-                    image_features[index] = image_feature[selected_indices]
-                else:
-                    print(f"selected_indices not needed: {image_feature_size}")
-                # if torch.isnan(image_feature).any():
-                #     print(f"NaN detected in image_feature: {image_feature}")
-                # print(f"image_features[index] shape: {image_features[index].shape}")
-                # print(retrieved_memory)
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")

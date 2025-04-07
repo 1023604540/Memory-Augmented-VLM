@@ -23,9 +23,9 @@ from memory import KMeansMemory
 print("load model")
 warnings.filterwarnings("ignore")
 # Load the OneVision model
-pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/checkpoints/llava-onevision-0.5b-memory_adapter_larimar_FAU"
+# pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/checkpoints/llava-onevision-0.5b-memory_adapter_larimar_FAU"
 #pretrained = "lmms-lab/llava-onevision-qwen2-7b-ov"   # Use this for 7B model
-#pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
+pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
 model_name = "llava_qwen"
 device = "cuda"
 device_map = "auto"
@@ -127,31 +127,6 @@ image_tensors = []
 frames = image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()
 print(frames.shape) # torch.Size([16, 3, 384, 384])
 image_tensors.append(frames)
-
-# memory_inserted = False
-# fifo = False
-# kmeans = False
-# if memory_inserted:
-#     ##### Insert memory module #####
-#     print(len(image_tensors)) # 1
-#     print(f"Shape: {image_tensors[0].shape}, Dtype: {image_tensors[0].dtype}")  # Shape: torch.Size([16, 3, 384, 384]), Dtype: torch.float16
-#     image_tensors = torch.cat(image_tensors, dim=0)
-#     if fifo:
-#         fifo_memory = FIFOMemory(max_size=10, tensor_shape=(3, 384, 384), device=device)
-#         fifo_memory.add_tensor(image_tensors)
-#         fifo_output = fifo_memory.get_tensors()
-#
-#     if kmeans:
-#         kmeans_memory = KMeansMemory(max_size=10, tensor_shape=(3, 384, 384), device=device)
-#         kmeans_memory.add_tensor(image_tensors)
-#         kmeans_output = kmeans_memory.memory
-#
-#     image_tensors = (fifo_output + kmeans_output) if fifo and kmeans else (
-#         fifo_output if fifo else kmeans_output if kmeans else image_tensors)
-#     image_tensors = [image_tensors.to(dtype=torch.float16)]
-#
-#     print(f"Shape: {image_tensors[0].shape}, Dtype: {image_tensors[0].dtype}")
-    ##### Insert memory module #####
 
 
 

@@ -1682,6 +1682,10 @@ def train(attn_implementation=None):
                 for name, param in model.named_parameters():
                     if "vision_tower" in name:
                         param.requires_grad_(True)
+            if "recurrent_model" in tunable_parts:
+                rank0_print("Unfreezing recurrent_model")
+                for p in model.get_model().recurrent_memory_transformer.parameters():
+                    p.requires_grad = True
             if "mm_language_model" in tunable_parts:
                 for name, param in model.named_parameters():
                     if "vision_tower" not in name and "mm_projector" not in name and "vision_resampler" not in name:

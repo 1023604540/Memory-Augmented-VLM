@@ -23,9 +23,9 @@ from memory import KMeansMemory
 print("load model")
 warnings.filterwarnings("ignore")
 # Load the OneVision model
-#pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/checkpoints/llava-onevision-google_siglip-so400m-patch14-384-Qwen_Qwen2-7B-Instruct-memory_adapter_no_compression——2nd"
+pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/checkpoints/llava-onevision-0.5b-memory_adapter_larimar_FAU"
 #pretrained = "lmms-lab/llava-onevision-qwen2-7b-ov"   # Use this for 7B model
-pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
+#pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
 model_name = "llava_qwen"
 device = "cuda"
 device_map = "auto"

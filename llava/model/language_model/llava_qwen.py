@@ -156,7 +156,8 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         if past_key_values is not None:
             if self.model.memory_readout_cache is not None:
                 print("Memory readout injecting")
-                memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device)
+                memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device).flatten(0, 1)
+                print(f"memory_readout shape, {memory_readout.shape}")
                 self.T_mem = memory_readout.shape[0]  # memory tokens
 
                 # === 1. Inject past_key_values ===

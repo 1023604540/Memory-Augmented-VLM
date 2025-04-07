@@ -404,7 +404,23 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # boundaries = adjusted_segment(image.mean(dim=1).flatten(1,2))
                 #print(f"boundaries:{len(boundaries)}")
                 #print(f"boundaries:{boundaries}")
-                encoded_features = self.encode_images(image)
+                # Encode image feature separately in case of large frame number
+                if image.shape[0] > 200:
+                    image_encode_seg = []
+                    start = 0
+                    for stop in range(200, image.shape[0], 200):
+                        encoded_chunk = self.encode_images(image[start:stop])
+                        image_encode_seg.append(encoded_chunk)
+                        start = stop
+
+                    # Handle any leftover slice
+                    if start < image.shape[0]:
+                        encoded_chunk = self.encode_images(image[start:])
+                        image_encode_seg.append(encoded_chunk)
+
+                    encoded_features = torch.cat(image_encode_seg, dim=0)
+                else:
+                    encoded_features = self.encode_images(image)
                 # print(f"after encoding time: {time.time() - start}")
                 # image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 # for image_segment in image_segments:

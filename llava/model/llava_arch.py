@@ -415,6 +415,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 updated_image_segment = None
+                recurrent_memory = None
                 recurrent_model.memory_cache = []
                 encoded_features = self.encode_images(image)
                 print(f"Encoded features shape : {encoded_features.shape}, {encoded_features[0].shape}")
@@ -423,8 +424,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
                     print(f"Image segment shape : {image_segment.shape}")
-                    self.get_model().memory_readout_cache, updated_image_segment = recurrent_model(image_segment)
-                    print(f"Recurrent memory shape : {updated_image_segment.shape}")
+                    recurrent_memory, updated_image_segment = recurrent_model(image_segment)
+                    print(f"updated_image_segment shape : {updated_image_segment.shape}")
+                    print(f"recurrent_memory shape : {recurrent_memory.shape}")
 
                 # if torch.isnan(recurrent_memory).any():
                 #    raise ValueError("NaNs detected in recurrent_memory!")
@@ -433,7 +435,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 # rank0_print(
                 #     f"[updated_image_segment] output requires_grad={updated_image_segment.requires_grad}, grad_fn={updated_image_segment.grad_fn}")
-                images_list[idx] = updated_image_segment
+                images_list[idx] = [recurrent_memory, updated_image_segment]
 
             # Now process all non-video images together.
             if non_video_images:
@@ -450,9 +452,18 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     images_list[pos] = enc
 
             # Apply mm_projector
-            split_sizes = [image.shape[0] for image in images_list]
-            projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
-            image_features = torch.split(projected_feature, split_sizes)
+            # split_sizes = [image.shape[0] for image in images_list]
+            # projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
+            # image_features = torch.split(projected_feature, split_sizes)
+
+            # Now support only batch size of 1
+            split_sizes = [image.shape[0] for image in images_list[0]]
+            projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list[0]], dim=0))
+            proj_result = torch.split(projected_feature, split_sizes, dim=0)
+            image_features = [proj_result[1]]
+            self.get_model().memory_readout_cache = proj_result[0]
+
+            print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
             # rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]
 
             new_image_features = []

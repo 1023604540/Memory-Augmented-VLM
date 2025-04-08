@@ -425,6 +425,9 @@ class LLaVATrainer(Trainer):
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
+
+            for i, group in enumerate(self.optimizer.param_groups):
+                print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
             if optimizer_cls.__name__ == "Adam8bit":
                 import bitsandbytes
 

@@ -428,20 +428,32 @@ class LLaVATrainer(Trainer):
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
-            #
-            # for i, group in enumerate(self.optimizer.param_groups):
-            #     print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
+
             for i, group in enumerate(self.optimizer.param_groups):
-                group_param_names = []
-                for p in group["params"]:
-                    for name, param in opt_model.named_parameters():
-                        if p is param:
-                            group_param_names.append(name)
-                            break  # Only need first match
+                print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
+            # Group 0 LLM weights
+            # Group 1 LLM bias
+            # Group 2 []
+            # Group 3 []
+            # Group 4 recurrent_memory_transformer weights
+            # Group 5 recurrent_memory_transformer bias
+            # Group 6 memory_key_projs weights
+            # Group 7 memory_key_projs bias
+            # Group 8 memory_value_projs weights
+            # Group 9 memory_value_projs bias
 
-                print(
-                    f"[create_optimizer] Group {i} | LR = {group['lr']} | WD = {group.get('weight_decay', 'N/A')} | Params: {group_param_names}")
-
+            ###### lr detailed print
+            # for i, group in enumerate(self.optimizer.param_groups):
+            #     group_param_names = []
+            #     for p in group["params"]:
+            #         for name, param in opt_model.named_parameters():
+            #             if p is param:
+            #                 group_param_names.append(name)
+            #                 break  # Only need first match
+            #
+            #     print(
+            #         f"[create_optimizer] Group {i} | LR = {group['lr']} | WD = {group.get('weight_decay', 'N/A')} | Params: {group_param_names}")
+            ###### lr detailed print
             if optimizer_cls.__name__ == "Adam8bit":
                 import bitsandbytes
 

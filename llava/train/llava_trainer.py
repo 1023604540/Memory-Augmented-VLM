@@ -428,9 +428,20 @@ class LLaVATrainer(Trainer):
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
-
+            #
+            # for i, group in enumerate(self.optimizer.param_groups):
+            #     print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
             for i, group in enumerate(self.optimizer.param_groups):
-                print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
+                group_param_names = []
+                for p in group["params"]:
+                    for name, param in opt_model.named_parameters():
+                        if p is param:
+                            group_param_names.append(name)
+                            break  # Only need first match
+
+                print(
+                    f"[create_optimizer] Group {i} | LR = {group['lr']} | WD = {group.get('weight_decay', 'N/A')} | Params: {group_param_names}")
+
             if optimizer_cls.__name__ == "Adam8bit":
                 import bitsandbytes
 

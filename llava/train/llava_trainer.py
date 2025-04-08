@@ -240,6 +240,7 @@ class LengthGroupedSampler(Sampler):
 class LLaVATrainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        print("Using LLaVATrainer, Init function is working")
         self.optimizer = None
     def create_accelerator_and_postprocess(self):
         grad_acc_kwargs = {"num_steps": self.args.gradient_accumulation_steps}

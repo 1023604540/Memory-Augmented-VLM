@@ -488,7 +488,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 # print(f"Encoded features shape : {encoded_features.shape}")
                 # encoded_features = encoded_features.requires_grad_()
-
+                rank_print(f"boundaries : {boundaries}")
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
                     rank_print(f"Image segment shape : {image_segment.shape}")

@@ -166,7 +166,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         #     for layer_idx, (key, value) in enumerate(past_key_values):
         #         print(f"Layer {layer_idx}: key shape = {key.shape}, value shape = {value.shape}")
         # print("after")
-        # print("self.model.memory_readout_cache", self.model.memory_readout_cache)
+        print("self.model.memory_readout_cache", self.model.memory_readout_cache)
         if past_key_values is not None:
             if self.model.memory_readout_cache is not None:
                 print("Memory readout injecting")

@@ -448,9 +448,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
 
             # # Now support only batch size of 1
-            split_sizes = [image.shape for image in images_list]
-            projected_feature = self.encode_images(torch.cat([image for image in images_list], dim=0))
-            image_features = torch.split(projected_feature, split_sizes, dim=0)
+            concat_images = torch.cat([image for image in images_list], dim=0)
+            split_sizes = [image.shape[0] for image in images_list]
+            encoded_image_features = self.encode_images(concat_images)
+            encoded_image_features = torch.split(encoded_image_features, split_sizes)
             # self.get_model().memory_readout_cache = proj_result[0]
 
             # print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
@@ -458,7 +459,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
 
             new_image_features = []
-            for idx, image_feat in enumerate(image_features):
+            for idx, image_feat in enumerate(encoded_image_features):
                 if idx in video_idx_in_batch:
                     #print(f"before_2dpool = {time.time() - start}")
                     new_image_features.append(self.get_2dPool(image_feat))

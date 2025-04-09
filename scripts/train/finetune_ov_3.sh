@@ -1,6 +1,9 @@
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0
 export NCCL_SOCKET_IFNAME=ib0
+export NCCL_P2P_LEVEL=NVL
+
+
 #export GLOO_SOCKET_IFNAME=ib0
 #
 #export NCCL_TIMEOUT=3600  # 1 hour

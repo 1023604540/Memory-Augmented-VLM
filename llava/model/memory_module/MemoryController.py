@@ -8,10 +8,10 @@ from transformers.activations import ACT2FN
 
 
 class Config:
-    mm_hidden_size = 1152
+    mm_hidden_size = 896  # Hidden size 896 for 0.5b, 3584 for 7b
     mm_hidden_act = "relu"
     mm_num_attention_heads = 8
-    patch_size = 729  # Patch size
+    patch_size = 196  # Patch size
     mm_attention_probs_dropout_prob = 0.1  # Attention dropout
     mm_layer_norm_eps = 1e-12  # LayerNorm epsilon
     mm_hidden_dropout_prob = 0.1  # Residual dropout

@@ -453,9 +453,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list[0]], dim=0))
             proj_result = torch.split(projected_feature, split_sizes, dim=0)
             image_features = [proj_result[1]]
-            self.memory_readout_cache = proj_result[0]
+            self.get_model().memory_readout_cache = proj_result[0]
 
-            print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.memory_readout_cache.shape}")
+            print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
             # rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]
 
             new_image_features = []

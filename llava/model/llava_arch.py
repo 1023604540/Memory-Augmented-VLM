@@ -406,7 +406,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 recurrent_memory = None
                 recurrent_model.memory_cache = []
                 encoded_features = self.encode_images(image)
-                print(f"Encoded features shape : {encoded_features.shape}")
+                # print(f"Encoded features shape : {encoded_features.shape}")
                 # encoded_features = encoded_features.requires_grad_()
 
                 # image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
@@ -453,7 +453,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list[0]], dim=0))
             proj_result = torch.split(projected_feature, split_sizes, dim=0)
             image_features = [proj_result[1]]
-            self.get_model().memory_readout_cache = proj_result[0]
+            self.memory_readout_cache = proj_result[0]
 
             print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
             # rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]

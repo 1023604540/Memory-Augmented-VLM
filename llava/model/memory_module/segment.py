@@ -95,7 +95,7 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=15, max_distance=
         boundaries.insert(0, 0)
     # Remove duplicates and sort
     boundaries = sorted(set(boundaries))
-    print("boundaries before adjusted: ", boundaries)
+    # ("boundaries before adjusted: ", boundaries)
 
     # Enforce minimum and maximum distance constraints
     # Ensure that the first and last indices are included
@@ -122,7 +122,7 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=15, max_distance=
         adjusted_boundaries.append(b)
     if boundaries[-1] not in adjusted_boundaries:
         adjusted_boundaries.append(boundaries[-1])
-    print("boundaries after adjusted: ", adjusted_boundaries)
+    # print("boundaries after adjusted: ", adjusted_boundaries)
 
     return adjusted_boundaries
 

@@ -455,7 +455,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             image_features = [proj_result[1]]
             self.memory_readout_cache = proj_result[0]
 
-            print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
+            print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.memory_readout_cache.shape}")
             # rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]
 
             new_image_features = []

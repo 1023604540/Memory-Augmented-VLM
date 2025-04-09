@@ -294,7 +294,7 @@ class TransformerProjector(nn.Module):
         updated_image_features = hidden_4d[:, self.num_memory_tokens :, :, :]  # => (1, F, P, D)
 
         # (6) Cache new memory tokens
-        self.memory_cache.append(new_memory_tokens.squeeze(0).detach())
+        self.memory_cache.append(new_memory_tokens.squeeze(0))  # Should i have detach here? No!
 
         # Return new memory tokens (or updated image if you prefer)
         return new_memory_tokens.squeeze(0), updated_image_features.squeeze(0)

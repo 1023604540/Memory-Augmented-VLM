@@ -235,7 +235,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         # We'll do one pass over the L layers.
         for i in range(L):
             old_key, old_value = old_cache[i]
-            print(f"old_key shape, {old_key.shape}, old_value shape, {old_value.shape}")
+            # print(f"old_key shape, {old_key.shape}, old_value shape, {old_value.shape}")
 
             # If there's no old key/value, define them as zero-length on dim=2
             if old_key is None or old_value is None:

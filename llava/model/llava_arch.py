@@ -409,21 +409,23 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # print(f"Encoded features shape : {encoded_features.shape}")
                 # encoded_features = encoded_features.requires_grad_()
 
-                # image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
-                # for image_segment in image_segments:
-                #     print(f"Image segment shape : {image_segment.shape}")
-                #     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-                #     print(f"updated_image_segment shape : {updated_image_segment.shape}")
-                #     print(f"recurrent_memory shape : {recurrent_memory.shape}")
-                #
-                # # if torch.isnan(recurrent_memory).any():
-                # #    raise ValueError("NaNs detected in recurrent_memory!")
-                # # if torch.isnan(updated_image_segment).any():
-                # #    raise ValueError("NaNs detected in updated_image_segment!")
-                #
-                # # rank0_print(
-                # #     f"[updated_image_segment] output requires_grad={updated_image_segment.requires_grad}, grad_fn={updated_image_segment.grad_fn}")
-                # images_list[idx] = [recurrent_memory, updated_image_segment]
+                image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
+                for image_segment in image_segments:
+                    print(f"Image segment shape : {image_segment.shape}")
+                    rank_print(torch.cuda.memory_allocated() / 1024 ** 2, "MB allocated")
+                    rank_print(torch.cuda.memory_reserved() / 1024 ** 2, "MB reserved")
+                    recurrent_memory, updated_image_segment = recurrent_model(image_segment)
+                    print(f"updated_image_segment shape : {updated_image_segment.shape}")
+                    print(f"recurrent_memory shape : {recurrent_memory.shape}")
+
+                # if torch.isnan(recurrent_memory).any():
+                #    raise ValueError("NaNs detected in recurrent_memory!")
+                # if torch.isnan(updated_image_segment).any():
+                #    raise ValueError("NaNs detected in updated_image_segment!")
+
+                # rank0_print(
+                #     f"[updated_image_segment] output requires_grad={updated_image_segment.requires_grad}, grad_fn={updated_image_segment.grad_fn}")
+                images_list[idx] = [recurrent_memory, updated_image_segment]
 
 
                 images_list[idx] = [encoded_features, encoded_features]

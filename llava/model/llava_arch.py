@@ -508,7 +508,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")
-
+            print(mm_newline_position)
             if mm_patch_merge_type == "flat":
                 image_features = [x.flatten(0, 1) for x in image_features]
                 #rank_print(f"Image feature shape flat : {image_features[0].shape}")

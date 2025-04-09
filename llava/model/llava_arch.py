@@ -477,9 +477,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_positions.append(idx)
                     continue
                 # Init recurrent memory module
-                print(f"image shape : {image.shape}")
+                # rank_print(f"image shape : {image.shape}")
                 boundaries = adjusted_segment(image.mean(dim=1))
-                print(f"boundaries : {boundaries}")
+                # rank_print(f"boundaries : {boundaries}")
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 updated_image_segment = None
@@ -491,12 +491,12 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
-                    print(f"Image segment shape : {image_segment.shape}")
+                    rank0_print(f"Image segment shape : {image_segment.shape}")
                     rank_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
                     rank_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-                    print(f"updated_image_segment shape : {updated_image_segment.shape}")
-                    print(f"recurrent_memory shape : {recurrent_memory.shape}")
+                    rank0_print(f"updated_image_segment shape : {updated_image_segment.shape}")
+                    rank0_print(f"recurrent_memory shape : {recurrent_memory.shape}")
                 memory_augmented_features.append(updated_image_segment)
             self.get_model().memory_readout_cache = recurrent_memory
 
@@ -558,7 +558,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                             # Add hierarchical memory module
                             # frame_memory = self.compress_temporal_features(image_feature)
-                            rank_print(f"Image feature shape one_token before flatten: {image_feature.shape}")  # [frame_num*196, 3584]
+                            rank0_print(f"Image feature shape one_token before flatten: {image_feature.shape}")  # [frame_num*196, 3584]
                             image_feature = image_feature.flatten(0, 1)
                             # image_feature = torch.cat((image_feature, frame_memory[0]), dim=0)
                             #rank_print(f"Image feature shape one_token : {image_feature.shape}")  # [frame_num*196, 3584]
@@ -729,7 +729,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         tokenizer_model_max_length = getattr(self.config, "tokenizer_model_max_length", None)
         #rank_print("Finishing Inserting")
         for x, modality in zip(new_input_embeds, modalities):
-             rank_print(f"New input embeds shape with {modality}: {x.shape}") # [squence_length, 3584]
+             rank0_print(f"New input embeds shape with {modality}: {x.shape}") # [squence_length, 3584]
         new_input_embeds = [x[:tokenizer_model_max_length] for x, modality in zip(new_input_embeds, modalities)]
         new_labels = [x[:tokenizer_model_max_length] for x, modality in zip(new_labels, modalities)]
         # TODO: Hard code for control loss spike

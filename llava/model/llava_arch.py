@@ -282,7 +282,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
     def encode_images(self, images):
         image_features = self.get_model().get_vision_tower()(images)
         # image_features = self.get_model().vision_resampler(image_features, images=images)
-        # image_features = self.get_model().mm_projector(image_features)
+        image_features = self.get_model().mm_projector(image_features)
         return image_features
 
     def encode_multimodals(self, videos_or_images, video_idx_in_batch, split_sizes=None):
@@ -390,45 +390,45 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             non_video_images = []
             non_video_positions = []
 
-            for idx, image in enumerate(images_list):
-                # If it is not a video feature, we don't need to process it
-                if idx not in video_idx_in_batch:
-                    non_video_images.append(image)
-                    non_video_positions.append(idx)
-                    continue
-
-                # Init recurrent memory module
-                boundaries = adjusted_segment(image.mean(dim=1).flatten(1, 2))
-
-                recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
-                # Clear the memory cache to avoid memory leak across videos
-                updated_image_segment = None
-                recurrent_memory = None
-                recurrent_model.memory_cache = []
-                encoded_features = self.encode_images(image)
-                # print(f"Encoded features shape : {encoded_features.shape}")
-                # encoded_features = encoded_features.requires_grad_()
-
-                image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
-                for image_segment in image_segments:
-                    print(f"Image segment shape : {image_segment.shape}")
-                    rank_print(torch.cuda.memory_allocated() / 1024 ** 2, "MB allocated")
-                    rank_print(torch.cuda.memory_reserved() / 1024 ** 2, "MB reserved")
-                    recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-                    print(f"updated_image_segment shape : {updated_image_segment.shape}")
-                    print(f"recurrent_memory shape : {recurrent_memory.shape}")
-
-                # if torch.isnan(recurrent_memory).any():
-                #    raise ValueError("NaNs detected in recurrent_memory!")
-                # if torch.isnan(updated_image_segment).any():
-                #    raise ValueError("NaNs detected in updated_image_segment!")
-
-                # rank0_print(
-                #     f"[updated_image_segment] output requires_grad={updated_image_segment.requires_grad}, grad_fn={updated_image_segment.grad_fn}")
-                images_list[idx] = [recurrent_memory, updated_image_segment]
-
-
-                images_list[idx] = [encoded_features, encoded_features]
+            # for idx, image in enumerate(images_list):
+            #     # If it is not a video feature, we don't need to process it
+            #     if idx not in video_idx_in_batch:
+            #         non_video_images.append(image)
+            #         non_video_positions.append(idx)
+            #         continue
+            #
+            #     # Init recurrent memory module
+            #     boundaries = adjusted_segment(image.mean(dim=1).flatten(1, 2))
+            #
+            #     recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
+            #     # Clear the memory cache to avoid memory leak across videos
+            #     updated_image_segment = None
+            #     recurrent_memory = None
+            #     recurrent_model.memory_cache = []
+            #     encoded_features = self.encode_images(image)
+            #     # print(f"Encoded features shape : {encoded_features.shape}")
+            #     # encoded_features = encoded_features.requires_grad_()
+            #
+            #     image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
+            #     for image_segment in image_segments:
+            #         print(f"Image segment shape : {image_segment.shape}")
+            #         rank_print(torch.cuda.memory_allocated() / 1024 ** 2, "MB allocated")
+            #         rank_print(torch.cuda.memory_reserved() / 1024 ** 2, "MB reserved")
+            #         recurrent_memory, updated_image_segment = recurrent_model(image_segment)
+            #         print(f"updated_image_segment shape : {updated_image_segment.shape}")
+            #         print(f"recurrent_memory shape : {recurrent_memory.shape}")
+            #
+            #     # if torch.isnan(recurrent_memory).any():
+            #     #    raise ValueError("NaNs detected in recurrent_memory!")
+            #     # if torch.isnan(updated_image_segment).any():
+            #     #    raise ValueError("NaNs detected in updated_image_segment!")
+            #
+            #     # rank0_print(
+            #     #     f"[updated_image_segment] output requires_grad={updated_image_segment.requires_grad}, grad_fn={updated_image_segment.grad_fn}")
+            #     images_list[idx] = [recurrent_memory, updated_image_segment]
+            #
+            #
+            #     # images_list[idx] = [encoded_features, encoded_features]
 
 
             # Now process all non-video images together.
@@ -445,20 +445,17 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 for pos, enc in zip(non_video_positions, splits):
                     images_list[pos] = enc
 
-            # Apply mm_projector
-            # split_sizes = [image.shape[0] for image in images_list]
-            # projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list], dim=0))
-            # image_features = torch.split(projected_feature, split_sizes)
 
-            # Now support only batch size of 1
-            split_sizes = [image.shape[0] for image in images_list[0]]
-            projected_feature = self.get_model().mm_projector(torch.cat([image for image in images_list[0]], dim=0))
-            proj_result = torch.split(projected_feature, split_sizes, dim=0)
-            image_features = [proj_result[1]]
-            self.get_model().memory_readout_cache = proj_result[0]
 
-            print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
+            # # Now support only batch size of 1
+            split_sizes = [image.shape for image in images_list]
+            projected_feature = self.encode_images(torch.cat([image for image in images_list], dim=0))
+            image_features = torch.split(projected_feature, split_sizes, dim=0)
+            # self.get_model().memory_readout_cache = proj_result[0]
+
+            # print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
             # rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]
+
 
             new_image_features = []
             for idx, image_feat in enumerate(image_features):
@@ -468,8 +465,44 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     #print(f"after_2dpool = {time.time() - start}")
                 else:
                     new_image_features.append(image_feat)
+            image_features = new_image_features  # [frame_num, 196, 3584]
 
-            image_features = new_image_features # [frame_num, 196, 3584]
+            recurrent_memory = None
+            memory_augmented_features = []
+            for idx, image in enumerate(image_features):
+                # If it is not a video feature, we don't need to process it
+                if idx not in video_idx_in_batch:
+                    non_video_images.append(image)
+                    non_video_positions.append(idx)
+                    continue
+                # Init recurrent memory module
+                boundaries = adjusted_segment(image.mean(dim=1).flatten(1, 2))
+
+                recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
+                # Clear the memory cache to avoid memory leak across videos
+                updated_image_segment = None
+                recurrent_memory = None
+                recurrent_model.memory_cache = []
+
+                # print(f"Encoded features shape : {encoded_features.shape}")
+                # encoded_features = encoded_features.requires_grad_()
+
+                image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
+                for image_segment in image_segments:
+                    print(f"Image segment shape : {image_segment.shape}")
+                    rank_print(torch.cuda.memory_allocated() / 1024 ** 2, "MB allocated")
+                    rank_print(torch.cuda.memory_reserved() / 1024 ** 2, "MB reserved")
+                    recurrent_memory, updated_image_segment = recurrent_model(image_segment)
+                    print(f"updated_image_segment shape : {updated_image_segment.shape}")
+                    print(f"recurrent_memory shape : {recurrent_memory.shape}")
+                memory_augmented_features.append(updated_image_segment)
+            self.get_model().memory_readout_cache = recurrent_memory
+
+
+
+
+
+
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

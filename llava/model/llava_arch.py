@@ -492,8 +492,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
                     print(f"Image segment shape : {image_segment.shape}")
-                    rank_print(torch.cuda.memory_allocated() / 1024 ** 2, "MB allocated")
-                    rank_print(torch.cuda.memory_reserved() / 1024 ** 2, "MB reserved")
+                    rank_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
+                    rank_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
                     print(f"updated_image_segment shape : {updated_image_segment.shape}")
                     print(f"recurrent_memory shape : {recurrent_memory.shape}")
@@ -503,8 +503,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
 
 
-
-
+            image_features = memory_augmented_features
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

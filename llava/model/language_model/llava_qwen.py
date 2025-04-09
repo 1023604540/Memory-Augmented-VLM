@@ -249,7 +249,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             #    so we permute them to [B, H, T, Dh].
             mem_key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
             mem_key = mem_key.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
-            print(f"injected mem_key shape, {mem_key.shape}")
+            # print(f"injected mem_key shape, {mem_key.shape}")
             mem_value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
             mem_value = mem_value.permute(0, 2, 1, 3).contiguous()
 

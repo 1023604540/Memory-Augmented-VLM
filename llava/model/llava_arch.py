@@ -525,7 +525,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     if image_idx in video_idx_in_batch:  # video operations
                         # rank0_print("Video in batch")
                         if mm_newline_position == "grid":
-                            # Grid-wise
+                            print("Grid-wise")
                             # 模型将视频帧划分为多个网格（grid），并在每个网格位置添加一个视觉 token
                             image_feature = self.add_token_per_grid(image_feature)
                             #rank_print(f"Image feature shape grid : {image_feature.shape}")

@@ -129,7 +129,7 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=32, max_distance=
     else:
         # If last segment is too small, consider merging it
         # by removing the previous boundary (if possible)
-        if len(adjusted_boundaries) >= 2 and (last_boundary - adjusted_boundaries[-2]) >= min_distance:
+        if len(adjusted_boundaries) >= 2:
             adjusted_boundaries[-1] = last_boundary  # merge small segment into previous
     # print("boundaries after adjusted: ", adjusted_boundaries)
 

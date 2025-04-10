@@ -117,7 +117,7 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=32, max_distance=
         # Always add the candidate boundary.
         adjusted_boundaries.append(b)
     # Check if we should add the final boundary
-    last_boundary = boundaries[-1]
+    last_boundary = features.shape[0]
     gap = last_boundary - adjusted_boundaries[-1]
 
     if gap >= min_distance:

@@ -295,7 +295,9 @@ class TransformerProjector(nn.Module):
 
         # (6) Cache new memory tokens
         self.memory_cache.append(new_memory_tokens.squeeze(0))  # Should i have detach here? No!
-
+        MAX_BACKPROP_STEPS = 4
+        if len(self.memory_cache) > MAX_BACKPROP_STEPS:
+            self.memory_cache = self.memory_cache[-MAX_BACKPROP_STEPS:]
         # Return new memory tokens (or updated image if you prefer)
         return new_memory_tokens.squeeze(0), updated_image_features.squeeze(0)
 

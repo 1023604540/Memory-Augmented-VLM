@@ -97,10 +97,6 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=32, max_distance=
     boundaries = sorted(set(boundaries))
     # ("boundaries before adjusted: ", boundaries)
 
-    # Enforce minimum and maximum distance constraints
-    # Ensure that the first and last indices are included
-    if not boundaries or boundaries[0] != 0:
-        boundaries.insert(0, 0)
 
     adjusted_boundaries = [boundaries[0]]
     for idx, b in enumerate(boundaries[1:-1], start=1):

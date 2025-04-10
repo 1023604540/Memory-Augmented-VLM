@@ -30,7 +30,7 @@ from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
-from llava.model.memory_module.segment import segment, adjusted_segment
+from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment
 import heapq
 import numpy as np
 from llava.model.memory_module.MemoryController import TransformerProjector
@@ -478,7 +478,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     continue
                 # Init recurrent memory module
                 # rank_print(f"image shape : {image.shape}")
-                boundaries = adjusted_segment(image.mean(dim=1))
+                boundaries = uniform_segment(image.mean(dim=1), d=32)
                 # rank_print(f"boundaries : {boundaries}")
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos

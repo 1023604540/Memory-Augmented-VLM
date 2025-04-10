@@ -132,6 +132,44 @@ def adjusted_segment(features, alpha=0.5, k=None, min_distance=32, max_distance=
 
     return adjusted_boundaries
 
+
+def uniform_segment(features, d=32):
+    """
+    Naively segment `features` into chunks of size d.
+    - The first chunk can be smaller than d if T % d != 0.
+    - The last chunk will always be exactly d in length unless T <= d (then there's just one chunk).
+
+    :param features: A tensor or array of shape (T, D), where T is the temporal length.
+    :param d: The fixed chunk size.
+    :return: A list of boundary indices (the ends of each chunk).
+    """
+    T = features.shape[0]
+    # If the entire sequence is shorter than or equal to d, just return one boundary
+    if T <= d:
+        return [0, T]
+
+    # Otherwise, compute the remainder
+    # leftover will be the size of the first chunk
+    leftover = T % d
+
+    boundaries = [0]
+
+    # If leftover is nonzero, the first chunk is `leftover` frames
+    # from index 0 up to leftover-1
+    if leftover != 0:
+        boundaries.append(leftover)
+
+    current = leftover
+    # Build boundaries in steps of size d
+    while current < T:
+        current += d
+        # Clamp if we go beyond the last index
+        if current > T:
+            current = T
+        boundaries.append(current)
+
+    return boundaries
+
 def cal_left_depth_score(sim_scores):
     n = sim_scores.shape[0]
     depth_scores = torch.zeros(sim_scores.size(), dtype=sim_scores.dtype, device=sim_scores.device)

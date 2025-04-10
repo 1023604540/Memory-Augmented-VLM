@@ -122,7 +122,7 @@ print("load video")
 # Load and process video
 video_path = "docs/needle_32.mp4"
 # video_frames = load_video(video_path, 64)
-video_frames = load_video(video_path, 28)
+video_frames = load_video(video_path, 10)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []
 frames = image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()

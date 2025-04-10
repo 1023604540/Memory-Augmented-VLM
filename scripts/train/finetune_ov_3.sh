@@ -81,7 +81,7 @@ srun --mpi=pmix torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --n
     --gradient_accumulation_steps 2 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 1000 \
+    --save_steps 500 \
     --save_total_limit 1 \
     --learning_rate 1e-5 \
     --memory_transformer_lr 1e-4 \

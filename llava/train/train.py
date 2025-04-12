@@ -47,6 +47,8 @@ from llava.model import *
 from llava.mm_utils import process_highres_image, process_anyres_image, process_highres_image_crop_split, tokenizer_image_token
 from llava.utils import rank0_print, process_video_with_pyav, process_video_with_decord, dynamic_process_video_with_decord
 from deepspeed.runtime.fp16.loss_scaler import LossScaler
+import wandb
+from transformers import TrainerCallback, TrainerControl, TrainerState
 import datetime
 
 torch.multiprocessing.set_sharing_strategy("file_system")
@@ -1753,7 +1755,7 @@ def train(attn_implementation=None):
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
     print("Setting up LLavaTrainer...!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[LogMultipleLrsCallback()], **data_module)
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
@@ -1780,6 +1782,23 @@ def train(attn_implementation=None):
 
     rank0_print(f"Model saved to {training_args.output_dir}")
 
+class LogMultipleLrsCallback(TrainerCallback):
+    def on_step_end(
+        self,
+        args,
+        state: TrainerState,
+        control: TrainerControl,
+        **kwargs
+    ):
+        # The optimizer is in kwargs["optimizer"] if you’re using the built-in Trainer flow
+        optimizer = kwargs.get("optimizer", None)
+        if optimizer is None:
+            return  # no-op if no optimizer found
+
+        # Log each param group’s LR
+        for i, param_group in enumerate(optimizer.param_groups):
+            group_lr = param_group["lr"]
+            wandb.log({f"learning_rate/group_{i}": group_lr}, step=state.global_step)
 
 if __name__ == "__main__":
     train()

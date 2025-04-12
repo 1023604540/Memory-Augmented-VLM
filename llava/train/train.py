@@ -1783,22 +1783,16 @@ def train(attn_implementation=None):
     rank0_print(f"Model saved to {training_args.output_dir}")
 
 class LogMultipleLrsCallback(TrainerCallback):
-    def on_step_end(
-        self,
-        args,
-        state: TrainerState,
-        control: TrainerControl,
-        **kwargs
-    ):
-        # The optimizer is in kwargs["optimizer"] if you’re using the built-in Trainer flow
+    def on_step_end(self, args, state, control, **kwargs):
+        import wandb
+        if wandb.run is None:
+            return  # wandb is not initialized yet
+
         optimizer = kwargs.get("optimizer", None)
         if optimizer is None:
-            return  # no-op if no optimizer found
-
-        # Log each param group’s LR
+            return
         for i, param_group in enumerate(optimizer.param_groups):
-            group_lr = param_group["lr"]
-            wandb.log({f"learning_rate/group_{i}": group_lr}, step=state.global_step)
-
+            lr = param_group["lr"]
+            wandb.log({f"learning_rate/group_{i}": lr}, step=state.global_step)
 if __name__ == "__main__":
     train()

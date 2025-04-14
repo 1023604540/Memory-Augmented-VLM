@@ -6,6 +6,17 @@ from llava.train.llava_trainer import LLaVATrainer
 
 class LLaVAEvalTrainer(LLaVATrainer):
     def evaluate(self, evaluate_args):
+        if evaluate_args is None:
+            # You can set default eval_args if needed
+            evaluate_args = {
+                "eval_num_processes": 4,
+                "model": self.model,
+                "model_args": self.args,
+                "tasks": "longvideobench_val_v",  # List of tasks
+                "batch_size": 1,
+                "log_samples_suffix": "eval_samples",
+                "output_path": "./evaluation_results",  # Path to save the results
+            }
         cmd = f"accelerate launch --num_processes {evaluate_args.eval_num_processes} -m lmms_eval \
                 --model {evaluate_args.model} \
                 --model_args {evaluate_args.model_args} \
@@ -72,5 +83,5 @@ class LLaVAEvalTrainer(LLaVATrainer):
                 if k != "alias" and "stderr" not in k:
                     metric = k.split(",")[0]
                     result_dict[f"{task}_{metric}"] = v
-            
+
         return result_dict"""

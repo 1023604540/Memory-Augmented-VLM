@@ -242,6 +242,23 @@ class LLaVATrainer(Trainer):
         super().__init__(*args, **kwargs)
         print("Using LLaVATrainer, Init function is working")
         self.optimizer = None
+
+    def evaluate(self, eval_dataset=None, eval_args=None, **kwargs):
+        if eval_args is None:
+            # You can define a default evaluation args if not passed
+            eval_args = {
+                "eval_num_processes": 4,
+                "model": self.model,
+                "model_args": self.args,
+                "tasks": "longvideobench_val_v",  # List of tasks
+                "batch_size": 1,
+                "log_samples_suffix": "eval_samples",
+                "output_path": "./evaluation_results",  # Path to save the results
+            }
+        # Call the custom evaluate function from LLaVAEvalTrainer
+        result_dict = super().evaluate(eval_args=eval_args)
+        print("Evaluation Results:", result_dict)
+        return result_dict
     def create_accelerator_and_postprocess(self):
         grad_acc_kwargs = {"num_steps": self.args.gradient_accumulation_steps}
         grad_acc_kwargs["sync_with_dataloader"] = False

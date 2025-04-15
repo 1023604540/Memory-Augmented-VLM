@@ -235,51 +235,51 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
 
         return inputs
 
-    # def inject_memory_as_kv(self, memory_readout, old_cache=None):
-    #     """
-    #     Example function to manually concatenate memory K/V to an existing
-    #     list-based cache of shape [B, n_heads, seq_len, head_dim].
-    #
-    #     If old_cache is None or empty, we treat it as zero-length for each layer.
-    #     """
-    #     B = 1  # your batch size, or read from memory_readout if needed
-    #     T = memory_readout.shape[0]  # number of memory tokens
-    #     H = self.config.num_key_value_heads
-    #     L = self.config.num_hidden_layers
-    #     Dh = 64  # typical dimension per head for Qwen; confirm from your config
-    #
-    #     new_cache = []
-    #
-    #     # We'll do one pass over the L layers.
-    #     for i in range(L):
-    #         old_key, old_value = old_cache[i]
-    #         # print(f"old_key shape, {old_key.shape}, old_value shape, {old_value.shape}")
-    #
-    #         # If there's no old key/value, define them as zero-length on dim=2
-    #         if old_key is None or old_value is None:
-    #             old_key = torch.empty(
-    #                 B, H, 0, Dh, dtype=memory_readout.dtype, device=memory_readout.device
-    #             )
-    #             old_value = torch.empty_like(old_key)  # same shape/dtype/device
-    #
-    #         # 1) Compute memory key/value for this layer
-    #         #    from your memory projections. Right now, they produce [B, T, H, Dh],
-    #         #    so we permute them to [B, H, T, Dh].
-    #         mem_key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
-    #         mem_key = mem_key.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
-    #         # print(f"injected mem_key shape, {mem_key.shape}")
-    #         mem_value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
-    #         mem_value = mem_value.permute(0, 2, 1, 3).contiguous()
-    #
-    #         # 2) Concatenate memory + old. Decide if memory tokens go before or after the old tokens.
-    #         #    Typically for "prepend" (memory is first):
-    #         new_key = torch.cat([mem_key, old_key], dim=2)  # shape [B, H, T+old_len, Dh]
-    #         new_value = torch.cat([mem_value, old_value], dim=2)
-    #
-    #         # 3) Append the new (key, value) to new_cache
-    #         new_cache.append((new_key, new_value))
-    #
-    #     return new_cache
+    def inject_memory_as_kv(self, memory_readout, old_cache=None):
+        """
+        Example function to manually concatenate memory K/V to an existing
+        list-based cache of shape [B, n_heads, seq_len, head_dim].
+
+        If old_cache is None or empty, we treat it as zero-length for each layer.
+        """
+        B = 1  # your batch size, or read from memory_readout if needed
+        T = memory_readout.shape[0]  # number of memory tokens
+        H = self.config.num_key_value_heads
+        L = self.config.num_hidden_layers
+        Dh = 64  # typical dimension per head for Qwen; confirm from your config
+
+        new_cache = []
+
+        # We'll do one pass over the L layers.
+        for i in range(L):
+            old_key, old_value = old_cache[i]
+            # print(f"old_key shape, {old_key.shape}, old_value shape, {old_value.shape}")
+
+            # If there's no old key/value, define them as zero-length on dim=2
+            if old_key is None or old_value is None:
+                old_key = torch.empty(
+                    B, H, 0, Dh, dtype=memory_readout.dtype, device=memory_readout.device
+                )
+                old_value = torch.empty_like(old_key)  # same shape/dtype/device
+
+            # 1) Compute memory key/value for this layer
+            #    from your memory projections. Right now, they produce [B, T, H, Dh],
+            #    so we permute them to [B, H, T, Dh].
+            mem_key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
+            mem_key = mem_key.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
+            # print(f"injected mem_key shape, {mem_key.shape}")
+            mem_value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
+            mem_value = mem_value.permute(0, 2, 1, 3).contiguous()
+
+            # 2) Concatenate memory + old. Decide if memory tokens go before or after the old tokens.
+            #    Typically for "prepend" (memory is first):
+            new_key = torch.cat([mem_key, old_key], dim=2)  # shape [B, H, T+old_len, Dh]
+            new_value = torch.cat([mem_value, old_value], dim=2)
+
+            # 3) Append the new (key, value) to new_cache
+            new_cache.append((new_key, new_value))
+
+        return new_cache
 
 
 AutoConfig.register("llava_qwen", LlavaQwenConfig)

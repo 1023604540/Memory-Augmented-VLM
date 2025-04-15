@@ -787,6 +787,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             position_ids[:, split_position:] += right_add
         # import pdb; pdb.set_trace()
         rank_print(f"Finish preparing")
+        print(f"new_input_embeds shape: {new_input_embeds.shape}, new_labels shape: {new_labels.shape if new_labels is not None else None}, position_ids shape: {position_ids.shape if position_ids is not None else None}, attention_mask shape: {attention_mask.shape if attention_mask is not None else None}")
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):

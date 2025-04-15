@@ -103,7 +103,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         else:
             print(f"past_key_values", past_key_values)
         print(f"attention_mask", attention_mask)
-        print(f"input_ids shape", input_ids.shape if input_ids is not None else None)
+        print(f"input_ids shape", input_ids)
         print(f"inputs_embeds", inputs_embeds)
 
         # if past_key_values is not None:

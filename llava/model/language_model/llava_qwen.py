@@ -97,7 +97,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         print("forward function called !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         if inputs_embeds is None:
             (input_ids, position_ids, attention_mask, past_key_values, inputs_embeds, labels) = self.prepare_inputs_labels_for_multimodal(input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities, image_sizes)
-
+        print(f"position_ids", position_ids)
         if past_key_values is not None:
             if self.model.memory_readout_cache is not None:
                 print("Memory readout injecting")

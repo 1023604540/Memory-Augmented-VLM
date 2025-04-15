@@ -125,6 +125,13 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 # print(f"new_cache_position shape, {new_cache_position.shape}")
                 cache_position = new_cache_position.to(dtype=self.dtype, device=self.device)
 
+            # === 4. Expand position_ids ===
+            if position_ids is not None:
+                memory_position_ids = torch.arange(
+                    self.T_mem, device=position_ids.device
+                ).unsqueeze(0)  # Shape: [1, T_mem]
+                position_ids = torch.cat([memory_position_ids, position_ids], dim=1)
+
         if dpo_forward:
             outputs = self.model(
                 input_ids=input_ids,

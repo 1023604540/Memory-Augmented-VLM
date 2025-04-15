@@ -788,7 +788,62 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # import pdb; pdb.set_trace()
         rank_print(f"Finish preparing")
         print(f"new_input_embeds shape: {new_input_embeds.shape}, new_labels shape: {new_labels.shape if new_labels is not None else None}, position_ids shape: {position_ids.shape if position_ids is not None else None}, attention_mask shape: {attention_mask.shape if attention_mask is not None else None}, past_key_values shape: {past_key_values[0].shape if past_key_values is not None else None}")
+        if past_key_values is None:
+            if self.get_model().memory_readout_cache is not None:
+                print("Memory readout injecting")
+                memory_readout = self.get_model().memory_readout_cache.to(dtype=self.dtype, device=self.device).flatten(0, 1)
+                print(f"memory_readout shape, {memory_readout.shape}")
+                T_mem = memory_readout.shape[0]  # memory tokens
+
+                # === 1. Inject past_key_values ===
+                past_key_values = self.inject_memory_as_kv(memory_readout)
+
+                self.get_model().memory_readout_cache = None
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
+
+    def inject_memory_as_kv(self, memory_readout, old_cache=None):
+        """
+        Inserts memory tensors into the past_key_values (key-value cache) for all layers.
+
+        Args:
+            memory_readout (torch.Tensor): Memory tensor of shape [T, hidden_dim].
+            old_cache (list or None): Existing past_key_values, a list of tuples [(key, value), ...].
+                                      If None, it is treated as empty.
+
+        Returns:
+            list: Updated past_key_values with memory tensors concatenated.
+        """
+        B = 1  # Batch size, adjust if needed
+        T = memory_readout.shape[0]  # Number of memory tokens
+        H = self.config.num_key_value_heads  # Number of attention heads
+        L = self.config.num_hidden_layers  # Number of layers
+        Dh = 64  # Dimension per head, confirm from your model config
+
+        new_cache = []
+
+        # Iterate over all layers
+        for i in range(L):
+            # Project memory_readout to key and value for the current layer
+            mem_key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
+            mem_key = mem_key.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
+            mem_value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
+            mem_value = mem_value.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
+
+            # Handle the case where old_cache is None or empty
+            if old_cache is None or len(old_cache) == 0:
+                old_key = torch.empty(B, H, 0, Dh, dtype=memory_readout.dtype, device=memory_readout.device)
+                old_value = torch.empty_like(old_key)
+            else:
+                old_key, old_value = old_cache[i]
+
+            # Concatenate memory tensors with the old cache
+            new_key = torch.cat([mem_key, old_key], dim=2)  # [B, H, T + old_len, Dh]
+            new_value = torch.cat([mem_value, old_value], dim=2)  # [B, H, T + old_len, Dh]
+
+            # Append the updated key-value pair to the new cache
+            new_cache.append((new_key, new_value))
+
+        return new_cache
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):
         if model_args.mm_use_im_patch_token:

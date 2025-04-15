@@ -98,14 +98,11 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         if inputs_embeds is None:
             (input_ids, position_ids, attention_mask, past_key_values, inputs_embeds, labels) = self.prepare_inputs_labels_for_multimodal(input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities, image_sizes)
         print(f"position_ids", position_ids)
-        print(f"past_key_values", past_key_values)
+        print(f"past_key_values", past_key_values[0][0].shape, past_key_values[0][1].shape)
         print(f"attention_mask", attention_mask)
         print(f"input_ids", input_ids)
-        print(f"labels", labels)
         print(f"inputs_embeds", inputs_embeds)
-        print(f"images", images)
-        print(f"cache_position", cache_position)
-        print(f"image_sizes", image_sizes)
+
         # if past_key_values is not None:
         #     if self.model.memory_readout_cache is not None:
         #         print("Memory readout injecting")

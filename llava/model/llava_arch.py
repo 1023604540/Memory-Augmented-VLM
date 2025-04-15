@@ -798,7 +798,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # === 1. Inject past_key_values ===
                 past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
                 self.get_model().memory_readout_cache = None
-        print(f"past_key_values shape: {past_key_values[0].shape if past_key_values is not None else None}")
+        print(f"past_key_values shape: {past_key_values[0][0].shape if past_key_values is not None else None}")
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):

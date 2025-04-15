@@ -98,39 +98,46 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         if inputs_embeds is None:
             (input_ids, position_ids, attention_mask, past_key_values, inputs_embeds, labels) = self.prepare_inputs_labels_for_multimodal(input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities, image_sizes)
         print(f"position_ids", position_ids)
-        if past_key_values is not None:
-            if self.model.memory_readout_cache is not None:
-                print("Memory readout injecting")
-                memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device).flatten(0, 1)
-                print(f"memory_readout shape, {memory_readout.shape}")
-                self.T_mem = memory_readout.shape[0]  # memory tokens
-
-                # === 1. Inject past_key_values ===
-                past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
-
-                self.model.memory_readout_cache = None
-            # === 2. Expand attention mask ===
-            b = 1  # batch size, or read from memory_readout if needed
-            if attention_mask is not None:
-                memory_mask = torch.ones(b, self.T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
-                new_attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
-                # print(f"new_attention_mask shape, {new_attention_mask.shape}")
-                attention_mask = new_attention_mask.to(dtype=self.dtype, device=self.device)
-
-            # === 3. Expand cache_position ===
-            if cache_position is not None:
-                # Find the last position value, e.g. 12572
-                last_pos_val = cache_position[0].item() + self.T_mem
-                new_cache_position = torch.tensor([last_pos_val])
-                # print(f"new_cache_position shape, {new_cache_position.shape}")
-                cache_position = new_cache_position.to(dtype=self.dtype, device=self.device)
-
-            # === 4. Expand position_ids ===
-            if position_ids is not None:
-                memory_position_ids = torch.arange(
-                    self.T_mem, device=position_ids.device
-                ).unsqueeze(0)  # Shape: [1, T_mem]
-                position_ids = torch.cat([memory_position_ids, position_ids], dim=1)
+        print(f"attention_mask", attention_mask)
+        print(f"input_ids", input_ids)
+        print(f"labels", labels)
+        print(f"inputs_embeds", inputs_embeds)
+        print(f"images", images)
+        print(f"image_sizes", image_sizes)
+        print(f"cache_position", cache_position)
+        # if past_key_values is not None:
+        #     if self.model.memory_readout_cache is not None:
+        #         print("Memory readout injecting")
+        #         memory_readout = self.model.memory_readout_cache.to(dtype=self.dtype, device=self.device).flatten(0, 1)
+        #         print(f"memory_readout shape, {memory_readout.shape}")
+        #         self.T_mem = memory_readout.shape[0]  # memory tokens
+        #
+        #         # === 1. Inject past_key_values ===
+        #         past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
+        #
+        #         self.model.memory_readout_cache = None
+        #     # === 2. Expand attention mask ===
+        #     b = 1  # batch size, or read from memory_readout if needed
+        #     if attention_mask is not None:
+        #         memory_mask = torch.ones(b, self.T_mem, dtype=attention_mask.dtype, device=attention_mask.device)
+        #         new_attention_mask = torch.cat([memory_mask, attention_mask], dim=1)
+        #         # print(f"new_attention_mask shape, {new_attention_mask.shape}")
+        #         attention_mask = new_attention_mask.to(dtype=self.dtype, device=self.device)
+        #
+        #     # === 3. Expand cache_position ===
+        #     if cache_position is not None:
+        #         # Find the last position value, e.g. 12572
+        #         last_pos_val = cache_position[0].item() + self.T_mem
+        #         new_cache_position = torch.tensor([last_pos_val])
+        #         # print(f"new_cache_position shape, {new_cache_position.shape}")
+        #         cache_position = new_cache_position.to(dtype=self.dtype, device=self.device)
+        #
+        #     # === 4. Expand position_ids ===
+        #     if position_ids is not None:
+        #         memory_position_ids = torch.arange(
+        #             self.T_mem, device=position_ids.device
+        #         ).unsqueeze(0)  # Shape: [1, T_mem]
+        #         position_ids = torch.cat([memory_position_ids, position_ids], dim=1)
 
         if dpo_forward:
             outputs = self.model(

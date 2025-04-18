@@ -156,6 +156,7 @@ cont = model.generate(
     max_new_tokens=1024,
     modalities=["video"],
     use_cache=True,
+    attn_implementation="flash_attention",
 )
 text_outputs = tokenizer.batch_decode(cont, skip_special_tokens=True)
 print(text_outputs[0])

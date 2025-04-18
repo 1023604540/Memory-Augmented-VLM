@@ -143,6 +143,7 @@ conv.append_message(conv.roles[1], None)
 prompt_question = conv.get_prompt()
 print(prompt_question)
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
+print(f"input_ids: f{input_ids}")  # torch.Size([1, 64])
 image_sizes = [frame.size for frame in video_frames]  # (width * height * 3)
 
 
@@ -150,7 +151,6 @@ image_sizes = [frame.size for frame in video_frames]  # (width * height * 3)
 cont = model.generate(
     input_ids,
     images=image_tensors,
-    image_sizes=image_sizes,
     do_sample=False,
     temperature=0,
     max_new_tokens=1024,

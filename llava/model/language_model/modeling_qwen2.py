@@ -1065,18 +1065,19 @@ class Qwen2Model(Qwen2PreTrainedModel):
                 all_hidden_states += (hidden_states,)
 
             current_mem = None
+            layer_position_ids = position_ids
             if memory_prompt is not None and i >= mem_layer_offset:
                 current_mem = memory_prompt[i - mem_layer_offset].unsqueeze(0).expand(hidden_states.size(0), -1, -1)
                 num_memory = current_mem.shape[1]
                 memory_position_ids = torch.arange(0, num_memory, device=position_ids.device).unsqueeze(0)
-                position_ids = torch.cat([memory_position_ids, position_ids], dim=1)
+                layer_position_ids = torch.cat([memory_position_ids, position_ids], dim=1)
 
             if self.gradient_checkpointing and self.training:
                 layer_outputs = self._gradient_checkpointing_func(
                     decoder_layer.__call__,
                     hidden_states,
                     attention_mask,
-                    position_ids,
+                    layer_position_ids,
                     past_key_values,
                     output_attentions,
                     use_cache,
@@ -1085,7 +1086,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
                 layer_outputs = decoder_layer(
                     hidden_states,
                     attention_mask=attention_mask,
-                    position_ids=position_ids,
+                    position_ids=layer_position_ids,
                     past_key_value=past_key_values,
                     output_attentions=output_attentions,
                     use_cache=use_cache,

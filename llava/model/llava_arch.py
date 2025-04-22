@@ -390,47 +390,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             non_video_images = []
             non_video_positions = []
 
-            # for idx, image in enumerate(images_list):
-            #     # If it is not a video feature, we don't need to process it
-            #     if idx not in video_idx_in_batch:
-            #         non_video_images.append(image)
-            #         non_video_positions.append(idx)
-            #         continue
-            #
-            #     # Init recurrent memory module
-            #     boundaries = adjusted_segment(image.mean(dim=1).flatten(1, 2))
-            #
-            #     recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
-            #     # Clear the memory cache to avoid memory leak across videos
-            #     updated_image_segment = None
-            #     recurrent_memory = None
-            #     recurrent_model.memory_cache = []
-            #     encoded_features = self.encode_images(image)
-            #     # print(f"Encoded features shape : {encoded_features.shape}")
-            #     # encoded_features = encoded_features.requires_grad_()
-            #
-            #     image_segments = [encoded_features[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
-            #     for image_segment in image_segments:
-            #         print(f"Image segment shape : {image_segment.shape}")
-            #         rank_print(torch.cuda.memory_allocated() / 1024 ** 2, "MB allocated")
-            #         rank_print(torch.cuda.memory_reserved() / 1024 ** 2, "MB reserved")
-            #         recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-            #         print(f"updated_image_segment shape : {updated_image_segment.shape}")
-            #         print(f"recurrent_memory shape : {recurrent_memory.shape}")
-            #
-            #     # if torch.isnan(recurrent_memory).any():
-            #     #    raise ValueError("NaNs detected in recurrent_memory!")
-            #     # if torch.isnan(updated_image_segment).any():
-            #     #    raise ValueError("NaNs detected in updated_image_segment!")
-            #
-            #     # rank0_print(
-            #     #     f"[updated_image_segment] output requires_grad={updated_image_segment.requires_grad}, grad_fn={updated_image_segment.grad_fn}")
-            #     images_list[idx] = [recurrent_memory, updated_image_segment]
-            #
-            #
-            #     # images_list[idx] = [encoded_features, encoded_features]
-
-
             # Now process all non-video images together.
             if non_video_images:
                 # Record the original batch sizes of each non-video image tensor.
@@ -492,8 +451,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
                     rank_print(f"Image segment shape : {image_segment.shape}")
-                    rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
-                    rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
+                    # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
+                    # rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
                     # rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
                     rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
@@ -799,7 +758,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
                 self.get_model().memory_readout_cache = None
         print(f"past_key_values shape: {past_key_values[0][0].shape if past_key_values is not None else None}")
-        return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
+
+        num_memory_layers = 4
+        memory_length = 5  # number of memory tokens
+        hidden_size = self.get_model().LLM_hidden_dim
+        memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(self.device)
+
+        return memory_prompt, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):
         """

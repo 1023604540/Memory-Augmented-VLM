@@ -761,7 +761,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
         num_memory_layers = 4
         memory_length = 5  # number of memory tokens
-        hidden_size = self.get_model().LLM_hidden_dim
+        hidden_size = 896
         memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(self.device)
 
         return memory_prompt, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels

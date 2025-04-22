@@ -27,6 +27,7 @@ from transformers.generation.utils import GenerateOutput
 # from ...constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 from llava.model.llava_arch import LlavaMetaModel, LlavaMetaForCausalLM
 from transformers import Qwen2Config, Qwen2ForCausalLM, Qwen2Model
+from transformers.modeling_attn_mask_utils import _prepare_4d_causal_attention_mask, _prepare_4d_causal_attention_mask_for_sdpa
 # from .modeling_qwen2 import Qwen2Model
 from transformers.utils import logging
 from transformers.modeling_attn_mask_utils import AttentionMaskConverter

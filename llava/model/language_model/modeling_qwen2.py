@@ -1057,13 +1057,13 @@ class Qwen2Model(Qwen2PreTrainedModel):
             memory_prompt = memory_prompt.view(self.config.num_memory_layers, -1, self.config.hidden_size)
             mem_layer_offset = len(self.layers) - self.config.num_memory_layers
 
-        current_mem = None
-        if memory_prompt is not None and i >= mem_layer_offset:
-            current_mem = memory_prompt[i - mem_layer_offset].unsqueeze(0).expand(hidden_states.size(0), -1, -1)
-
         for i, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
+
+            current_mem = None
+            if memory_prompt is not None and i >= mem_layer_offset:
+                current_mem = memory_prompt[i - mem_layer_offset].unsqueeze(0).expand(hidden_states.size(0), -1, -1)
 
             if self.gradient_checkpointing and self.training:
                 layer_outputs = self._gradient_checkpointing_func(
@@ -1087,7 +1087,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
                 )
 
             hidden_states = layer_outputs[0]
-
+            print(f"[Layer {i}] Hidden after layer: {hidden_states.shape}")
             if use_cache:
                 next_decoder_cache = layer_outputs[2 if output_attentions else 1]
 

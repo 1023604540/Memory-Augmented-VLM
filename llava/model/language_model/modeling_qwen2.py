@@ -1053,8 +1053,8 @@ class Qwen2Model(Qwen2PreTrainedModel):
         all_hidden_states = () if output_hidden_states else None
         all_self_attns = () if output_attentions else None
         next_decoder_cache = None
-        is_first_step = past_key_values is None
-        print("Qwen2Model.forward", past_key_values)
+        is_first_step = past_key_values.get_seq_length() == 0
+        print("Qwen2Model.forward", is_first_step)
         if memory_prompt is not None:
             # Define the memory prompt hyperparameters
             num_memory_layers = 4

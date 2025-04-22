@@ -1054,7 +1054,8 @@ class Qwen2Model(Qwen2PreTrainedModel):
         next_decoder_cache = None
 
         if memory_prompt is not None:
-            memory_prompt = memory_prompt.view(self.config.num_memory_layers, -1, self.config.hidden_size)
+            # Define the memory prompt hyperparameters
+            memory_prompt = memory_prompt.view(4, -1, self.hidden_size)
             mem_layer_offset = len(self.layers) - self.config.num_memory_layers
 
         for i, decoder_layer in enumerate(self.layers):

@@ -1055,7 +1055,8 @@ class Qwen2Model(Qwen2PreTrainedModel):
 
         if memory_prompt is not None:
             # Define the memory prompt hyperparameters
-            memory_prompt = memory_prompt.view(4, -1, hidden_states.shape[-1])
+            num_memory_layers = 4
+            memory_prompt = memory_prompt.view(num_memory_layers, -1, hidden_states.shape[-1])
             mem_layer_offset = len(self.layers) - self.config.num_memory_layers
 
         for i, decoder_layer in enumerate(self.layers):

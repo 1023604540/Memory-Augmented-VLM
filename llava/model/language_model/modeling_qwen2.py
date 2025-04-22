@@ -744,6 +744,8 @@ class Qwen2DecoderLayer(nn.Module):
         memory_prompt: Optional[torch.FloatTensor] = None,  # HIGHLIGHTED: new argument
         **kwargs,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
+        print("Qwen2DecoderLayer.forward", memory_prompt)
+
         if "padding_mask" in kwargs:
             warnings.warn(
                 "Passing `padding_mask` is deprecated and will be removed in v4.37. "

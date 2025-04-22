@@ -1056,13 +1056,13 @@ class Qwen2Model(Qwen2PreTrainedModel):
         all_self_attns = () if output_attentions else None
         next_decoder_cache = None
         is_first_step = past_key_values.get_seq_length() == 0
-        print("Qwen2Model.forward", is_first_step)
+        print("Qwen2Model.forward_is_first_step", is_first_step)
         if memory_prompt is not None:
             # Define the memory prompt hyperparameters
             num_memory_layers = 4
             memory_prompt = memory_prompt.view(num_memory_layers, -1, hidden_states.shape[-1])
             mem_layer_offset = len(self.layers) - num_memory_layers
-            print("Qwen2Model.forward")
+
         for i, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)

@@ -794,7 +794,7 @@ class Qwen2DecoderLayer(nn.Module):
             attention_output = attention_output[:, memory_prompt.size(1):, :]
 
         hidden_states = residual + attention_output
-
+        print("hidden_states", hidden_states.shape)
         # Fully Connected
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)

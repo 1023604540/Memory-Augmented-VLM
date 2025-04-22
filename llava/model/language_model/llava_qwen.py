@@ -32,7 +32,7 @@ from transformers.modeling_attn_mask_utils import AttentionMaskConverter
 
 # from .qwen.modeling_qwen import QWenLMHeadModel, QWenModel
 # from .qwen.configuration_qwen import QWenConfig
-from transformers.cache_utils import Cache, DynamicCache, StaticCache
+from transformers.cache_utils import Cache, DynamicCache, SlidingWindowCache, StaticCache
 from transformers.modeling_outputs import BaseModelOutputWithPast
 
 class LlavaQwenConfig(Qwen2Config):

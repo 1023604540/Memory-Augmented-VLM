@@ -66,13 +66,13 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --output_dir /anvme/workspace/b232dd16-LLaVA-OV/checkpoints/$RUN_NAME \
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
-    --per_device_eval_batch_size 4 \
+    --per_device_eval_batch_size 1 \
     --gradient_accumulation_steps 2 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 500 \
     --save_total_limit 1 \
-    --learning_rate 2e-6 \
+    --learning_rate 1e-5 \
     --memory_transformer_lr 1e-3 \
     --memory_key_value_lr 1e-3 \
     --weight_decay 0. \
@@ -81,15 +81,15 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --logging_steps 1 \
     --tf32 True \
     --model_max_length 32768 \
-    --gradient_checkpointing True \
-    --dataloader_num_workers 4 \
+    --gradient_checkpointing False \
+    --dataloader_num_workers 2 \
     --lazy_preprocess True \
     --report_to wandb \
     --torch_compile True \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --force_sample False \
-    --frames_upbound 128   # 32 initially
+    --frames_upbound 250   # 32 initially
 exit 0;
 
 # You can delete the sdpa attn_implementation if you want to use flash attn

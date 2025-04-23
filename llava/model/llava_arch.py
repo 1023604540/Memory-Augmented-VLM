@@ -451,7 +451,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 projected_prompts.append(projected)
 
             # Stack into shape: (10, 784, 896)
-            memory_prompt_stack = torch.cat(projected_prompts, dim=0)  # shape: (24, 4, 896)
+            memory_prompt_stack = torch.cat(projected_prompts, dim=0)  # shape: (10, 784, 896)
 
 
 

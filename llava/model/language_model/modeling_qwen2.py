@@ -790,6 +790,7 @@ class Qwen2DecoderLayer(nn.Module):
             use_cache=use_cache,
         )
 
+        # Trim the attention output to remove the memory prompt
         if memory_prompt is not None:
             attention_output = attention_output[:, memory_prompt.size(1):, :]
 
@@ -1059,8 +1060,9 @@ class Qwen2Model(Qwen2PreTrainedModel):
         print("Qwen2Model.forward_is_first_step", is_first_step)
         if memory_prompt is not None:
             # Define the memory prompt hyperparameters
-            num_memory_layers = 4
-            memory_prompt = memory_prompt.view(num_memory_layers, -1, hidden_states.shape[-1])
+            num_memory_layers = 10
+            print("Qwen2Model.forward_memory_prompt", memory_prompt.shape)
+            # memory_prompt = memory_prompt.view(num_memory_layers, -1, hidden_states.shape[-1])
             mem_layer_offset = len(self.layers) - num_memory_layers
 
         for i, decoder_layer in enumerate(self.layers):
@@ -1070,6 +1072,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
             current_mem = None
             layer_position_ids = position_ids
             if memory_prompt is not None and i >= mem_layer_offset and is_first_step:
+                print(i - mem_layer_offset)
                 current_mem = memory_prompt[i - mem_layer_offset].unsqueeze(0).expand(hidden_states.size(0), -1, -1)
                 num_memory = current_mem.shape[1]
                 memory_position_ids = torch.arange(0, num_memory, device=position_ids.device).unsqueeze(0)

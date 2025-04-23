@@ -103,14 +103,11 @@ class LlavaMetaModel:
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
-        kv_hidden_dim = getattr(config, "kv_hidden_dim", 128)
-        self.memory_proj_layers = getattr(config, "injected_layers", 24)
-        self.memory_key_projs = nn.ModuleList([
-            nn.Linear(LLM_hidden_dim, kv_hidden_dim).to(dtype=self.dtype,
-                                                        device=self.device) for _ in range(self.memory_proj_layers)
-        ])
-        self.memory_value_projs = nn.ModuleList([
-            nn.Linear(LLM_hidden_dim, kv_hidden_dim).to(dtype=self.dtype,
+        memory_prompt_hidden_dim = getattr(config, "memory_prompt_hidden_dim", 896)
+        #self.memory_proj_layers = getattr(config, "injected_layers", 24)
+        self.memory_proj_layers = getattr(config, "injected_layers", 10)
+        self.memory_projections = nn.ModuleList([
+            nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
                                                         device=self.device) for _ in range(self.memory_proj_layers)
         ])
 
@@ -457,8 +454,17 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
                     rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
                 memory_augmented_features.append(updated_image_segment)
-            self.get_model().memory_readout_cache = recurrent_memory
 
+            self.get_model().memory_readout_cache = recurrent_memory
+            projected_prompts = []
+            # Project through each layer’s linear projection
+            for i in range(self.get_model().memory_proj_layers):
+                # (1, 4, 896) → (1, 4, 896)
+                projected = self.get_model().memory_projections[i](self.get_model().memory_readout_cache)
+                projected_prompts.append(projected)
+
+            # Stack into shape: (24, 4, 896)
+            memory_prompt_stack = torch.cat(projected_prompts, dim=0)  # shape: (24, 4, 896)
 
 
 
@@ -759,12 +765,12 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 self.get_model().memory_readout_cache = None
         print(f"past_key_values shape: {past_key_values[0][0].shape if past_key_values is not None else None}")
 
-        num_memory_layers = 4
-        memory_length = 5  # number of memory tokens
-        hidden_size = 896
-        memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
+        # num_memory_layers = 4
+        # memory_length = 5  # number of memory tokens
+        # hidden_size = 896
+        # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
 
-        return memory_prompt, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
+        return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):
         """

@@ -60,8 +60,8 @@ srun --mpi=pmix torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --n
     --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/memory_train.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
-    --mm_tunable_parts="larimar_model,mm_language_model,recurrent_model" \
-    --mm_vision_tower_lr=1e-5 \
+    --mm_tunable_parts="larimar_model,mm_language_model,recurrent_model,mm_mlp_adapter" \
+    --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -83,7 +83,7 @@ srun --mpi=pmix torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --n
     --save_strategy "steps" \
     --save_steps 500 \
     --save_total_limit 1 \
-    --learning_rate 2e-6 \
+    --learning_rate 1e-5 \
     --memory_transformer_lr 1e-3 \
     --memory_key_value_lr 1e-3 \
     --weight_decay 0. \

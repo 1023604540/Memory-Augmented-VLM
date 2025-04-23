@@ -442,7 +442,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
                 memory_augmented_features.append(updated_image_segment)
 
-            self.get_model().memory_readout_cache = recurrent_memory.detached()
+            self.get_model().memory_readout_cache = recurrent_memory.detach()
             projected_prompts = []
             # Project through each layer’s linear projection
             for i in range(self.get_model().memory_proj_layers):

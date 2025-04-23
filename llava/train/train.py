@@ -1716,7 +1716,7 @@ def train(attn_implementation=None):
                 if substr in n
             )
 
-        for part in ["vision_tower", "vision_resampler", "mm_projector", "memory_key_projs", "memory_value_projs", "recurrent_memory_transformer"]:
+        for part in ["vision_tower", "vision_resampler", "mm_projector", "memory_projections", "recurrent_memory_transformer"]:
             rank0_print(f"{part} params: {param_count_by_substr(part) / 1e6:.2f} M")
 
         # Everything else goes into "language_model"

@@ -1072,7 +1072,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
             current_mem = None
             layer_position_ids = position_ids
             if memory_prompt is not None and i >= mem_layer_offset and is_first_step:
-                print(i - mem_layer_offset)
+                # print(i - mem_layer_offset)
                 current_mem = memory_prompt[i - mem_layer_offset].unsqueeze(0).expand(hidden_states.size(0), -1, -1)
                 num_memory = current_mem.shape[1]
                 memory_position_ids = torch.arange(0, num_memory, device=position_ids.device).unsqueeze(0)
@@ -1100,7 +1100,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
                 )
 
             hidden_states = layer_outputs[0]
-            print(f"[Layer {i}] Hidden after layer: {hidden_states.shape}")
+            # print(f"[Layer {i}] Hidden after layer: {hidden_states.shape}")
             if use_cache:
                 next_decoder_cache = layer_outputs[2 if output_attentions else 1]
 

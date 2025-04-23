@@ -61,7 +61,7 @@ srun --mpi=pmix torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --n
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --mm_tunable_parts="larimar_model,mm_language_model,recurrent_model" \
-    --mm_vision_tower_lr=2e-6 \
+    --mm_vision_tower_lr=1e-5 \
     --vision_tower ${VISION_MODEL_VERSION} \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \

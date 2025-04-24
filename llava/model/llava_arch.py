@@ -437,15 +437,15 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 # print(f"Encoded features shape : {encoded_features.shape}")
                 # encoded_features = encoded_features.requires_grad_()
-                rank_print(f"boundaries : {boundaries}")
+                # rank_print(f"boundaries : {boundaries}")
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 for image_segment in image_segments:
-                    rank_print(f"Image segment shape : {image_segment.shape}")
+                    # rank_print(f"Image segment shape : {image_segment.shape}")
                     # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
                     # rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
                     # rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
-                    rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
+                    rank_print(f"recurrent_memory shape : {recurrent_memory.shape}")
                 memory_augmented_features.append(updated_image_segment)
             if recurrent_memory is not None:
                 self.get_model().memory_readout_cache = recurrent_memory.detach()
@@ -745,7 +745,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             position_ids[:, split_position:] += right_add
         # import pdb; pdb.set_trace()
         # rank_print(f"Finish preparing")
-        print(f"new_input_embeds shape: {new_input_embeds.shape}, new_labels shape: {new_labels.shape if new_labels is not None else None}, position_ids shape: {position_ids.shape if position_ids is not None else None}, attention_mask shape: {attention_mask.shape if attention_mask is not None else None}, past_key_values shape: {past_key_values[0].shape if past_key_values is not None else None}")
+        # print(f"new_input_embeds shape: {new_input_embeds.shape}, new_labels shape: {new_labels.shape if new_labels is not None else None}, position_ids shape: {position_ids.shape if position_ids is not None else None}, attention_mask shape: {attention_mask.shape if attention_mask is not None else None}, past_key_values shape: {past_key_values[0].shape if past_key_values is not None else None}")
         # if past_key_values is None:
         #     if self.get_model().memory_readout_cache is not None:
         #         print("Memory readout injecting")

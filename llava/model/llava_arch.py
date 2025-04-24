@@ -88,8 +88,11 @@ import time
   # "vision_tower_pretrained": null,
   # "vocab_size": 152064
 ################################################################
-def grad_hook(module, grad_input):
-    print(f"[{module.__class__.__name__}] grad_input: {grad_input[0].abs().mean().item():.6f}")
+def grad_hook(module, grad_input, grad_output):
+    if grad_input and grad_input[0] is not None:
+        print(f"[{module.__class__.__name__}] grad_input: {grad_input[0].abs().mean().item():.6f}")
+    else:
+        print(f"[{module.__class__.__name__}] grad_input: None or empty ❌")
 class LlavaMetaModel:
 
     def __init__(self, config):

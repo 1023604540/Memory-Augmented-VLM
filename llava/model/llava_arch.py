@@ -88,6 +88,8 @@ import time
   # "vision_tower_pretrained": null,
   # "vocab_size": 152064
 ################################################################
+def grad_hook(module, grad_input):
+    print(f"[{module.__class__.__name__}] grad_input: {grad_input[0].abs().mean().item():.6f}")
 class LlavaMetaModel:
 
     def __init__(self, config):
@@ -110,7 +112,7 @@ class LlavaMetaModel:
             nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
                                                         device=self.device) for _ in range(self.memory_proj_layers)
         ])
-
+        self.memory_projections[0].register_full_backward_hook(grad_hook)
 
         self.memory_readout_cache = None
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)

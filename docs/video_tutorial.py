@@ -144,8 +144,12 @@ prompt_question = conv.get_prompt()
 print(prompt_question)
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
 image_sizes = [frame.size for frame in video_frames]  # (width * height * 3)
-
-model_graph = draw_graph(model,input_data=input_ids)
+input_data = {
+    "input_ids": input_ids,
+    "images": image_tensors,
+    "image_sizes": image_sizes,
+}
+model_graph = draw_graph(model,input_data=input_data)
 model_graph.visual_graph
 print("input_ids shape", input_ids.shape) # torch.Size([1, 1024])
 print("image_tensors shape", image_tensors[0].shape) # torch.Size([1, 3, 384, 384])

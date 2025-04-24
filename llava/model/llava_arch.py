@@ -739,7 +739,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             position_ids[:, split_position:] += right_add
         # import pdb; pdb.set_trace()
         # rank_print(f"Finish preparing")
-        # print(f"new_input_embeds shape: {new_input_embeds.shape}, new_labels shape: {new_labels.shape if new_labels is not None else None}, position_ids shape: {position_ids.shape if position_ids is not None else None}, attention_mask shape: {attention_mask.shape if attention_mask is not None else None}, past_key_values shape: {past_key_values[0].shape if past_key_values is not None else None}")
+        print(f"new_input_embeds shape: {new_input_embeds.shape}, new_labels shape: {new_labels.shape if new_labels is not None else None}, position_ids shape: {position_ids.shape if position_ids is not None else None}, attention_mask shape: {attention_mask.shape if attention_mask is not None else None}, past_key_values shape: {past_key_values[0].shape if past_key_values is not None else None}")
         # if past_key_values is None:
         #     if self.get_model().memory_readout_cache is not None:
         #         print("Memory readout injecting")

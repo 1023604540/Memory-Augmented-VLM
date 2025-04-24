@@ -145,7 +145,7 @@ print(prompt_question)
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
 image_sizes = [frame.size for frame in video_frames]  # (width * height * 3)
 
-model_graph = draw_graph(model,input_data=input_ids, input_data2=image_tensors[0])
+model_graph = draw_graph(model,input_data=input_ids)
 model_graph.visual_graph
 
 # Generate response

@@ -137,7 +137,7 @@ def rotate_half(x):
 
 # Copied from transformers.models.mistral.modeling_mistral.apply_rotary_pos_emb
 def apply_rotary_pos_emb(q, k, cos, sin, position_ids, unsqueeze_dim=1):
-    print("apply_rotary_pos_emb, position_ids.shape", position_ids.shape)
+    # print("apply_rotary_pos_emb, position_ids.shape", position_ids.shape)
     """Applies Rotary Position Embedding to the query and key tensors.
 
     Args:
@@ -744,7 +744,7 @@ class Qwen2DecoderLayer(nn.Module):
         memory_prompt: Optional[torch.FloatTensor] = None,  # HIGHLIGHTED: new argument
         **kwargs,
     ) -> Tuple[torch.FloatTensor, Optional[Tuple[torch.FloatTensor, torch.FloatTensor]]]:
-        print("Qwen2DecoderLayer.forward", memory_prompt.shape if memory_prompt is not None else None)
+        # print("Qwen2DecoderLayer.forward", memory_prompt.shape if memory_prompt is not None else None)
 
         if "padding_mask" in kwargs:
             warnings.warn(

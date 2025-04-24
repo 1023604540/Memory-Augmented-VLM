@@ -774,7 +774,7 @@ class Qwen2DecoderLayer(nn.Module):
             if memory_prompt.dim() == 3:
                 memory_prompt = memory_prompt.expand(hidden_states.size(0), -1, -1)
             hidden_states = torch.cat([memory_prompt, hidden_states], dim=1)
-            print("hidden_states", hidden_states.shape)
+            # print("hidden_states", hidden_states.shape)
             if attention_mask is not None:
                 mem_len = memory_prompt.size(1)
                 pad_mask = torch.zeros(attention_mask.shape[0], 1, 1, mem_len, device=attention_mask.device)
@@ -795,7 +795,7 @@ class Qwen2DecoderLayer(nn.Module):
             attention_output = attention_output[:, memory_prompt.size(1):, :]
 
         hidden_states = residual + attention_output
-        print("hidden_states", hidden_states.shape)
+        # print("hidden_states", hidden_states.shape)
         # Fully Connected
         residual = hidden_states
         hidden_states = self.post_attention_layernorm(hidden_states)

@@ -149,7 +149,7 @@ input_data = {
     "images": image_tensors,
     "image_sizes": image_sizes,
 }
-model_graph = draw_graph(model,input_data=input_data)
+model_graph = draw_graph(model, input_data=input_data)
 model_graph.visual_graph
 print("input_ids shape", input_ids.shape) # torch.Size([1, 1024])
 print("image_tensors shape", image_tensors[0].shape) # torch.Size([1, 3, 384, 384])

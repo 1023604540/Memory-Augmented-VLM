@@ -3,7 +3,7 @@ from llava.model.builder import load_pretrained_model
 from llava.mm_utils import get_model_name_from_path, process_images, tokenizer_image_token
 from llava.constants import IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IGNORE_INDEX
 from llava.conversation import conv_templates, SeparatorStyle
-from torchview import draw_graph
+
 
 import torch
 import cv2
@@ -144,15 +144,8 @@ prompt_question = conv.get_prompt()
 print(prompt_question)
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
 image_sizes = [frame.size for frame in video_frames]  # (width * height * 3)
-input_data = {
-    "input_ids": input_ids,
-    "images": image_tensors,
-    "image_sizes": image_sizes,
-}
-model_graph = draw_graph(model, input_data=input_ids)
-model_graph.visual_graph
-print("input_ids shape", input_ids.shape) # torch.Size([1, 1024])
-print("image_tensors shape", image_tensors[0].shape) # torch.Size([1, 3, 384, 384])
+
+
 # Generate response
 cont = model.generate(
     input_ids,

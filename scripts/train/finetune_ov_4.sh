@@ -1,6 +1,6 @@
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=1
-export NCCL_SOCKET_IFNAME=bond0
+export NCCL_SOCKET_IFNAME=ens4f0np0
 export NCCL_DEBUG=INFO
 export NCCL_P2P_LEVEL=SYS
 export NCCL_TIMEOUT=3600  # 1 hour

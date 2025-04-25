@@ -107,7 +107,7 @@ def make_grad_hook(name):
                         continue
                     # Look for this param in the optimizer
                     for group in global_optimizer_ref.param_groups:
-                        if param in group["params"]:
+                        if any(param is p for p in group["params"]):
                             lr = group["lr"]
                             print(f"[GRAD + LR] {name:<30} | Grad Norm: {grad_norm:.4f} | LR: {lr:.6e}")
                             break

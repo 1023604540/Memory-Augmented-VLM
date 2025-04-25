@@ -116,7 +116,7 @@ class LlavaMetaModel:
             nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
                                                         device=self.device) for _ in range(self.memory_proj_layers)
         ])
-        self.memory_projections[0].register_full_backward_hook(grad_hook)
+        # self.memory_projections[0].register_full_backward_hook(grad_hook)
 
         self.memory_readout_cache = None
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)

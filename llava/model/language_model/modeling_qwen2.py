@@ -1081,14 +1081,26 @@ class Qwen2Model(Qwen2PreTrainedModel):
                 layer_position_ids = torch.cat([memory_position_ids, position_ids], dim=1)
 
             if self.gradient_checkpointing and self.training:
+                def custom_forward(*inputs):
+                    return decoder_layer(
+                        inputs[0],  # hidden_states
+                        attention_mask=inputs[1],
+                        position_ids=inputs[2],
+                        past_key_value=inputs[3],
+                        output_attentions=inputs[4],
+                        use_cache=inputs[5],
+                        memory_prompt=inputs[6],
+                    )
+
                 layer_outputs = self._gradient_checkpointing_func(
-                    decoder_layer.__call__,
+                    custom_forward,
                     hidden_states,
                     attention_mask,
                     layer_position_ids,
                     past_key_values,
                     output_attentions,
                     use_cache,
+                    current_mem,  # ✅ now memory_prompt is passed in
                 )
             else:
                 layer_outputs = decoder_layer(

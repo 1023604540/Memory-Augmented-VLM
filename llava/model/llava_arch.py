@@ -88,11 +88,26 @@ import time
   # "vision_tower_pretrained": null,
   # "vocab_size": 152064
 ################################################################
-def grad_hook(module, grad_input, grad_output):
-    if grad_input and grad_input[0] is not None:
-        print(f"[{module.__class__.__name__}] grad_input: {grad_input[0].abs().mean().item():.6f}")
-    else:
-        print(f"[{module.__class__.__name__}] grad_input: None or empty ❌")
+grad_flow_log = {}
+
+def make_grad_hook(name):
+    def grad_hook(module, grad_input, grad_output):
+        if grad_output and grad_output[0] is not None:
+            grad_norm = grad_output[0].norm().item()
+            grad_flow_log[name] = grad_norm
+            print(f"[GRAD NORM] {name}: {grad_norm:.4f}")
+    return grad_hook
+
+def register_grad_hooks(model: nn.Module, modules: dict):
+    for name, mod in modules.items():
+        if mod is not None:
+            mod.register_full_backward_hook(make_grad_hook(name))
+
+def print_grad_flow_summary():
+    print("\n====== Gradient Norm Flow Summary ======")
+    for name, norm in grad_flow_log.items():
+        print(f"{name:<40}: {norm:.6f}")
+    print("========================================\n")
 class LlavaMetaModel:
 
     def __init__(self, config):
@@ -103,7 +118,6 @@ class LlavaMetaModel:
             self.vision_tower = build_vision_tower(config, delay_load=delay_load)
             self.vision_resampler = build_vision_resampler(config, vision_tower=self.vision_tower)
             self.mm_projector = build_vision_projector(config, vision_cfg=self.vision_tower.config)
-            self.mm_projector.register_full_backward_hook(grad_hook)
 
             if "unpad" in getattr(config, "mm_patch_merge_type", ""):
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
@@ -121,6 +135,16 @@ class LlavaMetaModel:
         self.memory_readout_cache = None
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
 
+        # Register gradient norm hooks for key modules
+        register_grad_hooks(self, {
+            "vision_tower": self.vision_tower,
+            "mm_projector": self.mm_projector,
+            "recurrent_memory_transformer": self.recurrent_memory_transformer
+        })
+
+        # Register hooks for each memory projection layer
+        for i, layer in enumerate(self.memory_projections):
+            layer.register_full_backward_hook(make_grad_hook(f"memory_proj_{i}"))
 
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)

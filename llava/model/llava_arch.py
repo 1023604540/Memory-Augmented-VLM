@@ -89,13 +89,31 @@ import time
   # "vocab_size": 152064
 ################################################################
 grad_flow_log = {}
-
+global_optimizer_ref = None
+def set_global_optimizer(optimizer):
+    global global_optimizer_ref
+    global_optimizer_ref = optimizer
 def make_grad_hook(name):
     def grad_hook(module, grad_input, grad_output):
         if grad_output and grad_output[0] is not None:
             grad_norm = grad_output[0].norm().item()
             grad_flow_log[name] = grad_norm
-            print(f"[GRAD NORM] {name}: {grad_norm:.4f}")
+
+            # Print the learning rate
+            if global_optimizer_ref is not None:
+                # Grab the first param of this module
+                for param in module.parameters():
+                    if not param.requires_grad:
+                        continue
+                    # Look for this param in the optimizer
+                    for group in global_optimizer_ref.param_groups:
+                        if param in group["params"]:
+                            lr = group["lr"]
+                            print(f"[GRAD + LR] {name:<30} | Grad Norm: {grad_norm:.4f} | LR: {lr:.6e}")
+                            break
+                    break  # just need 1 param to infer the group's LR
+            else:
+                print(f"[GRAD NORM] {name}: {grad_norm:.4f}")
     return grad_hook
 
 def register_grad_hooks(model: nn.Module, modules: dict):

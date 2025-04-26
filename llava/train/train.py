@@ -1705,9 +1705,14 @@ def train(attn_implementation=None):
         rank0_print(f"Total parameters: ~{total_params/1e6:.2f} MB)")
         rank0_print(f"Trainable parameters: ~{trainable_params/1e6:.2f} MB)")
         # ADD YOUR SANITY CHECK HERE (TEMPORARILY)
-        rank0_print("=== Sanity Check: requires_grad for all model parameters ===")
-        for name, param in model.named_parameters():
-            rank0_print(f"{name}: requires_grad={param.requires_grad}")
+        # rank0_print("=== Sanity Check: requires_grad for all model parameters ===")
+        # for name, param in model.named_parameters():
+        #     rank0_print(f"{name}: requires_grad={param.requires_grad}")
+
+        print("========== MODEL PARAMETERS DUMP ==========")
+        for idx, (name, param) in enumerate(model.named_parameters()):
+            print(f"Param ID {idx}: {name} | Shape: {param.shape} | requires_grad={param.requires_grad}")
+        print("===========================================")
         ##########
         def param_count_by_substr(substr):
             return sum(

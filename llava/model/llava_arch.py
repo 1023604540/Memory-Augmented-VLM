@@ -491,7 +491,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     rank_print(f"recurrent_memory shape : {recurrent_memory.shape}")
                 memory_augmented_features.append(updated_image_segment)
             if recurrent_memory is not None:
-                self.get_model().memory_readout_cache = recurrent_memory.detach()
+                self.get_model().memory_readout_cache = recurrent_memory
             projected_prompts = []
             # Project through each layer’s linear projection
             for i in range(self.get_model().memory_proj_layers):

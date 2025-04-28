@@ -34,6 +34,7 @@ from llava.model.memory_module.segment import segment, adjusted_segment, uniform
 import heapq
 import numpy as np
 from llava.model.memory_module.MemoryController import TransformerProjector
+from llava.model.memory_module.bigru import TemporalGRUEncoder
 import time
 
 
@@ -152,6 +153,7 @@ class LlavaMetaModel:
 
         self.memory_readout_cache = None
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
+        self.gru_encoder = TemporalGRUEncoder().to(self.device)
 
         # Register gradient norm hooks for key modules
         register_grad_hooks(self, {
@@ -314,6 +316,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
     def encode_images(self, images):
         image_features = self.get_model().get_vision_tower()(images)
         # image_features = self.get_model().vision_resampler(image_features, images=images)
+        image_features = self.get_model().gru_encoder(image_features)
         image_features = self.get_model().mm_projector(image_features)
         return image_features
 

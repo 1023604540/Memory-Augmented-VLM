@@ -1101,6 +1101,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
                     output_attentions,
                     use_cache,
                     current_mem,  # ✅ now memory_prompt is passed in
+                    use_reentrant=False,
                 )
             else:
                 layer_outputs = decoder_layer(

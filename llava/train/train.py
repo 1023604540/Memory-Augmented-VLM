@@ -1529,7 +1529,7 @@ def train(attn_implementation=None):
     #         model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
 
     if training_args.gradient_checkpointing:
-        model.gradient_checkpointing_enable()
+        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs = {"use_reentrant": False})
 
         def make_inputs_require_grad(module, input, output):
             output.requires_grad_(True)

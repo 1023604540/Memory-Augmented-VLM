@@ -52,6 +52,13 @@ import wandb
 from transformers import TrainerCallback, TrainerControl, TrainerState
 import datetime
 
+import warnings
+warnings.filterwarnings(
+    "error",
+    message="torch\\.utils\\.checkpoint: please pass in use_reentrant",
+    category=UserWarning
+)
+
 torch.multiprocessing.set_sharing_strategy("file_system")
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -1529,7 +1536,7 @@ def train(attn_implementation=None):
     #         model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
 
     if training_args.gradient_checkpointing:
-        model.gradient_checkpointing_enable(gradient_checkpointing_kwargs = {"use_reentrant": False})
+        model.gradient_checkpointing_enable()
 
         def make_inputs_require_grad(module, input, output):
             output.requires_grad_(True)

@@ -1776,6 +1776,7 @@ def train(attn_implementation=None):
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
     torch.autograd.set_detect_anomaly(True)
+    set_global_optimizer(trainer.optimizer)
     for name, param in model.named_parameters():
         if not param.requires_grad:
             continue

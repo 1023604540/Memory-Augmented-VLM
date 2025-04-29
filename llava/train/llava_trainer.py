@@ -25,7 +25,7 @@ if is_datasets_available():
     import datasets
 
 from llava.utils import rank0_print
-from llava.train.train import set_global_optimizer
+
 
 def maybe_zero_3(param, ignore_status=False, name=None):
     from deepspeed import zero
@@ -428,7 +428,6 @@ class LLaVATrainer(Trainer):
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
-            set_global_optimizer(self.optimizer)
             for i, group in enumerate(self.optimizer.param_groups):
                 rank0_print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
             # Group 0 LLM weights

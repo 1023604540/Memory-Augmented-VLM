@@ -109,11 +109,11 @@ def make_grad_hook(name):
                     for group in global_optimizer_ref.param_groups:
                         if any(param is p for p in group["params"]):
                             lr = group["lr"]
-                            print(f"[GRAD + LR] {name:<30} | Grad Norm: {grad_norm:.4f} | LR: {lr:.6e}")
+                            rank0_print(f"[GRAD + LR] {name:<30} | Grad Norm: {grad_norm:.4f} | LR: {lr:.6e}")
                             break
                     break  # just need 1 param to infer the group's LR
             else:
-                print(f"[GRAD NORM] {name}: {grad_norm:.4f}")
+                rank0_print(f"[GRAD NORM] {name}: {grad_norm:.4f}")
     return grad_hook
 
 def register_grad_hooks(model: nn.Module, modules: dict):

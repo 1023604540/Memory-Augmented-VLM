@@ -50,8 +50,8 @@ from llava.utils import rank0_print, process_video_with_pyav, process_video_with
 from deepspeed.runtime.fp16.loss_scaler import LossScaler
 import wandb
 from transformers import TrainerCallback, TrainerControl, TrainerState
-import datetime
-from llava.model.llava_arch import make_grad_hook, register_grad_hooks
+
+
 import warnings
 warnings.filterwarnings(
     "error",
@@ -66,6 +66,11 @@ local_rank = None
 
 IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse("0.14")
 
+
+global_optimizer_ref = None
+def set_global_optimizer(optimizer):
+    global global_optimizer_ref
+    global_optimizer_ref = optimizer
 
 @dataclass
 class ModelArguments:
@@ -1706,15 +1711,6 @@ def train(attn_implementation=None):
                 for name, param in model.named_parameters():
                     if "vision_tower" not in name and "mm_projector" not in name and "vision_resampler" not in name:
                         param.requires_grad_(True)
-        # 1) collect every nn.Module that has at least one trainable parameter
-        modules_with_params = {
-            name: module
-            for name, module in model.named_modules()
-            if any(p.requires_grad for p in module.parameters())
-        }
-
-        # 2) register your full_backward_hook on all of them
-        register_grad_hooks(model, modules_with_params)
 
         total_params = sum(p.ds_numel if hasattr(p, "ds_numel") else p.numel() for p in model.parameters())
         trainable_params = sum(p.ds_numel if hasattr(p, "ds_numel") else p.numel() for p in model.parameters() if p.requires_grad)
@@ -1780,6 +1776,25 @@ def train(attn_implementation=None):
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
     torch.autograd.set_detect_anomaly(True)
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+
+        def make_param_hook(param_name, param_ref):
+            def hook(grad):
+                grad_norm = grad.norm().item()
+                # find this param’s LR
+                lr = None
+                for group in global_optimizer_ref.param_groups:
+                    if param_ref in group["params"]:
+                        lr = group["lr"]
+                        break
+                rank0_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
+                return grad
+
+            return hook
+
+        param.register_hook(make_param_hook(name, param))
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         torch.serialization.add_safe_globals([LossScaler])

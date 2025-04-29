@@ -25,7 +25,7 @@ if is_datasets_available():
     import datasets
 
 from llava.utils import rank0_print
-from llava.model.llava_arch import set_global_optimizer
+from llava.train.train import set_global_optimizer
 
 def maybe_zero_3(param, ignore_status=False, name=None):
     from deepspeed import zero

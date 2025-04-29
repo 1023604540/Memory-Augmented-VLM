@@ -51,7 +51,7 @@ from deepspeed.runtime.fp16.loss_scaler import LossScaler
 import wandb
 from transformers import TrainerCallback, TrainerControl, TrainerState
 import datetime
-
+from llava.model.llava_arch import make_grad_hook, register_grad_hooks
 import warnings
 warnings.filterwarnings(
     "error",
@@ -1706,6 +1706,15 @@ def train(attn_implementation=None):
                 for name, param in model.named_parameters():
                     if "vision_tower" not in name and "mm_projector" not in name and "vision_resampler" not in name:
                         param.requires_grad_(True)
+        # 1) collect every nn.Module that has at least one trainable parameter
+        modules_with_params = {
+            name: module
+            for name, module in model.named_modules()
+            if any(p.requires_grad for p in module.parameters())
+        }
+
+        # 2) register your full_backward_hook on all of them
+        register_grad_hooks(model, modules_with_params)
 
         total_params = sum(p.ds_numel if hasattr(p, "ds_numel") else p.numel() for p in model.parameters())
         trainable_params = sum(p.ds_numel if hasattr(p, "ds_numel") else p.numel() for p in model.parameters() if p.requires_grad)

@@ -121,11 +121,6 @@ def register_grad_hooks(model: nn.Module, modules: dict):
         if mod is not None:
             mod.register_full_backward_hook(make_grad_hook(name))
 
-def print_grad_flow_summary():
-    print("\n====== Gradient Norm Flow Summary ======")
-    for name, norm in grad_flow_log.items():
-        print(f"{name:<40}: {norm:.6f}")
-    print("========================================\n")
 class LlavaMetaModel:
 
     def __init__(self, config):
@@ -148,21 +143,20 @@ class LlavaMetaModel:
             nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
                                                         device=self.device) for _ in range(self.memory_proj_layers)
         ])
-        # self.memory_projections[0].register_full_backward_hook(grad_hook)
 
         self.memory_readout_cache = None
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
 
-        # Register gradient norm hooks for key modules
-        register_grad_hooks(self, {
-            "vision_tower": self.vision_tower,
-            "mm_projector": self.mm_projector,
-            "recurrent_memory_transformer": self.recurrent_memory_transformer
-        })
-
-        # Register hooks for each memory projection layer
-        for i, layer in enumerate(self.memory_projections):
-            layer.register_full_backward_hook(make_grad_hook(f"memory_proj_{i}"))
+        # # Register gradient norm hooks for key modules
+        # register_grad_hooks(self, {
+        #     "vision_tower": self.vision_tower,
+        #     "mm_projector": self.mm_projector,
+        #     "recurrent_memory_transformer": self.recurrent_memory_transformer,
+        # })
+        #
+        # # Register hooks for each memory projection layer
+        # for i, layer in enumerate(self.memory_projections):
+        #     layer.register_full_backward_hook(make_grad_hook(f"memory_proj_{i}"))
 
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)

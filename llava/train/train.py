@@ -189,7 +189,10 @@ class TrainingArguments(transformers.TrainingArguments):
     gradient_checkpointing: bool = field(default=True)
     verbose_logging: bool = field(default=False)
     attn_implementation: str = field(default="flash_attention_2", metadata={"help": "Use transformers attention implementation."})
-    gradient_clip_val: float = field(default=1.0, metadata={"help": "Gradient clipping value."})
+    max_grad_norm: float = field(
+        default=1.0,
+        metadata={"help": "Max global norm for gradient clipping"}
+    )
 
 # @dataclass
 # class EvaluationArguments:

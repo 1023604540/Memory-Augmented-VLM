@@ -73,7 +73,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
     --gradient_accumulation_steps 2 \
-    --gradient_clip_val 1.0 \
+    --max_grad_norm 1.0 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 500 \

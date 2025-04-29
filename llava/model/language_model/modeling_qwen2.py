@@ -1249,6 +1249,20 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel):
             shift_labels = shift_labels.view(-1)
             # Enable model parallelism
             shift_labels = shift_labels.to(shift_logits.device)
+            # detect any NAN/INF in the logits
+            if torch.isnan(shift_logits).any():
+                print("⚠️ shift_logits contains NaN!")
+                # you can even log its min/max
+                print(" min, max:", shift_logits.min().item(), shift_logits.max().item())
+                # and panic out
+                raise ValueError("Bad logits in LogSoftmax")
+            # detect any NAN/INF in the logits
+            if torch.isinf(shift_logits).any():
+                print("⚠️ shift_logits contains Inf!")
+                # you can even log its min/max
+                print(" min, max:", shift_logits.min().item(), shift_logits.max().item())
+                # and panic out
+                raise ValueError("Bad logits in LogSoftmax")
             loss = loss_fct(shift_logits, shift_labels)
 
         if not return_dict:

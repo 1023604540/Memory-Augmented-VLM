@@ -1787,9 +1787,10 @@ def train(attn_implementation=None):
                 # find this param’s LR
                 lr = None
                 for group in global_optimizer_ref.param_groups:
-                    if param_ref in group["params"]:
-                        lr = group["lr"]
-                        break
+                    for p in group["params"]:
+                        if p is param_ref:
+                            lr = group["lr"]
+                            break
                 rank0_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
                 return grad
 

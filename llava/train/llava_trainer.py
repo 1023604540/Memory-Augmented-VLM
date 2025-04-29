@@ -430,7 +430,7 @@ class LLaVATrainer(Trainer):
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
             set_global_optimizer(self.optimizer)
             for i, group in enumerate(self.optimizer.param_groups):
-                print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
+                rank0_print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
             # Group 0 LLM weights
             # Group 1 LLM bias
             # Group 2 []

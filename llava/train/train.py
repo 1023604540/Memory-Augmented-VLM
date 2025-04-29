@@ -1771,6 +1771,8 @@ def train(attn_implementation=None):
     trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
+    torch.autograd.set_detect_anomaly(True)
+
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         torch.serialization.add_safe_globals([LossScaler])
         trainer.train(resume_from_checkpoint=True)

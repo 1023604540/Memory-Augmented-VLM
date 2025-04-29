@@ -467,25 +467,7 @@ class LLaVATrainer(Trainer):
                         manager.register_module_override(module, "weight", {"optim_bits": 32})
                         logger.debug(f"bitsandbytes: will optimize {module} in fp32")
                 logger.info(f"skipped: {skipped/2**20}M params")
-        # ─── HOOK THE SCHEDULER ───────────────────────────────────────────────
-        # compute total number of update steps across all epochs
-            num_update_steps_per_epoch = (len(self.get_train_dataloader())// self.args.gradient_accumulation_steps)
-            max_train_steps = int(num_update_steps_per_epoch * self.args.num_train_epochs)
-        # call the Trainer’s built-in scheduler creator,
-        # which will read self.args.lr_scheduler_type, warmup_steps, etc.
-            self.lr_scheduler = super().create_scheduler(num_training_steps=max_train_steps)
-        # ───────────────────────────────────────────────────────────────────────
 
-        # ─── WRAP IN DummyOptim FOR DEEPSPEED ────────────────────────────────
-        # This satisfies DeepSpeed’s “only-one-optimizer” rule while letting
-        # you actually use the optimizer you built (with your custom LRs).
-        from accelerate.utils import DummyOptim
-        if getattr(self.accelerator.state, "deepspeed_plugin", None) is not None:
-            self.optimizer = DummyOptim(self.optimizer)
-
-        self.optimizer, self.lr_scheduler = self.accelerator.prepare(
-                        self.optimizer, self.lr_scheduler)
-        # ───────────────────────────────────────────────────────────────────────
         return self.optimizer
 
     def _save_checkpoint(self, model, trial, metrics=None):

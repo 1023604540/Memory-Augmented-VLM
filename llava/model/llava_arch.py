@@ -88,7 +88,14 @@ import time
   # "vision_tower_pretrained": null,
   # "vocab_size": 152064
 ################################################################
-
+# Initialization function
+def kaiming_init_linear(layer):
+    if isinstance(layer, nn.Linear):
+        nn.init.kaiming_uniform_(layer.weight, a=math.sqrt(5))
+        if layer.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(layer.weight)
+            bound = 1 / math.sqrt(fan_in)
+            nn.init.uniform_(layer.bias, -bound, bound)
 class LlavaMetaModel:
 
     def __init__(self, config):
@@ -105,26 +112,19 @@ class LlavaMetaModel:
 
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
         memory_prompt_hidden_dim = getattr(config, "memory_prompt_hidden_dim", 896)
-        #self.memory_proj_layers = getattr(config, "injected_layers", 24)
         self.memory_proj_layers = getattr(config, "injected_layers", 10)
+
+        # Define memory projections
         self.memory_projections = nn.ModuleList([
-            nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
-                                                        device=self.device) for _ in range(self.memory_proj_layers)
+            nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim) for _ in range(self.memory_proj_layers)
         ])
+        self.memory_projections.apply(kaiming_init_linear)
+
+        # Define recurrent memory transformer
+        self.recurrent_memory_transformer = TransformerProjector()
+        self.recurrent_memory_transformer.apply(kaiming_init_linear)
 
         self.memory_readout_cache = None
-        self.recurrent_memory_transformer = TransformerProjector().to(self.device)
-
-        # # Register gradient norm hooks for key modules
-        # register_grad_hooks(self, {
-        #     "vision_tower": self.vision_tower,
-        #     "mm_projector": self.mm_projector,
-        #     "recurrent_memory_transformer": self.recurrent_memory_transformer,
-        # })
-        #
-        # # Register hooks for each memory projection layer
-        # for i, layer in enumerate(self.memory_projections):
-        #     layer.register_full_backward_hook(make_grad_hook(f"memory_proj_{i}"))
 
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)

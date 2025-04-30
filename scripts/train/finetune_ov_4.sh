@@ -87,8 +87,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --force_sample False \
-    --frames_upbound 250 \
-    --label_smoothing_factor 0.1
+    --frames_upbound 250
 exit 0;
 
 # You can delete the sdpa attn_implementation if you want to use flash attn

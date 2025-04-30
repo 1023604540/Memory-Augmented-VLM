@@ -1,16 +1,11 @@
 export OMP_NUM_THREADS=8
 unset NCCL_SOCKET_IFNAME
-export NCCL_IB_DISABLE=0
-
 export NCCL_P2P_LEVEL=SYS
 export NCCL_NET_GDR_LEVEL=0
 export NCCL_TIMEOUT=3600  # 1 hour
-
-
+export TORCH_DISTRIBUTED_DEBUG=INFO
 
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
-
-
 
 LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"
 LLM_VERSION_CLEAN="${LLM_VERSION//\//_}"
@@ -40,9 +35,7 @@ MASTER_NODE=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
 export MASTER_ADDR=$(getent hosts $MASTER_NODE | awk '{print $1}')
 export MASTER_PORT=$(shuf -i 49152-65535 -n 1)  # IANA动态端口范围
 
-
 echo "[RANK $RANK] MASTER_ADDR=$MASTER_ADDR, MASTER_PORT=$MASTER_PORT"
-
 
 srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
   torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
@@ -86,7 +79,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --logging_steps 1 \
     --tf32 True \
     --model_max_length 32768 \
-    --gradient_checkpointing False \
+    --gradient_checkpointing True \
     --dataloader_num_workers 2 \
     --lazy_preprocess True \
     --report_to wandb \
@@ -94,7 +87,8 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --force_sample False \
-    --frames_upbound 250   # 32 initially
+    --frames_upbound 250 \
+    --label_smoothing_factor 0.1
 exit 0;
 
 # You can delete the sdpa attn_implementation if you want to use flash attn

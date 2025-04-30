@@ -1263,6 +1263,15 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel):
                 print(" min, max:", shift_logits.min().item(), shift_logits.max().item())
                 # and panic out
                 raise ValueError("Bad logits in LogSoftmax")
+            # Make sure shift_labels has valid values
+            num_classes = shift_logits.size(-1)
+            invalid_mask = (shift_labels < 0) & (shift_labels != -100) | (shift_labels >= num_classes)
+            if invalid_mask.any():
+                print("❌ Invalid label indices in shift_labels!")
+                print("Min label:", shift_labels.min().item())
+                print("Max label:", shift_labels.max().item())
+                print("Num classes:", num_classes)
+                raise ValueError("Label out of bounds for CrossEntropyLoss.")
             loss = loss_fct(shift_logits, shift_labels)
 
         if not return_dict:

@@ -40,6 +40,8 @@ echo "[RANK $RANK] MASTER_ADDR=$MASTER_ADDR, MASTER_PORT=$MASTER_PORT"
 srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
   torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
+    --rdzv_id=100 \
+    --rdzv_conf="is_host=1" \
     llava/train/train_mem.py \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
@@ -87,7 +89,9 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --force_sample False \
-    --frames_upbound 250
+    --frames_upbound 250 \
+    --ddp_find_unused_parameters False \
+    --ddp_bucket_cap_mb 25
 exit 0;
 
 # You can delete the sdpa attn_implementation if you want to use flash attn

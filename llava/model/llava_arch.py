@@ -89,44 +89,7 @@ import time
   # "vision_tower_pretrained": null,
   # "vocab_size": 152064
 ################################################################
-grad_flow_log = {}
-global_optimizer_ref = None
-def set_global_optimizer(optimizer):
-    global global_optimizer_ref
-    global_optimizer_ref = optimizer
-def make_grad_hook(name):
-    def grad_hook(module, grad_input, grad_output):
-        if grad_output and grad_output[0] is not None:
-            grad_norm = grad_output[0].norm().item()
-            grad_flow_log[name] = grad_norm
 
-            # Print the learning rate
-            if global_optimizer_ref is not None:
-                # Grab the first param of this module
-                for param in module.parameters():
-                    if not param.requires_grad:
-                        continue
-                    # Look for this param in the optimizer
-                    for group in global_optimizer_ref.param_groups:
-                        if any(param is p for p in group["params"]):
-                            lr = group["lr"]
-                            print(f"[GRAD + LR] {name:<30} | Grad Norm: {grad_norm:.4f} | LR: {lr:.6e}")
-                            break
-                    break  # just need 1 param to infer the group's LR
-            else:
-                print(f"[GRAD NORM] {name}: {grad_norm:.4f}")
-    return grad_hook
-
-def register_grad_hooks(model: nn.Module, modules: dict):
-    for name, mod in modules.items():
-        if mod is not None:
-            mod.register_full_backward_hook(make_grad_hook(name))
-
-def print_grad_flow_summary():
-    print("\n====== Gradient Norm Flow Summary ======")
-    for name, norm in grad_flow_log.items():
-        print(f"{name:<40}: {norm:.6f}")
-    print("========================================\n")
 class LlavaMetaModel:
 
     def __init__(self, config):
@@ -149,22 +112,21 @@ class LlavaMetaModel:
             nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
                                                         device=self.device) for _ in range(self.memory_proj_layers)
         ])
-        # self.memory_projections[0].register_full_backward_hook(grad_hook)
 
         self.memory_readout_cache = None
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
         self.gru_encoder = TemporalGRUEncoder().to(self.device)
 
-        # Register gradient norm hooks for key modules
-        register_grad_hooks(self, {
-            "vision_tower": self.vision_tower,
-            "mm_projector": self.mm_projector,
-            "recurrent_memory_transformer": self.recurrent_memory_transformer
-        })
-
-        # Register hooks for each memory projection layer
-        for i, layer in enumerate(self.memory_projections):
-            layer.register_full_backward_hook(make_grad_hook(f"memory_proj_{i}"))
+        # # Register gradient norm hooks for key modules
+        # register_grad_hooks(self, {
+        #     "vision_tower": self.vision_tower,
+        #     "mm_projector": self.mm_projector,
+        #     "recurrent_memory_transformer": self.recurrent_memory_transformer,
+        # })
+        #
+        # # Register hooks for each memory projection layer
+        # for i, layer in enumerate(self.memory_projections):
+        #     layer.register_full_backward_hook(make_grad_hook(f"memory_proj_{i}"))
 
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
@@ -441,13 +403,29 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     images_list[pos] = enc
 
 
-
             # # Now support only batch size of 1
             concat_images = torch.cat([image for image in images_list], dim=0)
             split_sizes = [image.shape[0] for image in images_list]
-            encoded_image_features = self.encode_images(concat_images)
+
+
+            # this is to encode chunk-wise, save memory
+            # Set the chunk size
+            chunk_size = 100
+
+            # Store the encoded features
+            encoded_chunks = []
+
+            # Loop over the image frames in chunks
+            for i in range(0, concat_images.shape[0], chunk_size):
+                chunk = concat_images[i:i + chunk_size]
+                print(f"chunk shape : {chunk.shape}")
+                encoded_chunk = self.encode_images(chunk)
+                encoded_chunks.append(encoded_chunk)
+
+            # Concatenate all the encoded chunks
+            encoded_image_features = torch.cat(encoded_chunks, dim=0)
             encoded_image_features = torch.split(encoded_image_features, split_sizes)
-            # self.get_model().memory_readout_cache = proj_result[0]
+
 
             # print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
             # rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]
@@ -494,7 +472,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     rank_print(f"recurrent_memory shape : {recurrent_memory.shape}")
                 memory_augmented_features.append(updated_image_segment)
             if recurrent_memory is not None:
-                self.get_model().memory_readout_cache = recurrent_memory.detach()
+                self.get_model().memory_readout_cache = recurrent_memory
             projected_prompts = []
             # Project through each layer’s linear projection
             for i in range(self.get_model().memory_proj_layers):

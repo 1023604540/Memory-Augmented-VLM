@@ -384,6 +384,7 @@ class SigLipEncoder(nn.Module):
                     hidden_states,
                     attention_mask,
                     output_attentions,
+                    use_reentrant=False,
                 )
             else:
                 layer_outputs = encoder_layer(

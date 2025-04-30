@@ -50,7 +50,14 @@ from llava.utils import rank0_print, process_video_with_pyav, process_video_with
 from deepspeed.runtime.fp16.loss_scaler import LossScaler
 import wandb
 from transformers import TrainerCallback, TrainerControl, TrainerState
-import datetime
+
+
+import warnings
+warnings.filterwarnings(
+    "error",
+    message="torch\\.utils\\.checkpoint: please pass in use_reentrant",
+    category=UserWarning
+)
 
 torch.multiprocessing.set_sharing_strategy("file_system")
 
@@ -59,6 +66,11 @@ local_rank = None
 
 IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse("0.14")
 
+
+global_optimizer_ref = None
+def set_global_optimizer(optimizer):
+    global global_optimizer_ref
+    global_optimizer_ref = optimizer
 
 @dataclass
 class ModelArguments:
@@ -177,7 +189,10 @@ class TrainingArguments(transformers.TrainingArguments):
     gradient_checkpointing: bool = field(default=True)
     verbose_logging: bool = field(default=False)
     attn_implementation: str = field(default="flash_attention_2", metadata={"help": "Use transformers attention implementation."})
-
+    max_grad_norm: float = field(
+        default=1.0,
+        metadata={"help": "Max global norm for gradient clipping"}
+    )
 
 # @dataclass
 # class EvaluationArguments:
@@ -1709,10 +1724,10 @@ def train(attn_implementation=None):
         # for name, param in model.named_parameters():
         #     rank0_print(f"{name}: requires_grad={param.requires_grad}")
 
-        print("========== MODEL PARAMETERS DUMP ==========")
+        rank0_print("========== MODEL PARAMETERS DUMP ==========")
         for idx, (name, param) in enumerate(model.named_parameters()):
-            print(f"Param ID {idx}: {name} | Shape: {param.shape} | requires_grad={param.requires_grad}")
-        print("===========================================")
+            rank0_print(f"Param ID {idx}: {name} | Shape: {param.shape} | requires_grad={param.requires_grad}")
+        rank0_print("===========================================")
         ##########
         def param_count_by_substr(substr):
             return sum(
@@ -1758,12 +1773,34 @@ def train(attn_implementation=None):
                         module = module.to(torch.bfloat16)
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
-    print("Setting up LLavaTrainer...!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
     # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
     # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[LogMultipleLrsCallback()], **data_module)
     trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
+    # torch.autograd.set_detect_anomaly(True)
+    set_global_optimizer(trainer.optimizer)
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
+
+        def make_param_hook(param_name, param_ref):
+            def hook(grad):
+                grad_norm = grad.norm().item()
+                # find this param’s LR
+                lr = None
+                for group in global_optimizer_ref.param_groups:
+                    for p in group["params"]:
+                        if p is param_ref:
+                            lr = group["lr"]
+                            break
+                rank0_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
+                return grad
+
+            return hook
+
+        param.register_hook(make_param_hook(name, param))
+
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         torch.serialization.add_safe_globals([LossScaler])
         trainer.train(resume_from_checkpoint=True)

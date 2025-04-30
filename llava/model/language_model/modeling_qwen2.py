@@ -1101,6 +1101,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
                     output_attentions,
                     use_cache,
                     current_mem,  # ✅ now memory_prompt is passed in
+                    use_reentrant=False,
                 )
             else:
                 layer_outputs = decoder_layer(
@@ -1248,6 +1249,29 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel):
             shift_labels = shift_labels.view(-1)
             # Enable model parallelism
             shift_labels = shift_labels.to(shift_logits.device)
+            # detect any NAN/INF in the logits
+            if torch.isnan(shift_logits).any():
+                print("⚠️ shift_logits contains NaN!")
+                # you can even log its min/max
+                print(" min, max:", shift_logits.min().item(), shift_logits.max().item())
+                # and panic out
+                raise ValueError("Bad logits in LogSoftmax")
+            # detect any NAN/INF in the logits
+            if torch.isinf(shift_logits).any():
+                print("⚠️ shift_logits contains Inf!")
+                # you can even log its min/max
+                print(" min, max:", shift_logits.min().item(), shift_logits.max().item())
+                # and panic out
+                raise ValueError("Bad logits in LogSoftmax")
+            # Make sure shift_labels has valid values
+            num_classes = shift_logits.size(-1)
+            invalid_mask = (shift_labels < 0) & (shift_labels != -100) | (shift_labels >= num_classes)
+            if invalid_mask.any():
+                print("❌ Invalid label indices in shift_labels!")
+                print("Min label:", shift_labels.min().item())
+                print("Max label:", shift_labels.max().item())
+                print("Num classes:", num_classes)
+                raise ValueError("Label out of bounds for CrossEntropyLoss.")
             loss = loss_fct(shift_logits, shift_labels)
 
         if not return_dict:

@@ -122,7 +122,7 @@ class LlavaMetaModel:
         #self.memory_projections.apply(kaiming_init_linear)
 
         # Define recurrent memory transformer
-        self.recurrent_memory_transformer = TransformerProjector()
+        self.recurrent_memory_transformer = TransformerProjector().to(self.device)
         # self.recurrent_memory_transformer.apply(kaiming_init_linear)
 
         self.memory_readout_cache = None

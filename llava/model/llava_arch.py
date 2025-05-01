@@ -116,7 +116,8 @@ class LlavaMetaModel:
 
         # Define memory projections
         self.memory_projections = nn.ModuleList([
-            nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim) for _ in range(self.memory_proj_layers)
+            nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
+                                                        device=self.device) for _ in range(self.memory_proj_layers)
         ])
         #self.memory_projections.apply(kaiming_init_linear)
 

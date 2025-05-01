@@ -278,10 +278,15 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         return image_feature
 
     def encode_images(self, images):
+        print("encode_images called")
         image_features = self.get_model().get_vision_tower()(images)
+        print(f"After vision tower, shape: {image_features.shape}")
         # image_features = self.get_model().vision_resampler(image_features, images=images)
+        print("Before GRU encoder")
         image_features = self.get_model().gru_encoder(image_features)
+        print(f"After GRU encoder, shape: {image_features.shape}")
         image_features = self.get_model().mm_projector(image_features)
+        print(f"After mm_projector, shape: {image_features.shape}")
         return image_features
 
     def encode_multimodals(self, videos_or_images, video_idx_in_batch, split_sizes=None):
@@ -480,7 +485,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             if recurrent_memory is not None:
                 self.get_model().memory_readout_cache = recurrent_memory
             projected_prompts = []
-            # Project through each layer’s linear projection
+            # Project through each layer's linear projection
             for i in range(self.get_model().memory_proj_layers):
                 # (4, 196, 896) → (1, 784, 896)
                 projected = self.get_model().memory_projections[i](self.get_model().memory_readout_cache).view(1, -1,self.config.hidden_size)

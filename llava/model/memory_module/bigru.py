@@ -61,10 +61,11 @@ class TemporalGRUEncoder(nn.Module):
             output_fp32, _ = self.gru(seq)
         # back to the original dtype (bfloat16)
         output = output_fp32.to(seq.dtype)
+        print("GRU Working !!!!!!!!!!")
         # ─────────────────────────────────────────────
 
         # 4) broadcast back to patches
-        frame_ctx     = output.squeeze(1)              # [F, D]
+        frame_ctx = output.squeeze(1)              # [F, D]
         temporal_term = frame_ctx.unsqueeze(1)         # [F, 1, D]
         temporal_term = temporal_term.expand(-1, P, -1)
 

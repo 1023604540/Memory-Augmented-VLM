@@ -5,7 +5,7 @@ export NCCL_NET_GDR_LEVEL=0
 export NCCL_TIMEOUT=3600  # 1 hour
 export TORCH_DISTRIBUTED_DEBUG=INFO
 export NCCL_DEBUG=INFO
-export NCCL_WATCHDOG=0
+
 
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
@@ -43,7 +43,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
   torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
     llava/train/train_mem.py \
-    --deepspeed scripts/zero2.json \
+    --deepspeed scripts/zero3.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
     --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/memory_train.yaml \

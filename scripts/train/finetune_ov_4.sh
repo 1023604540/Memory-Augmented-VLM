@@ -1,9 +1,14 @@
 export OMP_NUM_THREADS=8
-unset NCCL_SOCKET_IFNAME
-export NCCL_P2P_LEVEL=SYS
-export NCCL_NET_GDR_LEVEL=0
+export NCCL_IB_DISABLE=0
+export NCCL_IB_GID_INDEX=0
+export NCCL_SOCKET_IFNAME=ib0
+# export NCCL_DEBUG=INFO   # Uncomment for debugging
+export NCCL_DEBUG_SUBSYS=ALL
 export NCCL_TIMEOUT=3600  # 1 hour
-export TORCH_DISTRIBUTED_DEBUG=INFO
+# export TORCH_NCCL_TRACE_BUFFER_SIZE=33554432  # Uncomment for debugging
+
+# The next line is very important! Solves the WatchDog TimeOut Issue
+export NCCL_P2P_DISABLE=1
 
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
@@ -65,7 +70,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 1 \
+    --gradient_accumulation_steps 4 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 500 \
@@ -79,7 +84,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --logging_steps 1 \
     --tf32 True \
     --model_max_length 32768 \
-    --gradient_checkpointing True \
+    --gradient_checkpointing False \
     --dataloader_num_workers 2 \
     --lazy_preprocess True \
     --report_to wandb \

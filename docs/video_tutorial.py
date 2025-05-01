@@ -26,8 +26,8 @@ warnings.filterwarnings("ignore")
 # Load the OneVision model
 # pretrained = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-0.5b-larimar_videollamb_KIT/checkpoint-1500"
 # pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
-pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
-# pretrained = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
+# pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
+pretrained = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
 model_name = "llava_qwen"
 device = "cuda"
 device_map = "auto"

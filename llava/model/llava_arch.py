@@ -89,7 +89,14 @@ import time
   # "vision_tower_pretrained": null,
   # "vocab_size": 152064
 ################################################################
-
+# Initialization function
+def kaiming_init_linear(layer):
+    if isinstance(layer, nn.Linear):
+        nn.init.kaiming_uniform_(layer.weight, a=math.sqrt(5))
+        if layer.bias is not None:
+            fan_in, _ = nn.init._calculate_fan_in_and_fan_out(layer.weight)
+            bound = 1 / math.sqrt(fan_in)
+            nn.init.uniform_(layer.bias, -bound, bound)
 class LlavaMetaModel:
 
     def __init__(self, config):
@@ -106,27 +113,22 @@ class LlavaMetaModel:
 
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
         memory_prompt_hidden_dim = getattr(config, "memory_prompt_hidden_dim", 896)
-        #self.memory_proj_layers = getattr(config, "injected_layers", 24)
         self.memory_proj_layers = getattr(config, "injected_layers", 10)
+
+        # Define memory projections
         self.memory_projections = nn.ModuleList([
             nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
                                                         device=self.device) for _ in range(self.memory_proj_layers)
         ])
+        #self.memory_projections.apply(kaiming_init_linear)
 
-        self.memory_readout_cache = None
+        # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
+
+        # self.recurrent_memory_transformer.apply(kaiming_init_linear)
         self.gru_encoder = TemporalGRUEncoder().to(self.device)
 
-        # # Register gradient norm hooks for key modules
-        # register_grad_hooks(self, {
-        #     "vision_tower": self.vision_tower,
-        #     "mm_projector": self.mm_projector,
-        #     "recurrent_memory_transformer": self.recurrent_memory_transformer,
-        # })
-        #
-        # # Register hooks for each memory projection layer
-        # for i, layer in enumerate(self.memory_projections):
-        #     layer.register_full_backward_hook(make_grad_hook(f"memory_proj_{i}"))
+        self.memory_readout_cache = None
 
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
@@ -407,23 +409,27 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             concat_images = torch.cat([image for image in images_list], dim=0)
             split_sizes = [image.shape[0] for image in images_list]
 
+            chunk_wise_encode = False
+            if chunk_wise_encode:
+                # Encode the images in chunks to save memory
+                # Set the chunk size
+                chunk_size = 100
 
-            # this is to encode chunk-wise, save memory
-            # Set the chunk size
-            chunk_size = 100
+                # Store the encoded features
+                encoded_chunks = []
 
-            # Store the encoded features
-            encoded_chunks = []
+                # Loop over the image frames in chunks
+                for i in range(0, concat_images.shape[0], chunk_size):
+                    chunk = concat_images[i:i + chunk_size]
+                    print(f"chunk shape : {chunk.shape}")
+                    encoded_chunk = self.encode_images(chunk)
+                    encoded_chunks.append(encoded_chunk)
 
-            # Loop over the image frames in chunks
-            for i in range(0, concat_images.shape[0], chunk_size):
-                chunk = concat_images[i:i + chunk_size]
-                print(f"chunk shape : {chunk.shape}")
-                encoded_chunk = self.encode_images(chunk)
-                encoded_chunks.append(encoded_chunk)
+                # Concatenate all the encoded chunks
+                encoded_image_features = torch.cat(encoded_chunks, dim=0)
+            else:
+                encoded_image_features = self.encode_images(concat_images)
 
-            # Concatenate all the encoded chunks
-            encoded_image_features = torch.cat(encoded_chunks, dim=0)
             encoded_image_features = torch.split(encoded_image_features, split_sizes)
 
 

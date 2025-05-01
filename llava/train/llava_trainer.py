@@ -430,6 +430,12 @@ class LLaVATrainer(Trainer):
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
             for i, group in enumerate(self.optimizer.param_groups):
                 rank0_print(f"[create_optimizer] Group {i} has LR = {group['lr']}")
+
+            # Synchronize parameters across nodes
+            if torch.distributed.is_initialized():
+                for param in self.model.parameters():
+                    torch.distributed.broadcast(param.data, src=0)
+
             # Group 0 LLM weights
             # Group 1 LLM bias
             # Group 2 []

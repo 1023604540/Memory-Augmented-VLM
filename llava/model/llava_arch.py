@@ -405,23 +405,27 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             concat_images = torch.cat([image for image in images_list], dim=0)
             split_sizes = [image.shape[0] for image in images_list]
 
+            chunk_wise_encode = False
+            if chunk_wise_encode:
+                # Encode the images in chunks to save memory
+                # Set the chunk size
+                chunk_size = 100
 
-            # this is to encode chunk-wise, save memory
-            # Set the chunk size
-            chunk_size = 100
+                # Store the encoded features
+                encoded_chunks = []
 
-            # Store the encoded features
-            encoded_chunks = []
+                # Loop over the image frames in chunks
+                for i in range(0, concat_images.shape[0], chunk_size):
+                    chunk = concat_images[i:i + chunk_size]
+                    print(f"chunk shape : {chunk.shape}")
+                    encoded_chunk = self.encode_images(chunk)
+                    encoded_chunks.append(encoded_chunk)
 
-            # Loop over the image frames in chunks
-            for i in range(0, concat_images.shape[0], chunk_size):
-                chunk = concat_images[i:i + chunk_size]
-                print(f"chunk shape : {chunk.shape}")
-                encoded_chunk = self.encode_images(chunk)
-                encoded_chunks.append(encoded_chunk)
+                # Concatenate all the encoded chunks
+                encoded_image_features = torch.cat(encoded_chunks, dim=0)
+            else:
+                encoded_image_features = self.encode_images(concat_images)
 
-            # Concatenate all the encoded chunks
-            encoded_image_features = torch.cat(encoded_chunks, dim=0)
             encoded_image_features = torch.split(encoded_image_features, split_sizes)
 
 

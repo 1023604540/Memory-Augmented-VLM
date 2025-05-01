@@ -61,7 +61,6 @@ class TemporalGRUEncoder(nn.Module):
             output_fp32, _ = self.gru(seq)
         # back to the original dtype (bfloat16)
         output = output_fp32.to(seq.dtype)
-        print("GRU Working !!!!!!!!!!")
         # ─────────────────────────────────────────────
 
         # 4) broadcast back to patches

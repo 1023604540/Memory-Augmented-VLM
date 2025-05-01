@@ -57,7 +57,7 @@ class TemporalGRUEncoder(nn.Module):
 
         # ─── Autocast override: run GRU in FLOAT32 ───
         # this makes both weights & input float32 during the call
-        with torch.cuda.amp.autocast(device_type="cuda", dtype=torch.float32):
+        with torch.cuda.amp.autocast(enabled=True, dtype=torch.float32):
             output_fp32, _ = self.gru(seq)
         # back to the original dtype (bfloat16)
         output = output_fp32.to(seq.dtype)

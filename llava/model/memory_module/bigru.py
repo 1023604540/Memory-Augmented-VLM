@@ -42,7 +42,7 @@ class TemporalGRUEncoder(nn.Module):
             num_layers=num_layers,
             bidirectional=bidirectional,
             batch_first=False,
-        )
+        ).float()
 
         # Optional sinusoidal temporal positional encoding
         self.use_pe = use_positional_encoding

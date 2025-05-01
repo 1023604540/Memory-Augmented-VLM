@@ -54,39 +54,36 @@ class TemporalGRUEncoder(nn.Module):
             )
 
     def forward(self, visual_feats: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            visual_feats: Tensor of shape [F, P, D]
-                          F = number of frames
-                          P = number of patch tokens per frame (e.g. 729)
-                          D = feature dimension (e.g. 1152)
-        Returns:
-            enriched_feats: Tensor of shape [F, P, D], where each patch token
-                            has had the GRU’s bidirectional temporal context added.
-        """
+        # visual_feats is likely bfloat16 under autocast…
         F, P, D = visual_feats.shape
-        device = visual_feats.device
 
-        # 1. Pool patches to get one vector per frame: [F, D]
+        # 1) pool patches to [F, D]
         frame_vecs = visual_feats.mean(dim=1)
 
-        # 2. Add sinusoidal temporal encoding if enabled
+        # 2) add PE if you want…
         if self.use_pe:
-            pe = self.temporal_pe[:F].to(device)  # [F, D]
+            pe = self.temporal_pe[:F].to(frame_vecs.device)
             frame_vecs = frame_vecs + pe
 
-        # 3. Prepare sequence for GRU: [T=F, B=1, D]
-        seq = frame_vecs.unsqueeze(1)
+        # 3) shape for GRU: [T, B, D]
+        seq = frame_vecs.unsqueeze(1)   # [F, 1, D]
 
-        # 4. Run through GRU
-        output, _ = self.gru(seq)  # output: [F, 1, 2*hidden_size] == [F, 1, D]
-        print(f"BiGRU output shape: {output.shape}")
-        # 5. Remove batch dim and broadcast back to patches
-        frame_ctx = output.squeeze(1)            # [F, D]
-        temporal_term = frame_ctx.unsqueeze(1)   # [F, 1, D]
-        temporal_term = temporal_term.expand(-1, P, -1)  # [F, P, D]
+        # ───── FIX ─────
+        # cast up to float32 so the fused kernel is not selected
+        dtype_in = seq.dtype
+        seq = seq.to(torch.float32)
 
-        # 6. Add temporal context onto original visual features
-        enriched_feats = visual_feats + temporal_term     # [F, P, D]
-        print(f"BiGRU enriched features shape: {enriched_feats.shape}")
+        # 4) run GRU in float32
+        output, _ = self.gru(seq)       # output: [F, 1, 2*hidden]
+
+        # cast back to original dtype (bfloat16) if you like
+        output = output.to(dtype_in)
+        # ──────────────────
+
+        # 5) broadcast back to patches
+        frame_ctx = output.squeeze(1)           # [F, D]
+        temporal_term = frame_ctx.unsqueeze(1)      # [F, 1, D]
+        temporal_term = temporal_term.expand(-1, P, -1)
+
+        enriched_feats = visual_feats + temporal_term  # [F, P, D]
         return enriched_feats

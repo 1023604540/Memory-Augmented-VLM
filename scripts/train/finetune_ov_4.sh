@@ -6,8 +6,8 @@ export NCCL_DEBUG=INFO
 export NCCL_DEBUG_SUBSYS=ALL
 export NCCL_TIMEOUT=3600  # 1 hour
 export TORCH_NCCL_TRACE_BUFFER_SIZE=33554432
+# The next line is very important! Solves the WatchDog TimeOut Issue
 export NCCL_P2P_DISABLE=1
-
 
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 

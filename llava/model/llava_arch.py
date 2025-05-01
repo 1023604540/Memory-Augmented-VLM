@@ -118,11 +118,11 @@ class LlavaMetaModel:
         self.memory_projections = nn.ModuleList([
             nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim) for _ in range(self.memory_proj_layers)
         ])
-        self.memory_projections.apply(kaiming_init_linear)
+        #self.memory_projections.apply(kaiming_init_linear)
 
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector()
-        self.recurrent_memory_transformer.apply(kaiming_init_linear)
+        # self.recurrent_memory_transformer.apply(kaiming_init_linear)
 
         self.memory_readout_cache = None
 

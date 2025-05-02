@@ -4,10 +4,10 @@ export NCCL_IB_GID_INDEX=3
 export NCCL_SOCKET_IFNAME=ib0
 export NCCL_DEBUG=DEBUG
 export NCCL_DEBUG_SUBSYS=ALL
-export NCCL_P2P_LEVEL=NVL
+
 export NCCL_TIMEOUT=3600  # 1 hour
 export TORCH_NCCL_TRACE_BUFFER_SIZE=33554432
-
+export NCCL_P2P_DISABLE=1
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
 
@@ -68,7 +68,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 4 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 500 \

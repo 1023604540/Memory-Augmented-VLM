@@ -26,7 +26,7 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-larimar_videollamb_KIT_position"
+RUN_NAME="llava-onevision-0.5b-larimar_videollamb_KIT_position_8tokens"
 PREV_STAGE_CHECKPOINT="/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
@@ -84,7 +84,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --logging_steps 1 \
     --tf32 True \
     --model_max_length 32768 \
-    --gradient_checkpointing False \
+    --gradient_checkpointing True \
     --dataloader_num_workers 2 \
     --lazy_preprocess True \
     --report_to wandb \

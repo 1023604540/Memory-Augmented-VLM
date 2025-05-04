@@ -1,23 +1,16 @@
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0
+export NCCL_IB_GID_INDEX=0
 export NCCL_SOCKET_IFNAME=ib0
-export NCCL_P2P_LEVEL=NVL
-export NCCL_IB_GID_INDEX=3
-
-#export GLOO_SOCKET_IFNAME=ib0
-#
+# export NCCL_DEBUG=INFO   # Uncomment for debugging
+export NCCL_DEBUG_SUBSYS=ALL
 export NCCL_TIMEOUT=3600  # 1 hour
-#export TORCH_NCCL_TRACE_BUFFER_SIZE=33554432
-#export TORCH_DISTRIBUTED_DEBUG=DETAIL
-#
-export NCCL_DEBUG=INFO
-#export NCCL_DEBUG_SUBSYS=INIT,NET
-#export NCCL_IB_TIMEOUT=23
-#export NCCL_IB_RETRY_CNT=7
+# export TORCH_NCCL_TRACE_BUFFER_SIZE=33554432  # Uncomment for debugging
+
+# The next line is very important! Solves the WatchDog TimeOut Issue
+export NCCL_P2P_DISABLE=1
 
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
-
-
 
 LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"
 LLM_VERSION_CLEAN="${LLM_VERSION//\//_}"
@@ -33,7 +26,7 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-larimar_videollamb_KIT_newLR_correct"
+RUN_NAME="llava-onevision-0.5b-larimar_videollamb_KIT_position_continuetraining"
 PREV_STAGE_CHECKPOINT="/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
@@ -47,18 +40,16 @@ MASTER_NODE=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
 export MASTER_ADDR=$(getent hosts $MASTER_NODE | awk '{print $1}')
 export MASTER_PORT=$(shuf -i 49152-65535 -n 1)  # IANA动态端口范围
 
-
 echo "[RANK $RANK] MASTER_ADDR=$MASTER_ADDR, MASTER_PORT=$MASTER_PORT"
-
 
 srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
   torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
     llava/train/train_mem.py \
-    --deepspeed scripts/zero3.json \
+    --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/memory_train.yaml \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/memory_end.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --mm_tunable_parts="larimar_model,mm_language_model,recurrent_model,mm_mlp_adapter" \
@@ -79,11 +70,11 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 4 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 500 \
-    --save_total_limit 1 \
+    --save_steps 200 \
+    --save_total_limit 3 \
     --learning_rate 1e-5 \
     --memory_transformer_lr 1e-3 \
     --memory_key_value_lr 1e-3 \
@@ -101,7 +92,5 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --force_sample False \
-    --frames_upbound 250   # 32 initially
+    --frames_upbound 250
 exit 0;
-
-# You can delete the sdpa attn_implementation if you want to use flash attn

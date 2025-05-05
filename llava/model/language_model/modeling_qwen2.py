@@ -471,12 +471,12 @@ class Qwen2FlashAttention2(Qwen2Attention):
         if not output_attentions:
             attn_weights = None
 
-        if position_ids is not None and position_ids.shape[1] == 1:  # only for first generated token
-            mem_len = key_states.shape[-2] - query_states.shape[-2]
-            if mem_len > 0:
-                mem_attn = attn_weights[:, :, :, :mem_len]  # (B, H, Q, M)
-                avg_mem_attn = mem_attn.mean().item()
-                print(f"[Layer {self.layer_idx}] Avg attention to memory prompt (step 1): {avg_mem_attn:.6f}")
+
+        mem_len = key_states.shape[-2] - query_states.shape[-2]
+        if mem_len > 0:
+            mem_attn = attn_weights[:, :, :, :mem_len]  # (B, H, Q, M)
+            avg_mem_attn = mem_attn.mean().item()
+            print(f"[Layer {self.layer_idx}] Avg attention to memory prompt (step 1): {avg_mem_attn:.6f}")
 
         return attn_output, attn_weights, past_key_value
 

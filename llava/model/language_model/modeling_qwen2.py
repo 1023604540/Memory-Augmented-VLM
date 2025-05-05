@@ -774,7 +774,7 @@ class Qwen2DecoderLayer(nn.Module):
         residual = hidden_states
 
         hidden_states = self.input_layernorm(hidden_states)
-
+        print(f"[Layer {self.layer_idx}] Hidden before memory prompt concat: {hidden_states.shape}")
         # HIGHLIGHTED: prepend memory prompt if applicable
         if memory_prompt is not None:
             if memory_prompt.dim() == 3:

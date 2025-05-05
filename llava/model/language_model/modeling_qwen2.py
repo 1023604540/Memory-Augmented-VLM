@@ -346,7 +346,7 @@ class Qwen2FlashAttention2(Qwen2Attention):
         use_cache: bool = False,
         **kwargs,
     ):
-        print("Qwen2FlashAttention2.forward")
+        # print("Qwen2FlashAttention2.forward")
         if "padding_mask" in kwargs:
             warnings.warn(
                 "Passing `padding_mask` is deprecated and will be removed in v4.37. Please make sure use `attention_mask` instead.`"

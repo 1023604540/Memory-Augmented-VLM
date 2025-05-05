@@ -767,13 +767,13 @@ class Qwen2DecoderLayer(nn.Module):
         residual = hidden_states
 
         hidden_states = self.input_layernorm(hidden_states)
-        print(f"[Layer {self.layer_idx}] Hidden before memory prompt concat: {hidden_states.shape}")
+        # print(f"[Layer {self.layer_idx}] Hidden before memory prompt concat: {hidden_states.shape}")
         # HIGHLIGHTED: prepend memory prompt if applicable
         if memory_prompt is not None:
             if memory_prompt.dim() == 3:
                 memory_prompt = memory_prompt.expand(hidden_states.size(0), -1, -1)
             hidden_states = torch.cat([memory_prompt, hidden_states], dim=1)
-            print(f"[Layer {self.layer_idx}] Hidden after memory prompt concat: {hidden_states.shape}")
+            # print(f"[Layer {self.layer_idx}] Hidden after memory prompt concat: {hidden_states.shape}")
             if attention_mask is not None:
                 mem_len = memory_prompt.size(1)
                 pad_mask = torch.zeros(attention_mask.shape[0], 1, 1, mem_len, device=attention_mask.device)

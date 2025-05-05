@@ -793,7 +793,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # hidden_size = 896
         # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
         # memory_prompt_stack = None
-        memory_prompt_stack = torch.rand(10, 784, 896)
+        memory_prompt_stack = torch.rand([10, 784, 896])
         return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):

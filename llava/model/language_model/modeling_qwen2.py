@@ -471,11 +471,6 @@ class Qwen2FlashAttention2(Qwen2Attention):
         if not output_attentions:
             attn_weights = None
 
-        if position_ids is not None and position_ids.shape[1] == 1:
-            mem_attn = attn_weights[:, :, :, :784]
-            avg_mem_attn = mem_attn.mean().item()
-            print(f"[Layer {self.layer_idx}] Avg attention to memory prompt (step 1): {avg_mem_attn:.6f}")
-
         return attn_output, attn_weights, past_key_value
 
     def _flash_attention_forward(
@@ -793,7 +788,7 @@ class Qwen2DecoderLayer(nn.Module):
             output_attentions=output_attentions,
             use_cache=use_cache,
         )
-
+        print(f"self_attn_weights", self_attn_weights.shape if self_attn_weights is not None else None)
         # Trim the attention output to remove the memory prompt
         if memory_prompt is not None:
             attention_output = attention_output[:, memory_prompt.size(1):, :]

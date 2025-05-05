@@ -788,7 +788,7 @@ class Qwen2DecoderLayer(nn.Module):
             output_attentions=output_attentions,
             use_cache=use_cache,
         )
-        print(f"self_attn_weights", self_attn_weights.shape if self_attn_weights is not None else None)
+
         # Trim the attention output to remove the memory prompt
         if memory_prompt is not None:
             attention_output = attention_output[:, memory_prompt.size(1):, :]

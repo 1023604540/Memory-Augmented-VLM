@@ -738,7 +738,7 @@ class Qwen2DecoderLayer(nn.Module):
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
         past_key_value: Optional[Tuple[torch.Tensor]] = None,
-        output_attentions: Optional[bool] = False,
+        output_attentions: Optional[bool] = True,
         use_cache: Optional[bool] = False,
         memory_prompt: Optional[torch.FloatTensor] = None,  # HIGHLIGHTED: new argument
         **kwargs,

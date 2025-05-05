@@ -479,7 +479,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 memory_augmented_features.append(updated_image_segment)
             if recurrent_memory is not None:
                 self.get_model().memory_readout_cache = recurrent_memory
-                self.get_model().memory_readout_cache = None
             projected_prompts = []
             # Project through each layer's linear projection
             for i in range(self.get_model().memory_proj_layers):
@@ -793,7 +792,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # memory_length = 5  # number of memory tokens
         # hidden_size = 896
         # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
-
+        memory_prompt_stack = None
         return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):

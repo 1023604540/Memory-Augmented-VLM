@@ -471,10 +471,8 @@ class Qwen2FlashAttention2(Qwen2Attention):
         if not output_attentions:
             attn_weights = None
 
-
-        mem_len = key_states.shape[-2] - query_states.shape[-2]
-        if mem_len > 0:
-            mem_attn = attn_weights[:, :, :, :mem_len]  # (B, H, Q, M)
+        if position_ids is not None and position_ids.shape[1] == 1:
+            mem_attn = attn_weights[:, :, :, :784]
             avg_mem_attn = mem_attn.mean().item()
             print(f"[Layer {self.layer_idx}] Avg attention to memory prompt (step 1): {avg_mem_attn:.6f}")
 

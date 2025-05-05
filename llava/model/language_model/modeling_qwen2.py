@@ -1077,8 +1077,8 @@ class Qwen2Model(Qwen2PreTrainedModel):
                 current_mem = memory_prompt[i - mem_layer_offset].unsqueeze(0).expand(hidden_states.size(0), -1, -1)
                 num_memory = current_mem.shape[1]
                 memory_position_ids = torch.arange(0, num_memory, device=position_ids.device).unsqueeze(0)
-                print(f"memory_position_ids", memory_position_ids.shape)
-                print(f"position_ids", position_ids.shape)
+                print(f"memory_position_ids", memory_position_ids)
+                print(f"position_ids", position_ids)
                 layer_position_ids = torch.cat([memory_position_ids, position_ids], dim=1)
 
             if self.gradient_checkpointing and self.training:

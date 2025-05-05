@@ -470,11 +470,13 @@ class Qwen2FlashAttention2(Qwen2Attention):
 
         if not output_attentions:
             attn_weights = None
-        print(f"attention_mask, shape: {attention_mask.shape}")
-        if attention_mask is not None:
-            mem_len = attention_mask.shape[-1] - q_len  # estimate memory tokens
-            mem_attention = attn_weights[..., :mem_len]
-            print(f"[Layer {self.layer_idx}] Avg attention to memory: {mem_attention.mean().item():.6f}")
+
+        if position_ids is not None and position_ids.shape[1] == 1:  # only for first generated token
+            mem_len = key_states.shape[-2] - query_states.shape[-2]
+            if mem_len > 0:
+                mem_attn = attn_weights[:, :, :, :mem_len]  # (B, H, Q, M)
+                avg_mem_attn = mem_attn.mean().item()
+                print(f"[Layer {self.layer_idx}] Avg attention to memory prompt (step 1): {avg_mem_attn:.6f}")
 
         return attn_output, attn_weights, past_key_value
 

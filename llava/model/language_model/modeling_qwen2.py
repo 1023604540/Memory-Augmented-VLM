@@ -302,7 +302,7 @@ class Qwen2Attention(nn.Module):
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
         attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
         attn_output = torch.matmul(attn_weights, value_states)
-
+        print(f"[Layer {self.layer_idx}] attn_output shape: {attn_output.shape}")
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
             raise ValueError(
                 f"`attn_output` should be of size {(bsz, self.num_heads, q_len, self.head_dim)}, but is"
@@ -316,6 +316,11 @@ class Qwen2Attention(nn.Module):
 
         if not output_attentions:
             attn_weights = None
+
+        if attention_mask is not None:
+            mem_len = attention_mask.shape[-1] - q_len  # estimate memory tokens
+            mem_attention = attn_weights[..., :mem_len]
+            print(f"[Layer {self.layer_idx}] Avg attention to memory: {mem_attention.mean().item():.6f}")
 
         return attn_output, attn_weights, past_key_value
 
@@ -774,7 +779,7 @@ class Qwen2DecoderLayer(nn.Module):
             if memory_prompt.dim() == 3:
                 memory_prompt = memory_prompt.expand(hidden_states.size(0), -1, -1)
             hidden_states = torch.cat([memory_prompt, hidden_states], dim=1)
-            # print("hidden_states", hidden_states.shape)
+            print(f"[Layer {self.layer_idx}] Hidden after memory prompt concat: {hidden_states.shape}")
             if attention_mask is not None:
                 mem_len = memory_prompt.size(1)
                 pad_mask = torch.zeros(attention_mask.shape[0], 1, 1, mem_len, device=attention_mask.device)

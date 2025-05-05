@@ -470,7 +470,7 @@ class Qwen2FlashAttention2(Qwen2Attention):
 
         if not output_attentions:
             attn_weights = None
-
+        print(f"attention_mask, shape: {attention_mask.shape}")
         if attention_mask is not None:
             mem_len = attention_mask.shape[-1] - q_len  # estimate memory tokens
             mem_attention = attn_weights[..., :mem_len]

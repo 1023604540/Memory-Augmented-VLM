@@ -1065,7 +1065,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
             print("Qwen2Model.forward_memory_prompt", memory_prompt.shape)
             memory_prompt = memory_prompt.view(num_memory_layers, -1, hidden_states.shape[-1])
             mem_layer_offset = len(self.layers) - num_memory_layers
-
+        print(f"hidden_states.shape,{hidden_states.shape}")
         for i, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)

@@ -247,7 +247,6 @@ class Qwen2Attention(nn.Module):
         use_cache: bool = False,
         **kwargs,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Tuple[torch.Tensor]]]:
-        print("Qwen2Attention.forward")
         if "padding_mask" in kwargs:
             warnings.warn(
                 "Passing `padding_mask` is deprecated and will be removed in v4.37. Please make sure use `attention_mask` instead.`"
@@ -302,7 +301,6 @@ class Qwen2Attention(nn.Module):
         attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
         attn_weights = nn.functional.dropout(attn_weights, p=self.attention_dropout, training=self.training)
         attn_output = torch.matmul(attn_weights, value_states)
-        print(f"[Layer {self.layer_idx}] attn_output shape: {attn_output.shape}")
         if attn_output.size() != (bsz, self.num_heads, q_len, self.head_dim):
             raise ValueError(
                 f"`attn_output` should be of size {(bsz, self.num_heads, q_len, self.head_dim)}, but is"
@@ -353,7 +351,7 @@ class Qwen2FlashAttention2(Qwen2Attention):
         use_cache: bool = False,
         **kwargs,
     ):
-        # print("Qwen2FlashAttention2.forward")
+        print("Qwen2FlashAttention2.forward")
         if "padding_mask" in kwargs:
             warnings.warn(
                 "Passing `padding_mask` is deprecated and will be removed in v4.37. Please make sure use `attention_mask` instead.`"

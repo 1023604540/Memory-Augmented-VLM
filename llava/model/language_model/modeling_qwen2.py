@@ -1277,9 +1277,9 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel):
             output = (logits,) + outputs[1:]
             return (loss,) + output if loss is not None else output
 
-        if memory_prompt is not None:
-            topk = torch.topk(logits[:, -1, :], k=5)
-            print(f"🔍 [Step 1] Top-5 logits with memory prompt: {topk.indices.tolist()} / {topk.values.tolist()}")
+
+        topk = torch.topk(logits[:, -1, :], k=5)
+        print(f"🔍 [Step 1] Top-5 logits with memory prompt: {topk.indices.tolist()} / {topk.values.tolist()}")
         return CausalLMOutputWithPast(
             loss=loss,
             logits=logits,

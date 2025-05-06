@@ -11,7 +11,7 @@ import torch.nn as nn
 import math
 
 class TemporalPositionalEncoding(nn.Module):
-    def __init__(self, num_frames, embed_dim, learnable=True):
+    def __init__(self, max_frames, embed_dim, learnable=True):
         """
         Args:
             num_frames (int): number of frames (T).
@@ -19,16 +19,16 @@ class TemporalPositionalEncoding(nn.Module):
             learnable (bool): if True, use nn.Embedding; else, use fixed sin-cos.
         """
         super().__init__()
-        self.num_frames = num_frames
+        self.max_frames = max_frames
         self.embed_dim = embed_dim
         self.learnable = learnable
 
         if learnable:
-            self.frame_embed = nn.Embedding(num_frames, embed_dim)
+            self.frame_embed = nn.Embedding(max_frames, embed_dim)
         else:
             # Create fixed sin-cos positional encodings and register as buffer
-            pe = torch.zeros(num_frames, embed_dim)
-            position = torch.arange(0, num_frames).unsqueeze(1)
+            pe = torch.zeros(max_frames, embed_dim)
+            position = torch.arange(0, max_frames).unsqueeze(1)
             div_term = torch.exp(
                 torch.arange(0, embed_dim, 2).float() * -(math.log(10000.0) / embed_dim)
             )
@@ -75,6 +75,6 @@ if __name__ == "__main__":
     T, N, C = 8, 196, 512
     features = torch.randn(T, N, C)
     # Create temporal encoder (fixed sin-cos)
-    temp_enc = TemporalPositionalEncoding(num_frames=T, embed_dim=C, learnable=False)
+    temp_enc = TemporalPositionalEncoding(max_frames=T, embed_dim=C, learnable=False)
     encoded_features = temp_enc(features)
     print("Encoded features shape:", encoded_features.shape)

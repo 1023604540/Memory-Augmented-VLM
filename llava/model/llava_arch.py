@@ -127,9 +127,13 @@ class LlavaMetaModel:
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
 
         # self.recurrent_memory_transformer.apply(kaiming_init_linear)
-        self.gru_encoder = TemporalGRUEncoder().to(self.device)
         self.memory_readout_cache = None
-
+        # Initialize positional encoding
+        self.positional_encoding = TemporalPositionalEncoding(
+            max_frames=250,
+            embed_dim=LLM_hidden_dim,
+            learnable=False
+        ).to(self.device)
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
         if type(vision_tower) is list:
@@ -280,7 +284,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
     def encode_images(self, images):
         image_features = self.get_model().get_vision_tower()(images)
         # image_features = self.get_model().vision_resampler(image_features, images=images)
-        image_features = self.get_model().gru_encoder(image_features)
         image_features = self.get_model().mm_projector(image_features)
         return image_features
 
@@ -455,6 +458,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_images.append(image)
                     non_video_positions.append(idx)
                     continue
+                # Add positional encoding
+                image = self.get_model().positional_encoding(image)
+                rank_print(f"image shape after positional encoding: {image.shape}")
                 # Init recurrent memory module
                 # rank_print(f"image shape : {image.shape}")
                 boundaries = uniform_segment(image.mean(dim=1), d=32)

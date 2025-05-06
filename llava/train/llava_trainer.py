@@ -380,7 +380,6 @@ class LLaVATrainer(Trainer):
             if self.args.memory_transformer_lr is not None:
                 # Apply memory_transformer_lr to all parameters that contain "recurrent_memory_transformer"
                 lr_mapper["recurrent_memory_transformer"] = self.args.memory_transformer_lr
-                lr_mapper["gru_encoder"] = self.args.memory_transformer_lr
             if self.args.memory_key_value_lr is not None:
                 # Apply memory_key_value_lr to memory_key_projs and memory_value_projs
                 lr_mapper["memory_projections"] = self.args.memory_key_value_lr

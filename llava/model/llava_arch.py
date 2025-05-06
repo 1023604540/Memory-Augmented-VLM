@@ -460,7 +460,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     continue
                 # Add positional encoding
                 image = self.get_model().positional_encoding(image)
-                rank_print(f"image shape after positional encoding: {image.shape}")
+                # rank_print(f"image shape after positional encoding: {image.shape}")
                 # Init recurrent memory module
                 # rank_print(f"image shape : {image.shape}")
                 boundaries = uniform_segment(image.mean(dim=1), d=32)

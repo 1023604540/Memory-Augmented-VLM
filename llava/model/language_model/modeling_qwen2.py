@@ -1065,7 +1065,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
             print("Qwen2Model.forward_memory_prompt", memory_prompt.shape)
             memory_prompt = memory_prompt.view(num_memory_layers, -1, hidden_states.shape[-1])
             mem_layer_offset = len(self.layers) - num_memory_layers
-        print(f"hidden_states.shape,{hidden_states.shape}")
+        # print(f"hidden_states.shape,{hidden_states.shape}")
         for i, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
@@ -1079,7 +1079,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
                 memory_position_ids = torch.arange(0, num_memory, device=position_ids.device).unsqueeze(0)
                 token_position_ids = position_ids + num_memory
                 layer_position_ids = torch.cat([memory_position_ids, token_position_ids], dim=1)
-                print(f"layer_position_ids", layer_position_ids)
+                # print(f"layer_position_ids", layer_position_ids)
             if self.gradient_checkpointing and self.training:
                 def custom_forward(*inputs):
                     return decoder_layer(
@@ -1279,8 +1279,8 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel):
             return (loss,) + output if loss is not None else output
 
 
-        topk = torch.topk(logits[:, -1, :], k=5)
-        print(f"🔍 [Step 1] Top-5 logits with memory prompt: {topk.indices.tolist()} / {topk.values.tolist()}")
+        # topk = torch.topk(logits[:, -1, :], k=5)
+        # print(f"🔍 [Step 1] Top-5 logits with memory prompt: {topk.indices.tolist()} / {topk.values.tolist()}")
         return CausalLMOutputWithPast(
             loss=loss,
             logits=logits,
@@ -1292,7 +1292,7 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel):
     def prepare_inputs_for_generation(
         self, input_ids, past_key_values=None, attention_mask=None, inputs_embeds=None, **kwargs
     ):
-        print("Qwen2ForCausalLM.prepare_inputs_for_generation")
+        # print("Qwen2ForCausalLM.prepare_inputs_for_generation")
         # Omit tokens covered by past_key_values
         if past_key_values is not None:
             if isinstance(past_key_values, Cache):

@@ -1699,8 +1699,6 @@ def train(attn_implementation=None):
                 rank0_print("Unfreezing larimar_weights")
                 for p in model.get_model().memory_projections.parameters():
                     p.requires_grad = True
-                for p in model.get_model().gru_encoder.parameters():
-                    p.requires_grad = True
             if "mm_vision_resampler" in tunable_parts:
                 for p in model.get_model().vision_resampler.parameters():
                     p.requires_grad = True
@@ -1745,7 +1743,7 @@ def train(attn_implementation=None):
         lm_params = sum(
             p.ds_numel if hasattr(p, "ds_numel") else p.numel()
             for n, p in model.named_parameters()
-            if not any(x in n for x in ["vision_tower", "vision_resampler", "mm_projector", "memory_value_projs", "memory_key_projs", "recurrent_memory_transformer","gru_encoder"])
+            if not any(x in n for x in ["vision_tower", "vision_resampler", "mm_projector", "memory_value_projs", "memory_key_projs", "recurrent_memory_transformer"])
         )
         rank0_print(f"language_model params: {lm_params / 1e6:.2f} M")
         ##########

@@ -35,6 +35,7 @@ import heapq
 import numpy as np
 from llava.model.memory_module.MemoryController import TransformerProjector
 from llava.model.memory_module.bigru import TemporalGRUEncoder
+from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
 import time
 
 
@@ -127,7 +128,6 @@ class LlavaMetaModel:
 
         # self.recurrent_memory_transformer.apply(kaiming_init_linear)
         self.gru_encoder = TemporalGRUEncoder().to(self.device)
-
         self.memory_readout_cache = None
 
     def get_vision_tower(self):

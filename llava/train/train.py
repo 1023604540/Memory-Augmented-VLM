@@ -1801,23 +1801,27 @@ def train(attn_implementation=None):
 
         param.register_hook(make_param_hook(name, param))
 
-    import threading, time, subprocess, sys, os, socket
+    import threading, time, subprocess, sys, os, socket, torch
 
-    def monitor_my_gpu(interval=10):
-        # identify this process’s placement
+    def monitor_gpu(interval=5):
+        # identify this node/process
         hostname = socket.gethostname()
         node_rank = int(os.environ.get("NODE_RANK", os.environ.get("SLURM_NODEID", 0)))
-        local_rank = int(os.environ.get("LOCAL_RANK", torch.cuda.current_device()))
         gpus_per_node = torch.cuda.device_count()
-        global_gpu_idx = node_rank * gpus_per_node + local_rank
 
-        # print a header once per process
-        header = f"{'Timestamp':19} | {'Host':>10} | {'N-Rank':>6} | {'L-GPU':>5} | {'G-GPU':>5} | {'Util%':>6} | {'Mem%':>5}"
-        sep = "-" * len(header)
-        print(header)
-        print(sep)
+        # prepare header and separator
+        header_fmt = "{:19} | {:>10} | {:>6} | {:>5} | {:>5} | {:>6} | {:>5}"
+        headers = ["Timestamp", "Host", "N-Rank", "L-GPU", "G-GPU", "Util%", "Mem%"]
+        header_line = header_fmt.format(*headers)
+        sep_line = "-" * len(header_line)
 
         while True:
+            now = time.strftime("%Y-%m-%d %H:%M:%S")
+            # separator + header
+            print(sep_line)
+            print(header_line)
+            print(sep_line)
+
             # query all GPUs on this node
             out = subprocess.check_output([
                 "nvidia-smi",
@@ -1826,19 +1830,22 @@ def train(attn_implementation=None):
             ])
             for line in out.decode().splitlines():
                 idx, util, mem = [x.strip() for x in line.split(",")]
-                if int(idx) == local_rank:
-                    now = time.strftime("%Y-%m-%d %H:%M:%S")
-                    sys.stdout.write(
-                        f"{now} | {hostname:>10} | {node_rank:6d} | {local_rank:5d} | {global_gpu_idx:5d} | "
-                        f"{int(util):6d}% | {int(mem):5d}%\n"
-                    )
-                    break
+                global_idx = node_rank * gpus_per_node + int(idx)
+                print(header_fmt.format(
+                    now,
+                    hostname,
+                    node_rank,
+                    int(idx),
+                    global_idx,
+                    f"{util}%",
+                    f"{mem}%"
+                ))
 
             sys.stdout.flush()
             time.sleep(interval)
 
-    # start it in the background
-    t = threading.Thread(target=monitor_my_gpu, args=(5,), daemon=True)
+    # start the background monitor
+    t = threading.Thread(target=monitor_gpu, args=(5,), daemon=True)
     t.start()
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):

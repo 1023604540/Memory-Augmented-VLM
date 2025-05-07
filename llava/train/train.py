@@ -1801,22 +1801,44 @@ def train(attn_implementation=None):
 
         param.register_hook(make_param_hook(name, param))
 
-    import threading, time, subprocess, sys
+    import threading, time, subprocess, sys, os, socket
 
-    def monitor_gpu(interval=5):
+    def monitor_my_gpu(interval=10):
+        # identify this process’s placement
+        hostname = socket.gethostname()
+        node_rank = int(os.environ.get("NODE_RANK", os.environ.get("SLURM_NODEID", 0)))
+        local_rank = int(os.environ.get("LOCAL_RANK", torch.cuda.current_device()))
+        gpus_per_node = torch.cuda.device_count()
+        global_gpu_idx = node_rank * gpus_per_node + local_rank
+
+        # print a header once per process
+        header = f"{'Timestamp':19} | {'Host':>10} | {'N-Rank':>6} | {'L-GPU':>5} | {'G-GPU':>5} | {'Util%':>6} | {'Mem%':>5}"
+        sep = "-" * len(header)
+        print(header)
+        print(sep)
+
         while True:
-            # you can also swap to pynvml if you want more detail
+            # query all GPUs on this node
             out = subprocess.check_output([
                 "nvidia-smi",
                 "--query-gpu=index,utilization.gpu,utilization.memory",
                 "--format=csv,nounits,noheader"
             ])
-            sys.stdout.write(f"[GPU] {out.decode().strip()}\n")
+            for line in out.decode().splitlines():
+                idx, util, mem = [x.strip() for x in line.split(",")]
+                if int(idx) == local_rank:
+                    now = time.strftime("%Y-%m-%d %H:%M:%S")
+                    sys.stdout.write(
+                        f"{now} | {hostname:>10} | {node_rank:6d} | {local_rank:5d} | {global_gpu_idx:5d} | "
+                        f"{int(util):6d}% | {int(mem):5d}%\n"
+                    )
+                    break
+
             sys.stdout.flush()
             time.sleep(interval)
 
-    # start the monitor thread
-    t = threading.Thread(target=monitor_gpu, args=(5,), daemon=True)
+    # start it in the background
+    t = threading.Thread(target=monitor_my_gpu, args=(5,), daemon=True)
     t.start()
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):

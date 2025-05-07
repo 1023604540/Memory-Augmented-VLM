@@ -1801,6 +1801,24 @@ def train(attn_implementation=None):
 
         param.register_hook(make_param_hook(name, param))
 
+    import threading, time, subprocess, sys
+
+    def monitor_gpu(interval=5):
+        while True:
+            # you can also swap to pynvml if you want more detail
+            out = subprocess.check_output([
+                "nvidia-smi",
+                "--query-gpu=index,utilization.gpu,utilization.memory",
+                "--format=csv,nounits,noheader"
+            ])
+            sys.stdout.write(f"[GPU] {out.decode().strip()}\n")
+            sys.stdout.flush()
+            time.sleep(interval)
+
+    # start the monitor thread
+    t = threading.Thread(target=monitor_gpu, args=(5,), daemon=True)
+    t.start()
+
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         torch.serialization.add_safe_globals([LossScaler])
         trainer.train(resume_from_checkpoint=True)

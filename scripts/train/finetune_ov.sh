@@ -71,11 +71,11 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --gradient_accumulation_steps 4 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 500 \
-    --save_total_limit 1 \
-    --learning_rate 1e-5 \
-    --memory_transformer_lr 1e-3 \
-    --memory_key_value_lr 1e-3 \
+    --save_steps 200 \
+    --save_total_limit 3 \
+    --learning_rate 2e-6 \
+    --memory_transformer_lr 1e-4 \
+    --memory_key_value_lr 1e-4 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \

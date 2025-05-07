@@ -86,13 +86,14 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --model_max_length 32768 \
     --gradient_checkpointing False \
     --dataloader_num_workers 2 \
-    --lazy_preprocess True \
+    --lazy_preIprocess True \
     --report_to wandb \
     --torch_compile True \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --force_sample False \
-    --frames_upbound 250
+    --frames_upbound 250 \
+    --attn_implementation "flash_attention_2"
 exit 0;
 
 # You can delete the sdpa attn_implementation if you want to use flash attn

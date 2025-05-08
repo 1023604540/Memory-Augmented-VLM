@@ -972,7 +972,7 @@ class Qwen2Model(Qwen2PreTrainedModel):
         return_dict: Optional[bool] = None,
         memory_prompt: Optional[torch.FloatTensor] = None,
     ) -> Union[Tuple, BaseModelOutputWithPast]:
-        print("Qwen2Model.forward")
+        # print("Qwen2Model.forward")
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
@@ -1058,11 +1058,11 @@ class Qwen2Model(Qwen2PreTrainedModel):
         is_first_step = True if past_key_values is None else False  # During training, past_key_values is None
         if not is_first_step:
             is_first_step = past_key_values.get_seq_length() == 0  # During inference, past_key_values is DynamicCache
-        print("Qwen2Model.forward_is_first_step", is_first_step)
+        # print("Qwen2Model.forward_is_first_step", is_first_step)
         if memory_prompt is not None:
             # Define the memory prompt hyperparameters
             num_memory_layers = 10
-            print("Qwen2Model.forward_memory_prompt", memory_prompt.shape)
+            # print("Qwen2Model.forward_memory_prompt", memory_prompt.shape)
             memory_prompt = memory_prompt.view(num_memory_layers, -1, hidden_states.shape[-1])
             mem_layer_offset = len(self.layers) - num_memory_layers
         # print(f"hidden_states.shape,{hidden_states.shape}")
@@ -1213,7 +1213,7 @@ class Qwen2ForCausalLM(Qwen2PreTrainedModel):
         >>> tokenizer.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
         "Hey, are you conscious? Can you talk to me?\nI'm not conscious, but I can talk to you."
         ```"""
-        print("Qwen2ForCausalLM.forward")
+        # print("Qwen2ForCausalLM.forward")
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states

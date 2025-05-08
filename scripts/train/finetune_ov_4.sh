@@ -85,7 +85,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --tf32 True \
     --model_max_length 32768 \
     --gradient_checkpointing False \
-    --dataloader_num_workers 2 \
+    --dataloader_num_workers 0 \
     --lazy_preprocess True \
     --report_to wandb \
     --torch_compile True \

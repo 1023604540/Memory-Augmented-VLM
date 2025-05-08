@@ -1888,11 +1888,21 @@ class TimedDataLoader:
         return len(self.dl)
 
 class IntraEpochTimingLLaVATrainer(LLaVATrainer):
-    def train(self, resume_from_checkpoint: Optional[str] = None, trial=None):
-        # 1) accelerator + scheduler/optimizer
+    def train(self, resume_from_checkpoint=None, trial=None):
+        # 1) accelerator + optimizer/scheduler setup
         self.create_accelerator_and_postprocess()
         self._load_optimizer_and_scheduler(resume_from_checkpoint)
 
+        # 1b) *** make sure projector is in the right dtype ***
+        compute_dtype = (
+            torch.float16 if self.args.fp16
+            else (torch.bfloat16 if self.args.bf16
+                  else torch.float32)
+        )
+        mm = self.model.get_model()
+        mm.mm_projector.to(dtype=compute_dtype, device=self.args.device)
+        if hasattr(mm, "vision_resampler"):
+            mm.vision_resampler.to(dtype=compute_dtype, device=self.args.device)
         train_dataloader = self.get_train_dataloader()
         total_epochs = int(self.args.num_train_epochs)
         global_step = 0

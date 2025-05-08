@@ -1888,10 +1888,10 @@ class TimedDataLoader:
         return len(self.dl)
 
 class IntraEpochTimingLLaVATrainer(LLaVATrainer):
-    def train(self, *args, **kwargs):
-        # mirror of Trainer.train() setup, but inline timers
+    def train(self, resume_from_checkpoint: Optional[str] = None, trial=None):
+        # 1) accelerator + scheduler/optimizer
         self.create_accelerator_and_postprocess()
-        self._load_optimizer_and_scheduler()
+        self._load_optimizer_and_scheduler(resume_from_checkpoint)
 
         train_dataloader = self.get_train_dataloader()
         total_epochs = int(self.args.num_train_epochs)
@@ -1935,12 +1935,11 @@ class IntraEpochTimingLLaVATrainer(LLaVATrainer):
                 if global_step >= self.args.max_steps:
                     break
 
-            # optional: eval/checkpoint here if you want between epochs
+            # (optional) checkpoint or eval if you want
             if self.args.save_strategy == "epoch":
-                self._save_checkpoint(self.model, None)
+                self._save_checkpoint(self.model, trial)
 
         return self.state
-
 class LogMultipleLrsCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):
         import wandb

@@ -482,7 +482,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
                     # rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
                     # rank_print(f"recurrent_memory shape : {recurrent_memory.shape}")
-                updated_image_segment = torch.zeros(updated_image_segment.shape)
+                updated_image_segment = torch.zeros(updated_image_segment.shape).to(device=self.device,dtype=self.dtype)
                 memory_augmented_features.append(updated_image_segment)
             if recurrent_memory is not None:
                 self.get_model().memory_readout_cache = recurrent_memory

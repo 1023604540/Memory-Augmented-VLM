@@ -1774,8 +1774,8 @@ def train(attn_implementation=None):
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
     # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
-    # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    # trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
+    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
 
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()

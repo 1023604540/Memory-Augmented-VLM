@@ -1774,8 +1774,8 @@ def train(attn_implementation=None):
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
     # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
-    # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    # trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
+    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
 
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
@@ -1897,33 +1897,6 @@ class StepTimingCallback(TrainerCallback):
         print(f"[Compute] {compute_time:.4f}s")
         # mark for next iteration’s data‐load timing
         self._last_time = now
-class DetailedTimingTrainer(LLaVATrainer):
-    def training_step(self, model: nn.Module, inputs: dict) -> torch.Tensor:
-        # 1) make sure we're in train mode & inputs are ready
-        model.train()
-        inputs = self._prepare_inputs(inputs)
 
-        # 2) forward
-        t0 = time.time()
-        outputs = model(**inputs)
-        loss = outputs.loss
-        t_fw = time.time() - t0
-
-        # 3) backward
-        t1 = time.time()
-        loss.backward()
-        t_bw = time.time() - t1
-
-        # 4) optimizer + scheduler + zero_grad
-        t2 = time.time()
-        self.optimizer.step()
-        self.lr_scheduler.step()
-        self.optimizer.zero_grad()
-        t_opt = time.time() - t2
-
-        # 5) print out
-        print(f"[Timing] fw: {t_fw:.4f}s │ bw: {t_bw:.4f}s │ opt: {t_opt:.4f}s")
-
-        return loss.detach()
 if __name__ == "__main__":
     train()

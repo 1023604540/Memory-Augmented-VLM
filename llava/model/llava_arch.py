@@ -482,6 +482,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
                     # rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
                     # rank_print(f"recurrent_memory shape : {recurrent_memory.shape}")
+                updated_image_segment = torch.zeros(updated_image_segment.shape)
                 memory_augmented_features.append(updated_image_segment)
             if recurrent_memory is not None:
                 self.get_model().memory_readout_cache = recurrent_memory
@@ -798,7 +799,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # memory_length = 5  # number of memory tokens
         # hidden_size = 896
         # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
-        memory_prompt_stack = None
+        # memory_prompt_stack = None
         # memory_prompt_stack = torch.rand([10, 27840, 896]).to(dtype=self.dtype, device=self.device)
         return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 

@@ -26,8 +26,8 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-larimar_videollamb_KIT_position_continuetraining"
-PREV_STAGE_CHECKPOINT="/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-0.5b-larimar_videollamb_KIT_position/checkpoint-800" # replace it with your last checkpoint training from single image collection
+RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_higherLR"
+PREV_STAGE_CHECKPOINT="/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
@@ -49,7 +49,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/memory_end.yaml \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/single_image.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --mm_tunable_parts="larimar_model,mm_language_model,recurrent_model,mm_mlp_adapter" \
@@ -92,5 +92,9 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --force_sample False \
-    --frames_upbound 250
+    --frames_upbound 250 \
+    --attn_implementation "flash_attention_2" \
+    --ddp_find_unused_parameters False
 exit 0;
+
+# You can delete the sdpa attn_implementation if you want to use flash attn

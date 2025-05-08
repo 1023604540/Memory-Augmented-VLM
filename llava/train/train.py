@@ -1801,52 +1801,52 @@ def train(attn_implementation=None):
 
         param.register_hook(make_param_hook(name, param))
     print(torch.cuda.memory_summary(device=torch.cuda.current_device(), abbreviated=False))
-    import threading, time, subprocess, sys, os, socket
-
-    def monitor_gpu(interval=5):
-        # identify this node/process
-        hostname = socket.gethostname()
-        node_rank = int(os.environ.get("NODE_RANK", os.environ.get("SLURM_NODEID", 0)))
-        gpus_per_node = torch.cuda.device_count()
-
-        # prepare header and separator
-        header_fmt = "{:19} | {:>10} | {:>6} | {:>5} | {:>5} | {:>6} | {:>5}"
-        headers = ["Timestamp", "Host", "N-Rank", "L-GPU", "G-GPU", "Util%", "Mem%"]
-        header_line = header_fmt.format(*headers)
-        sep_line = "-" * len(header_line)
-
-        while True:
-            now = time.strftime("%Y-%m-%d %H:%M:%S")
-            # separator + header
-            print(sep_line)
-            print(header_line)
-            print(sep_line)
-
-            # query all GPUs on this node
-            out = subprocess.check_output([
-                "nvidia-smi",
-                "--query-gpu=index,utilization.gpu,utilization.memory",
-                "--format=csv,nounits,noheader"
-            ])
-            for line in out.decode().splitlines():
-                idx, util, mem = [x.strip() for x in line.split(",")]
-                global_idx = node_rank * gpus_per_node + int(idx)
-                print(header_fmt.format(
-                    now,
-                    hostname,
-                    node_rank,
-                    int(idx),
-                    global_idx,
-                    f"{util}%",
-                    f"{mem}%"
-                ))
-
-            sys.stdout.flush()
-            time.sleep(interval)
-
-    # start the background monitor
-    t = threading.Thread(target=monitor_gpu, args=(5,), daemon=True)
-    t.start()
+    # import threading, time, subprocess, sys, os, socket
+    #
+    # def monitor_gpu(interval=5):
+    #     # identify this node/process
+    #     hostname = socket.gethostname()
+    #     node_rank = int(os.environ.get("NODE_RANK", os.environ.get("SLURM_NODEID", 0)))
+    #     gpus_per_node = torch.cuda.device_count()
+    #
+    #     # prepare header and separator
+    #     header_fmt = "{:19} | {:>10} | {:>6} | {:>5} | {:>5} | {:>6} | {:>5}"
+    #     headers = ["Timestamp", "Host", "N-Rank", "L-GPU", "G-GPU", "Util%", "Mem%"]
+    #     header_line = header_fmt.format(*headers)
+    #     sep_line = "-" * len(header_line)
+    #
+    #     while True:
+    #         now = time.strftime("%Y-%m-%d %H:%M:%S")
+    #         # separator + header
+    #         print(sep_line)
+    #         print(header_line)
+    #         print(sep_line)
+    #
+    #         # query all GPUs on this node
+    #         out = subprocess.check_output([
+    #             "nvidia-smi",
+    #             "--query-gpu=index,utilization.gpu,utilization.memory",
+    #             "--format=csv,nounits,noheader"
+    #         ])
+    #         for line in out.decode().splitlines():
+    #             idx, util, mem = [x.strip() for x in line.split(",")]
+    #             global_idx = node_rank * gpus_per_node + int(idx)
+    #             print(header_fmt.format(
+    #                 now,
+    #                 hostname,
+    #                 node_rank,
+    #                 int(idx),
+    #                 global_idx,
+    #                 f"{util}%",
+    #                 f"{mem}%"
+    #             ))
+    #
+    #         sys.stdout.flush()
+    #         time.sleep(interval)
+    #
+    # # start the background monitor
+    # t = threading.Thread(target=monitor_gpu, args=(5,), daemon=True)
+    # t.start()
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         torch.serialization.add_safe_globals([LossScaler])

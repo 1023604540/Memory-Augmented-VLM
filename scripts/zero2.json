@@ -29,7 +29,7 @@
         "allgather_bucket_size": 2e8,
         "overlap_comm": true,
         "reduce_scatter": true,
-        "reduce_bucket_size": 5e7,
+        "reduce_bucket_size": 2e8,
         "contiguous_gradients": true,
         "ignore_unused_parameters": true
     },

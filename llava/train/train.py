@@ -1800,7 +1800,7 @@ def train(attn_implementation=None):
             return hook
 
         param.register_hook(make_param_hook(name, param))
-
+    print(torch.cuda.memory_summary(device=torch.cuda.current_device(), abbreviated=False))
     import threading, time, subprocess, sys, os, socket
 
     def monitor_gpu(interval=5):

@@ -50,7 +50,7 @@ from llava.utils import rank0_print, process_video_with_pyav, process_video_with
 from deepspeed.runtime.fp16.loss_scaler import LossScaler
 import wandb
 from transformers import TrainerCallback, TrainerControl, TrainerState
-
+from torch import nn
 
 import warnings
 warnings.filterwarnings(
@@ -1774,7 +1774,7 @@ def train(attn_implementation=None):
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
     # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
+    trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
     # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
 
     # Manually create the optimizer with custom LR groups
@@ -1875,19 +1875,7 @@ def train(attn_implementation=None):
 
     rank0_print(f"Model saved to {training_args.output_dir}")
 
-class TimedDataLoader:
-    def __init__(self, dataloader):
-        self.dl = dataloader
 
-    def __iter__(self):
-        for batch in self.dl:
-            t0 = time.time()
-            yield batch
-            t_load = time.time() - t0
-            print(f"[DataLoad] {t_load:.4f}s")
-
-    def __len__(self):
-        return len(self.dl)
 
 class StepTimingCallback(TrainerCallback):
     def on_train_begin(self, args, state, control, **kwargs):
@@ -1909,17 +1897,33 @@ class StepTimingCallback(TrainerCallback):
         print(f"[Compute] {compute_time:.4f}s")
         # mark for next iteration’s data‐load timing
         self._last_time = now
-class LogMultipleLrsCallback(TrainerCallback):
-    def on_step_end(self, args, state, control, **kwargs):
-        import wandb
-        if wandb.run is None:
-            return  # wandb is not initialized yet
+class DetailedTimingTrainer(LLaVATrainer):
+    def training_step(self, model: nn.Module, inputs: dict) -> torch.Tensor:
+        # 1) make sure we're in train mode & inputs are ready
+        model.train()
+        inputs = self._prepare_inputs(inputs)
 
-        optimizer = kwargs.get("optimizer", None)
-        if optimizer is None:
-            return
-        for i, param_group in enumerate(optimizer.param_groups):
-            lr = param_group["lr"]
-            wandb.log({f"learning_rate/group_{i}": lr}, step=state.global_step)
+        # 2) forward
+        t0 = time.time()
+        outputs = model(**inputs)
+        loss = outputs.loss
+        t_fw = time.time() - t0
+
+        # 3) backward
+        t1 = time.time()
+        loss.backward()
+        t_bw = time.time() - t1
+
+        # 4) optimizer + scheduler + zero_grad
+        t2 = time.time()
+        self.optimizer.step()
+        self.lr_scheduler.step()
+        self.optimizer.zero_grad()
+        t_opt = time.time() - t2
+
+        # 5) print out
+        print(f"[Timing] fw: {t_fw:.4f}s │ bw: {t_bw:.4f}s │ opt: {t_opt:.4f}s")
+
+        return loss.detach()
 if __name__ == "__main__":
     train()

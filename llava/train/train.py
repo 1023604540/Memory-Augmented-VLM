@@ -1781,26 +1781,28 @@ def train(attn_implementation=None):
     trainer.create_optimizer()
     # torch.autograd.set_detect_anomaly(True)
     set_global_optimizer(trainer.optimizer)
-    for name, param in model.named_parameters():
-        if not param.requires_grad:
-            continue
+    print_grad_norm = False
+    if print_grad_norm:
+        for name, param in model.named_parameters():
+            if not param.requires_grad:
+                continue
 
-        def make_param_hook(param_name, param_ref):
-            def hook(grad):
-                grad_norm = grad.norm().item()
-                # find this param’s LR
-                lr = None
-                for group in global_optimizer_ref.param_groups:
-                    for p in group["params"]:
-                        if p is param_ref:
-                            lr = group["lr"]
-                            break
-                rank0_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
-                return grad
+            def make_param_hook(param_name, param_ref):
+                def hook(grad):
+                    grad_norm = grad.norm().item()
+                    # find this param’s LR
+                    lr = None
+                    for group in global_optimizer_ref.param_groups:
+                        for p in group["params"]:
+                            if p is param_ref:
+                                lr = group["lr"]
+                                break
+                    rank0_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
+                    return grad
 
-            return hook
+                return hook
 
-        param.register_hook(make_param_hook(name, param))
+            param.register_hook(make_param_hook(name, param))
     # print(torch.cuda.memory_summary(device=torch.cuda.current_device(), abbreviated=False))
     # import threading, time, subprocess, sys, os, socket
     #

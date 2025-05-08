@@ -126,7 +126,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         memory_prompt=None,
         **kwargs,
     ) -> Union[GenerateOutput, torch.LongTensor]:
-        print("LlavaQwenForCausalLM.generate")
+        # print("LlavaQwenForCausalLM.generate")
         position_ids = kwargs.pop("position_ids", None)
         attention_mask = kwargs.pop("attention_mask", None)
         if "inputs_embeds" in kwargs:
@@ -140,7 +140,7 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         return super().generate(position_ids=position_ids, attention_mask=attention_mask, inputs_embeds=inputs_embeds, memory_prompt=memory_prompt, **kwargs)
 
     def prepare_inputs_for_generation(self, input_ids, past_key_values=None, inputs_embeds=None, memory_prompt=None, **kwargs):
-        print("LlavaQwenForCausalLM.prepare_inputs_for_generation")
+        # print("LlavaQwenForCausalLM.prepare_inputs_for_generation")
 
         images = kwargs.pop("images", None)
         image_sizes = kwargs.pop("image_sizes", None)

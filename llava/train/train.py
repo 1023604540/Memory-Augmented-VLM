@@ -1776,7 +1776,7 @@ def train(attn_implementation=None):
     # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
     # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[LogMultipleLrsCallback()], **data_module)
     # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    trainer = TimingTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    trainer = IntraEpochTimingLLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
     # torch.autograd.set_detect_anomaly(True)
@@ -1887,26 +1887,59 @@ class TimedDataLoader:
     def __len__(self):
         return len(self.dl)
 
-class TimingTrainer(LLaVATrainer):
-    def get_train_dataloader(self):
-        base = super().get_train_dataloader()
-        return TimedDataLoader(base)
+class IntraEpochTimingLLaVATrainer(LLaVATrainer):
+    def train(self, *args, **kwargs):
+        # mirror of Trainer.train() setup, but inline timers
+        self.create_accelerator_and_postprocess()
+        self._load_optimizer_and_scheduler()
 
-    def training_step(self, model, inputs):
-        # --- forward + backward + loss
-        t0 = time.time()
-        loss = super().training_step(model, inputs)
-        t_fwbw = time.time() - t0
+        train_dataloader = self.get_train_dataloader()
+        total_epochs = int(self.args.num_train_epochs)
+        global_step = 0
 
-        # --- optimizer + scheduler + zero_grad
-        t1 = time.time()
-        self.optimizer.step()
-        self.lr_scheduler.step()
-        self.optimizer.zero_grad()
-        t_opt = time.time() - t1
+        for epoch in range(total_epochs):
+            self.model.train()
+            dataloader_iter = iter(train_dataloader)
 
-        print(f"[Compute] fw+bw: {t_fwbw:.4f}s │ [Opt] step: {t_opt:.4f}s")
-        return loss
+            while True:
+                # —— data load timing ——
+                t0 = time.time()
+                try:
+                    batch = next(dataloader_iter)
+                except StopIteration:
+                    break
+                t_data = time.time() - t0
+                print(f"[DataLoad] {t_data:.4f}s")
+
+                # —— forward timing ——
+                t1 = time.time()
+                outputs = self.model(**batch)
+                loss = outputs.loss
+                t_fw = time.time() - t1
+
+                # —— backward timing ——
+                t2 = time.time()
+                loss.backward()
+                t_bw = time.time() - t2
+
+                # —— optimizer + scheduler + zero_grad timing ——
+                t3 = time.time()
+                self.optimizer.step()
+                self.lr_scheduler.step()
+                self.optimizer.zero_grad()
+                t_opt = time.time() - t3
+
+                print(f"[Compute]  fw: {t_fw:.4f}s │ bw: {t_bw:.4f}s │ opt: {t_opt:.4f}s")
+
+                global_step += 1
+                if global_step >= self.args.max_steps:
+                    break
+
+            # optional: eval/checkpoint here if you want between epochs
+            if self.args.save_strategy == "epoch":
+                self._save_checkpoint(self.model, None)
+
+        return self.state
 
 class LogMultipleLrsCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):

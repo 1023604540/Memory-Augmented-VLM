@@ -1774,9 +1774,9 @@ def train(attn_implementation=None):
 
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
     # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[LogMultipleLrsCallback()], **data_module)
+    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
     # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    trainer = IntraEpochTimingLLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
     # torch.autograd.set_detect_anomaly(True)
@@ -1887,69 +1887,26 @@ class TimedDataLoader:
     def __len__(self):
         return len(self.dl)
 
-class IntraEpochTimingLLaVATrainer(LLaVATrainer):
-    def train(self, resume_from_checkpoint=None, trial=None):
-        # 1) accelerator + optimizer/scheduler setup
-        self.create_accelerator_and_postprocess()
-        self._load_optimizer_and_scheduler(resume_from_checkpoint)
+class StepTimingCallback(TrainerCallback):
+    def on_train_begin(self, args, state, control, **kwargs):
+        # mark the moment training actually starts
+        self._last_time = time.time()
 
-        # 1b) *** make sure projector is in the right dtype ***
-        compute_dtype = (
-            torch.float16 if self.args.fp16
-            else (torch.bfloat16 if self.args.bf16
-                  else torch.float32)
-        )
-        mm = self.model.get_model()
-        mm.mm_projector.to(dtype=compute_dtype, device=self.args.device)
-        if hasattr(mm, "vision_resampler"):
-            mm.vision_resampler.to(dtype=compute_dtype, device=self.args.device)
-        train_dataloader = self.get_train_dataloader()
-        total_epochs = int(self.args.num_train_epochs)
-        global_step = 0
+    def on_step_begin(self, args, state, control, **kwargs):
+        now = time.time()
+        # time spent since the end of the last step (≈ data loading + any extras)
+        data_load = now - self._last_time
+        print(f"[DataLoad] {data_load:.4f}s")
+        # start timing compute
+        self._step_start = now
 
-        for epoch in range(total_epochs):
-            self.model.train()
-            dataloader_iter = iter(train_dataloader)
-
-            while True:
-                # —— data load timing ——
-                t0 = time.time()
-                try:
-                    batch = next(dataloader_iter)
-                except StopIteration:
-                    break
-                t_data = time.time() - t0
-                print(f"[DataLoad] {t_data:.4f}s")
-
-                # —— forward timing ——
-                t1 = time.time()
-                outputs = self.model(**batch)
-                loss = outputs.loss
-                t_fw = time.time() - t1
-
-                # —— backward timing ——
-                t2 = time.time()
-                loss.backward()
-                t_bw = time.time() - t2
-
-                # —— optimizer + scheduler + zero_grad timing ——
-                t3 = time.time()
-                self.optimizer.step()
-                self.lr_scheduler.step()
-                self.optimizer.zero_grad()
-                t_opt = time.time() - t3
-
-                print(f"[Compute]  fw: {t_fw:.4f}s │ bw: {t_bw:.4f}s │ opt: {t_opt:.4f}s")
-
-                global_step += 1
-                if global_step >= self.args.max_steps:
-                    break
-
-            # (optional) checkpoint or eval if you want
-            if self.args.save_strategy == "epoch":
-                self._save_checkpoint(self.model, trial)
-
-        return self.state
+    def on_step_end(self, args, state, control, **kwargs):
+        now = time.time()
+        # time spent in training_step + optimizer + scheduler + zero_grad
+        compute_time = now - self._step_start
+        print(f"[Compute] {compute_time:.4f}s")
+        # mark for next iteration’s data‐load timing
+        self._last_time = now
 class LogMultipleLrsCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):
         import wandb

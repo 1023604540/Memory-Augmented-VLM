@@ -1775,7 +1775,8 @@ def train(attn_implementation=None):
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
     # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
     # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[LogMultipleLrsCallback()], **data_module)
-    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    trainer = TimingTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
     # Manually create the optimizer with custom LR groups
     trainer.create_optimizer()
     # torch.autograd.set_detect_anomaly(True)
@@ -1871,6 +1872,41 @@ def train(attn_implementation=None):
         safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
 
     rank0_print(f"Model saved to {training_args.output_dir}")
+
+class TimedDataLoader:
+    def __init__(self, dataloader):
+        self.dl = dataloader
+
+    def __iter__(self):
+        for batch in self.dl:
+            t0 = time.time()
+            yield batch
+            t_load = time.time() - t0
+            print(f"[DataLoad] {t_load:.4f}s")
+
+    def __len__(self):
+        return len(self.dl)
+
+class TimingTrainer(LLaVATrainer):
+    def get_train_dataloader(self):
+        base = super().get_train_dataloader()
+        return TimedDataLoader(base)
+
+    def training_step(self, model, inputs):
+        # --- forward + backward + loss
+        t0 = time.time()
+        loss = super().training_step(model, inputs)
+        t_fwbw = time.time() - t0
+
+        # --- optimizer + scheduler + zero_grad
+        t1 = time.time()
+        self.optimizer.step()
+        self.lr_scheduler.step()
+        self.optimizer.zero_grad()
+        t_opt = time.time() - t1
+
+        print(f"[Compute] fw+bw: {t_fwbw:.4f}s │ [Opt] step: {t_opt:.4f}s")
+        return loss
 
 class LogMultipleLrsCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):

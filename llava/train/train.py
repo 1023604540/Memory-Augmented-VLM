@@ -1801,7 +1801,7 @@ def train(attn_implementation=None):
 
         param.register_hook(make_param_hook(name, param))
 
-    import threading, time, subprocess, sys, os, socket, torch
+    import threading, time, subprocess, sys, os, socket
 
     def monitor_gpu(interval=5):
         # identify this node/process

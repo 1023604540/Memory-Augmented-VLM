@@ -31,11 +31,11 @@ class Residual(nn.Module):
         self.layernorm = nn.LayerNorm(
             output_size, eps=config.mm_layer_norm_eps, dtype=config.mm_dtype
         )
-        self.dropout = nn.Dropout(config.mm_hidden_dropout_prob)
+        # self.dropout = nn.Dropout(config.mm_hidden_dropout_prob)
 
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor):
         hidden_states = self.dense(hidden_states)
-        hidden_states = self.dropout(hidden_states)
+        # hidden_states = self.dropout(hidden_states)
         hidden_states = self.layernorm(hidden_states + input_tensor)
         return hidden_states
 
@@ -55,7 +55,7 @@ class Attention(nn.Module):
         self.v_proj = nn.Linear(self.hidden_size, self.hidden_size, dtype=config.mm_dtype)
         self.q_proj = nn.Linear(self.hidden_size, self.hidden_size, dtype=config.mm_dtype)
 
-        self.dropout = nn.Dropout(config.mm_attention_probs_dropout_prob)
+        # self.dropout = nn.Dropout(config.mm_attention_probs_dropout_prob)
         self.residual = Residual(self.hidden_size, self.hidden_size, config)
 
     def transpose_for_scores(self, x):
@@ -113,7 +113,7 @@ class Attention(nn.Module):
             attention_scores += attention_mask
 
         attention_probs = nn.functional.softmax(attention_scores, dim=-1)
-        attention_probs = self.dropout(attention_probs)
+        # attention_probs = self.dropout(attention_probs)
 
         if head_mask is not None:
             attention_probs = attention_probs * head_mask

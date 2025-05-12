@@ -488,7 +488,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     if torch.rand(1, device=updated_image_segment.device).item() < dropout_rate:
                         updated_image_segment = torch.zeros(updated_image_segment.shape).to(device=self.device,dtype=self.dtype)
                         rank_print(f"updated_image_segment dropout")
-                    memory_augmented_features.append(updated_image_segment)
+            memory_augmented_features.append(updated_image_segment)
             if recurrent_memory is not None:
                 self.get_model().memory_readout_cache = recurrent_memory
             projected_prompts = []

@@ -259,6 +259,7 @@ class TransformerProjector(nn.Module):
 
         # (1) Decide memory
         if len(self.memory_cache) == 0:
+            print("Initializing memory tokens (This should not happen!)")
             current_memory = self.initial_memory.to(device=device, dtype=dtype)
         else:
             current_memory = self.memory_cache[-1].to(device=device, dtype=dtype)

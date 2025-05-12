@@ -504,7 +504,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
 
             image_features = memory_augmented_features
-
+            image_features = encoded_image_features
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")

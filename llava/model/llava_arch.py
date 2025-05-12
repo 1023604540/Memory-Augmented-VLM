@@ -484,7 +484,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # rank_print(f"recurrent_memory shape : {recurrent_memory.shape}")
                 # Branch dropout the updated image segment
                 dropout_rate = getattr(self.config, "recurrent_dropout_rate", 0.2)
-                if torch.rand(1, device=updated_image_segment.device).item() < dropout_rate:
+                force_dropout = True
+                if torch.rand(1, device=updated_image_segment.device).item() < dropout_rate or force_dropout:
                     updated_image_segment = torch.zeros(updated_image_segment.shape).to(device=self.device,dtype=self.dtype)
                     rank_print(f"updated_image_segment dropout")
                 memory_augmented_features.append(updated_image_segment)
@@ -504,7 +505,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
 
             image_features = memory_augmented_features
-            image_features = encoded_image_features
+
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")
@@ -803,7 +804,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # memory_length = 5  # number of memory tokens
         # hidden_size = 896
         # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
-        memory_prompt_stack = None
+        # memory_prompt_stack = None
         # memory_prompt_stack = torch.rand([10, 27840, 896]).to(dtype=self.dtype, device=self.device)
         return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 

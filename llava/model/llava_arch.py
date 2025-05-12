@@ -475,6 +475,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # encoded_features = encoded_features.requires_grad_()
                 # rank_print(f"boundaries : {boundaries}")
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
+                image_initial_memory_index = torch.linspace(0, image.shape[0]-1, steps=8)  # Sample 8 frames as initial memory
+                image_initial_memory = image[image_initial_memory_index.long()]
+                print(f"testing sampling: {image_initial_memory_index}, {image_initial_memory.shape}")
                 for image_segment in image_segments:
                     # rank_print(f"Image segment shape : {image_segment.shape}")
                     # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")

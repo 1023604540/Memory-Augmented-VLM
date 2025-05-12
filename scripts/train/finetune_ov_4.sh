@@ -49,7 +49,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/memory_train.yaml \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/long_train.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
     --mm_tunable_parts="larimar_model,recurrent_model,mm_mlp_adapter,mm_language_model" \
@@ -75,9 +75,9 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --save_strategy "steps" \
     --save_steps 200 \
     --save_total_limit 3 \
-    --learning_rate 2e-6 \
-    --memory_transformer_lr 5e-5 \
-    --memory_key_value_lr 5e-5 \
+    --learning_rate 1e-5 \
+    --memory_transformer_lr 1e-4 \
+    --memory_key_value_lr 1e-4 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \

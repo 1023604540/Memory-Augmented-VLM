@@ -484,12 +484,12 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # rank_print(f"recurrent_memory shape : {recurrent_memory.shape}")
                 # Branch dropout the updated image segment
                 dropout_rate = getattr(self.config, "recurrent_dropout_rate", 0.2)
-                # if self.training:
-                number = torch.rand(1, device=updated_image_segment.device).item()
-                print(f"random number is {number}")
-                if number < dropout_rate:
-                    updated_image_segment = torch.zeros(updated_image_segment.shape).to(device=self.device,dtype=self.dtype)
-                    rank_print(f"updated_image_segment dropout")
+                if self.training:
+                    number = torch.rand(1, device=updated_image_segment.device).item()
+                    # print(f"random number is {number}")
+                    if number < dropout_rate:
+                        updated_image_segment = torch.zeros(updated_image_segment.shape).to(device=self.device,dtype=self.dtype)
+                        rank_print(f"updated_image_segment dropout")
             memory_augmented_features.append(updated_image_segment)
             if recurrent_memory is not None:
                 self.get_model().memory_readout_cache = recurrent_memory

@@ -156,6 +156,7 @@ cont = model.generate(
     temperature=0,
     max_new_tokens=1024,
     modalities=["video"],
+    repetition_penalty=1.2,
 )
 text_outputs = tokenizer.batch_decode(cont, skip_special_tokens=True)
 print(text_outputs[0])

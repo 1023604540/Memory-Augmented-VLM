@@ -809,7 +809,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # memory_length = 5  # number of memory tokens
         # hidden_size = 896
         # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
-        memory_prompt_stack = None
         # memory_prompt_stack = torch.rand([10, 27840, 896]).to(dtype=self.dtype, device=self.device)
 
 

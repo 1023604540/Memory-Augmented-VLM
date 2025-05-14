@@ -811,6 +811,41 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
         memory_prompt_stack = None
         # memory_prompt_stack = torch.rand([10, 27840, 896]).to(dtype=self.dtype, device=self.device)
+
+
+        import numpy as np
+        import matplotlib
+        matplotlib.use('Agg')  # 非交互式后端
+        import matplotlib.pyplot as plt
+        from sklearn.decomposition import PCA
+
+        def save_memory_pca(memory_cache, filename="memory_pca_projection.png", n_components=2):
+            """
+            memory_cache: list of tensors or arrays [num_tokens, patch, dim]
+            filename: 图像保存路径
+            """
+            mems = [m.detach().cpu().numpy().reshape(m.shape[0], -1)
+                    for m in memory_cache]
+            all_data = np.concatenate(mems, axis=0)
+            pca = PCA(n_components=n_components)
+            proj = pca.fit_transform(all_data)
+
+            num_tokens = mems[0].shape[0]
+            iters = len(mems)
+
+            plt.figure(figsize=(6, 6))
+            for i in range(iters):
+                pts = proj[i * num_tokens:(i + 1) * num_tokens]
+                plt.scatter(pts[:, 0], pts[:, 1], label=f'iter {i}', alpha=0.7)
+            plt.legend()
+            plt.title('Memory Token PCA 投影')
+            plt.xlabel('PC1')
+            plt.ylabel('PC2')
+            plt.tight_layout()
+            plt.savefig(filename)
+            print(f"PCA 投影图已保存为 {filename}")
+
+        save_memory_pca(recurrent_model.memory_cache)
         return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):

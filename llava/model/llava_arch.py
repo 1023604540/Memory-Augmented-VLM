@@ -811,7 +811,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
         # memory_prompt_stack = torch.rand([10, 27840, 896]).to(dtype=self.dtype, device=self.device)
 
-
+        ############### This is for PCA visualization ################
         import numpy as np
         import matplotlib
         matplotlib.use('Agg')  # 非交互式后端
@@ -843,8 +843,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             plt.tight_layout()
             plt.savefig(filename)
             print(f"PCA 投影图已保存为 {filename}")
-
         # save_memory_pca(recurrent_model.memory_cache)
+        ############### This is for PCA visualization ################
+
         return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):

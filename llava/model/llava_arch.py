@@ -839,7 +839,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             plt.savefig(filename)
             print(f"PCA 投影图已保存为 {filename}")
 
-        save_memory_pca(recurrent_model.memory_cache)
+        # save_memory_pca(recurrent_model.memory_cache)
         return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):

@@ -28,7 +28,7 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="0.5b_FAU_llava_onevision_qwen2_8tokens"
+RUN_NAME="0.5b_FAU_llava_onevision_qwen2_8tokens_initial"
 # PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov" # replace it with your last checkpoint training from single image collection
 PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-0.5b-ov"
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
@@ -49,7 +49,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --version $PROMPT_VERSION \
     --data_path /home/hpc/b232dd/b232dd16/LLaVA-OV/scripts/train/sharegpt_train.yaml \
     --image_folder /anvme/workspace/b232dd21-zyr/llava-data \
-    --video_folder /anvme/workspace/b232dd16-LLaVA-OV/llava-video \
+    --video_folder /anvme/workspace/b232dd16-LLaVA-OV/long_videos/video_data \
     --mm_tunable_parts="larimar_model,mm_language_model,recurrent_model,mm_mlp_adapter" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \

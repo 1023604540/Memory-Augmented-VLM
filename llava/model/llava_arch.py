@@ -113,14 +113,7 @@ class LlavaMetaModel:
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
-        memory_prompt_hidden_dim = getattr(config, "memory_prompt_hidden_dim", 896)
-        self.memory_proj_layers = getattr(config, "injected_layers", 10)
 
-        # Define memory projections
-        self.memory_projections = nn.ModuleList([
-            nn.Linear(LLM_hidden_dim, memory_prompt_hidden_dim).to(dtype=self.dtype,
-                                                        device=self.device) for _ in range(self.memory_proj_layers)
-        ])
         #self.memory_projections.apply(kaiming_init_linear)
 
         # Define recurrent memory transformer
@@ -134,6 +127,7 @@ class LlavaMetaModel:
             embed_dim=LLM_hidden_dim,
             learnable=False
         ).to(self.device)
+        self.token_type_embedding = nn.Embedding(2, 896)
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
         if type(vision_tower) is list:
@@ -450,7 +444,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     new_image_features.append(image_feat)
             image_features = new_image_features  # [frame_num, 196, 3584]
 
-            recurrent_memory = None
             memory_augmented_features = []
             for idx, image in enumerate(image_features):
                 # If it is not a video feature, we don't need to process it
@@ -468,7 +461,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 updated_image_segment = None
-                recurrent_memory = None
                 recurrent_model.memory_cache = []
 
                 # print(f"Encoded features shape : {encoded_features.shape}")
@@ -483,33 +475,57 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
                     # rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-                    # rank_print(f"updated_image_segment shape : {updated_image_segment.shape}")
-                    # rank_print(f"recurrent_memory shape : {recurrent_memory.shape}")
-                # Branch dropout the updated image segment
-                dropout_rate = getattr(self.config, "recurrent_dropout_rate", 0.2)
-                if self.training:
-                    number = torch.rand(1, device=updated_image_segment.device).item()
-                    # print(f"random number is {number}")
-                    if number < dropout_rate:
-                        updated_image_segment = torch.zeros(updated_image_segment.shape).to(device=self.device,dtype=self.dtype)
-                        rank_print(f"updated_image_segment dropout")
             memory_augmented_features.append(updated_image_segment)
-            if recurrent_memory is not None:
-                self.get_model().memory_readout_cache = recurrent_memory
-            projected_prompts = []
-            # Project through each layer's linear projection
-            for i in range(self.get_model().memory_proj_layers):
-                # (4, 196, 896) → (1, 784, 896)
-                projected = self.get_model().memory_projections[i](self.get_model().memory_readout_cache).view(1, -1,self.config.hidden_size)
-                projected_prompts.append(projected)
-
-            # Stack into shape: (10, 784, 896)
-            memory_prompt_stack = torch.cat(projected_prompts, dim=0)  # shape: (10, 784, 896)
-
-
-
 
             image_features = memory_augmented_features
+
+            # Key Memory Selection Module
+            for index, image_feature in enumerate(image_features):
+                print(input_ids.shape)
+                cur_input_ids = input_ids[index]
+                print(cur_input_ids)
+
+                ############################## Conversation Template
+                # < | im_start | > system
+                # You are a helpful assistant. < | im_end | >
+                # < | im_start | > user
+                # < image >
+                # tell me what is going on in this video. < | im_end | >
+                # < | im_start | > assistant
+                ##############################
+                IM_END_TOKEN_ID = 151645  # "<|im_end|>"
+                IMAGE_TOKEN_ID = -200  # "<image>"
+
+                def extract_user_query_tokens(input_ids, image_token_id=IMAGE_TOKEN_ID,
+                                              im_end_token_id=IM_END_TOKEN_ID):
+                    """
+                    Extract tokens from the user message that come after the <image> token
+                    and before the next <|im_end|> token.
+                    """
+                    # Ensure we work with a list of ints.
+                    if isinstance(input_ids, torch.Tensor):
+                        tokens = input_ids.tolist()
+                    else:
+                        tokens = input_ids
+
+                    try:
+                        # Find the first occurrence of the <image> token.
+                        idx_image = tokens.index(image_token_id)
+                        # Then find the next occurrence of the <|im_end|> token after the <image> token.
+                        idx_im_end = tokens.index(im_end_token_id, idx_image)
+                        # Extract tokens after the <image> token up to (but not including) the <|im_end|> token.
+                        query_tokens = tokens[idx_image + 2: idx_im_end]  # Skip the <image> token and the space token.
+                        query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
+                        return query_tensor
+                    except ValueError:
+                        # If the expected tokens are not found, return an empty list.
+                        return []
+
+                query = extract_user_query_tokens(cur_input_ids)
+                print(f"the query is : {query}")
+                query_feature = self.get_model().embed_tokens(query)
+                print(query_feature.shape)  # [1, n, 3584]
+
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
@@ -812,41 +828,41 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # memory_prompt_stack = torch.rand([10, 27840, 896]).to(dtype=self.dtype, device=self.device)
 
         ############### This is for PCA visualization ################
-        import numpy as np
-        import matplotlib
-        matplotlib.use('Agg')  # 非交互式后端
-        import matplotlib.pyplot as plt
-        from sklearn.decomposition import PCA
-
-        def save_memory_pca(memory_cache, filename="memory_pca_projection.png", n_components=2):
-            """
-            memory_cache: list of tensors or arrays [num_tokens, patch, dim]
-            filename: 图像保存路径
-            """
-            mems = [m.detach().cpu().numpy().reshape(m.shape[0], -1)
-                    for m in memory_cache]
-            all_data = np.concatenate(mems, axis=0)
-            pca = PCA(n_components=n_components)
-            proj = pca.fit_transform(all_data)
-
-            num_tokens = mems[0].shape[0]
-            iters = len(mems)
-
-            plt.figure(figsize=(6, 6))
-            for i in range(iters):
-                pts = proj[i * num_tokens:(i + 1) * num_tokens]
-                plt.scatter(pts[:, 0], pts[:, 1], label=f'iter {i}', alpha=0.7)
-            plt.legend()
-            plt.title('Memory Token PCA 投影')
-            plt.xlabel('PC1')
-            plt.ylabel('PC2')
-            plt.tight_layout()
-            plt.savefig(filename)
-            print(f"PCA 投影图已保存为 {filename}")
+        # import numpy as np
+        # import matplotlib
+        # matplotlib.use('Agg')  # 非交互式后端
+        # import matplotlib.pyplot as plt
+        # from sklearn.decomposition import PCA
+        #
+        # def save_memory_pca(memory_cache, filename="memory_pca_projection.png", n_components=2):
+        #     """
+        #     memory_cache: list of tensors or arrays [num_tokens, patch, dim]
+        #     filename: 图像保存路径
+        #     """
+        #     mems = [m.detach().cpu().numpy().reshape(m.shape[0], -1)
+        #             for m in memory_cache]
+        #     all_data = np.concatenate(mems, axis=0)
+        #     pca = PCA(n_components=n_components)
+        #     proj = pca.fit_transform(all_data)
+        #
+        #     num_tokens = mems[0].shape[0]
+        #     iters = len(mems)
+        #
+        #     plt.figure(figsize=(6, 6))
+        #     for i in range(iters):
+        #         pts = proj[i * num_tokens:(i + 1) * num_tokens]
+        #         plt.scatter(pts[:, 0], pts[:, 1], label=f'iter {i}', alpha=0.7)
+        #     plt.legend()
+        #     plt.title('Memory Token PCA 投影')
+        #     plt.xlabel('PC1')
+        #     plt.ylabel('PC2')
+        #     plt.tight_layout()
+        #     plt.savefig(filename)
+        #     print(f"PCA 投影图已保存为 {filename}")
         # save_memory_pca(recurrent_model.memory_cache)
         ############### This is for PCA visualization ################
 
-        return memory_prompt_stack, None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
+        return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
     def inject_memory_as_kv(self, memory_readout, old_cache=None):
         """

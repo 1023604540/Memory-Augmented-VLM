@@ -50,7 +50,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --data_path /home/hpc/b232dd/b232dd16/LLaVA-OV/scripts/train/sharegpt_train.yaml \
     --image_folder /anvme/workspace/b232dd21-zyr/llava-data \
     --video_folder /anvme/workspace/b232dd16-LLaVA-OV/long_videos/video_data \
-    --mm_tunable_parts="larimar_model,mm_language_model,recurrent_model,mm_mlp_adapter" \
+    --mm_tunable_parts="larimar_model,recurrent_model,mm_mlp_adapter" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
     --mm_projector_type mlp2x_gelu \
@@ -89,8 +89,9 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --torch_compile True \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last False \
-    --force_sample True \
-    --frames_upbound 250   # 32 initially
+    --force_sample False \
+    --frames_upbound 250 \
+    --attn_implementation "flash_attention_2"
 exit 0;
 
 # You can delete the sdpa attn_implementation if you want to use flash attn

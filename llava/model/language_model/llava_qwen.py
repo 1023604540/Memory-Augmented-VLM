@@ -26,9 +26,9 @@ from transformers.generation.utils import GenerateOutput
 
 
 from llava.model.llava_arch import LlavaMetaModel, LlavaMetaForCausalLM
-# from transformers import Qwen2Config, Qwen2ForCausalLM, Qwen2Model
+from transformers import Qwen2Config, Qwen2ForCausalLM, Qwen2Model
 
-from .modeling_qwen2 import Qwen2Model, Qwen2Config, Qwen2ForCausalLM
+# from .modeling_qwen2 import Qwen2Model, Qwen2Config, Qwen2ForCausalLM
 
 
 class LlavaQwenConfig(Qwen2Config):
@@ -74,12 +74,11 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         modalities: Optional[List[str]] = ["image"],
         dpo_forward: Optional[bool] = False,
         cache_position=None,
-        memory_prompt=None,
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         # print("LlavaQwenForCausalLM.forward")
         # This is called in training
         if inputs_embeds is None:
-            (memory_prompt, input_ids, position_ids, attention_mask, past_key_values, inputs_embeds, labels) = (
+            (input_ids, position_ids, attention_mask, past_key_values, inputs_embeds, labels) = (
                 self.prepare_inputs_labels_for_multimodal(input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities, image_sizes))
 
 
@@ -94,7 +93,6 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
                 return_dict=return_dict,
-                memory_prompt=memory_prompt,
             )
 
             hidden_states = outputs[0]
@@ -113,7 +111,6 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
                 output_attentions=output_attentions,
                 output_hidden_states=output_hidden_states,
                 return_dict=return_dict,
-                memory_prompt=memory_prompt,
             )
 
     @torch.no_grad()
@@ -123,7 +120,6 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
         images: Optional[torch.Tensor] = None,
         image_sizes: Optional[torch.Tensor] = None,
         modalities: Optional[List[str]] = ["image"],
-        memory_prompt=None,
         **kwargs,
     ) -> Union[GenerateOutput, torch.LongTensor]:
         # print("LlavaQwenForCausalLM.generate")
@@ -133,13 +129,13 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             raise NotImplementedError("`inputs_embeds` is not supported")
         # This is called in inference
         if images is not None:
-            (memory_prompt, inputs, position_ids, attention_mask, _, inputs_embeds, _) = self.prepare_inputs_labels_for_multimodal(inputs, position_ids, attention_mask, None, None, images, modalities, image_sizes=image_sizes)
+            (inputs, position_ids, attention_mask, _, inputs_embeds, _) = self.prepare_inputs_labels_for_multimodal(inputs, position_ids, attention_mask, None, None, images, modalities, image_sizes=image_sizes)
         else:
             inputs_embeds = self.get_model().embed_tokens(inputs)
 
-        return super().generate(position_ids=position_ids, attention_mask=attention_mask, inputs_embeds=inputs_embeds, memory_prompt=memory_prompt, **kwargs)
+        return super().generate(position_ids=position_ids, attention_mask=attention_mask, inputs_embeds=inputs_embeds, **kwargs)
 
-    def prepare_inputs_for_generation(self, input_ids, past_key_values=None, inputs_embeds=None, memory_prompt=None, **kwargs):
+    def prepare_inputs_for_generation(self, input_ids, past_key_values=None, inputs_embeds=None, **kwargs):
         # print("LlavaQwenForCausalLM.prepare_inputs_for_generation")
 
         images = kwargs.pop("images", None)
@@ -150,8 +146,6 @@ class LlavaQwenForCausalLM(Qwen2ForCausalLM, LlavaMetaForCausalLM):
             inputs["images"] = images
         if image_sizes is not None:
             inputs["image_sizes"] = image_sizes
-        if memory_prompt is not None:
-            inputs["memory_prompt"] = memory_prompt
 
         return inputs
 

@@ -475,8 +475,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
                     # rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-            mem_type_ids = torch.zeros((8, 196), dtype=torch.long)  # shape [8, 196]
-            fine_type_ids = torch.ones((32, 196), dtype=torch.long)  # shape [32, 196]
+            mem_type_ids = torch.zeros((8, 196), dtype=torch.long, device=self.device)  # shape [8, 196]
+            fine_type_ids = torch.ones((32, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
             mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
             fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
             print(f"recurrent_memory shape : {recurrent_memory.shape}, updated_image_segment shape : {updated_image_segment.shape}")

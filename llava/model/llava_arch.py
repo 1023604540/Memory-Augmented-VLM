@@ -114,7 +114,7 @@ class LlavaMetaModel:
 
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
 
-        #self.memory_projections.apply(kaiming_init_linear)
+
 
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)

@@ -482,8 +482,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             print(f"recurrent_memory shape : {recurrent_memory.shape}, updated_image_segment shape : {updated_image_segment.shape}")
             recurrent_memory = recurrent_memory + mem_type_embeds
             updated_image_segment = updated_image_segment + fine_type_embeds
-            combined_fature = torch.cat((recurrent_memory, updated_image_segment), dim=0)
-            memory_augmented_features.append(combined_fature)
+            combined_feature = torch.cat((recurrent_memory, updated_image_segment), dim=0)
+            memory_augmented_features.append(combined_feature)
 
             image_features = memory_augmented_features
 

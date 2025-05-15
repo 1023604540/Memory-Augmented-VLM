@@ -361,7 +361,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # rank_print(modalities)
         if vision_tower is None or images is None or input_ids.shape[1] == 1:
             # print("vision_tower is None or images is None or input_ids.shape[1] == 1")
-            return None, input_ids, position_ids, attention_mask, past_key_values, None, labels
+            return input_ids, position_ids, attention_mask, past_key_values, None, labels
 
         if isinstance(modalities, str):
             modalities = [modalities]

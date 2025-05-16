@@ -37,6 +37,7 @@ from llava.model.memory_module.MemoryController import TransformerProjector
 from llava.model.memory_module.bigru import TemporalGRUEncoder
 from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
 import time
+from llava.model.memory_module.visual_attention import VisualAttention
 
 
 ################################################################
@@ -114,8 +115,15 @@ class LlavaMetaModel:
 
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
 
+        # Initialize 2 Layer MLP query projector
+        self.query_projector = nn.Sequential(
+            nn.Linear(LLM_hidden_dim, LLM_hidden_dim),
+            nn.GeLU(),
+            nn.Linear(LLM_hidden_dim, LLM_hidden_dim)
+        ).to(self.device)
 
-
+        # Define visual attention module
+        self.visual_attention = VisualAttention(LLM_hidden_dim, LLM_hidden_dim).to(self.device)
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
 
@@ -532,9 +540,16 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 query = extract_user_query_tokens(cur_input_ids)
                 # print(f"the query is : {query}")
                 query_feature = self.get_model().embed_tokens(query)
-                # print(query_feature.shape)  # [1, n, 3584]
+                print(query_feature.shape)  # [1, n, 3584]
 
-
+                # Project the query feature
+                query_feature = self.query_projector(query_feature)
+                # Apply visual attention
+                visual_bank = torch.cat(recurrent_model.memory_cache, dim=0)
+                print(f"visual_bank shape : {visual_bank.shape}")
+                context = self.visual_attention(query_feature, visual_bank)
+                print(f"context shape : {context.shape}")
+                
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")

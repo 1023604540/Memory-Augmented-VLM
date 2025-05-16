@@ -118,7 +118,7 @@ class LlavaMetaModel:
         # Initialize 2 Layer MLP query projector
         self.query_projector = nn.Sequential(
             nn.Linear(LLM_hidden_dim, LLM_hidden_dim),
-            nn.GeLU(),
+            nn.GELU(),
             nn.Linear(LLM_hidden_dim, LLM_hidden_dim)
         ).to(self.device)
 
@@ -549,7 +549,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(f"visual_bank shape : {visual_bank.shape}")
                 context = self.visual_attention(query_feature, visual_bank)
                 print(f"context shape : {context.shape}")
-                
+
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")

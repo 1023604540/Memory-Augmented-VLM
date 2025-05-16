@@ -7,8 +7,13 @@ class VisualAttention(nn.Module):
         self.W_q = nn.Linear(D_in, D_model)
         self.W_k = nn.Linear(D_in, D_model)
         self.W_v = nn.Linear(D_in, D_model)
-
+        self.query_projector = nn.Sequential(
+            nn.Linear(D_in, D_in),
+            nn.GELU(),
+            nn.Linear(D_in, D_in)
+        ).to(self.device)
     def forward(self, query_input, visual_bank):
+        query_input = self.query_projector(query_input)  # [B, T_q, D_in]
         B, T_q, _ = query_input.shape
         N, T_k, _ = visual_bank.shape
 

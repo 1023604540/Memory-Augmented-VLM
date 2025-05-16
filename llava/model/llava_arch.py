@@ -115,13 +115,6 @@ class LlavaMetaModel:
 
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
 
-        # Initialize 2 Layer MLP query projector
-        self.query_projector = nn.Sequential(
-            nn.Linear(LLM_hidden_dim, LLM_hidden_dim),
-            nn.GELU(),
-            nn.Linear(LLM_hidden_dim, LLM_hidden_dim)
-        ).to(self.device)
-
         # Define visual attention module
         self.visual_attention = VisualAttention(LLM_hidden_dim, LLM_hidden_dim).to(self.device)
         # Define recurrent memory transformer
@@ -483,22 +476,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
                     # rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
                     recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-            mem_type_ids = torch.zeros((8, 196), dtype=torch.long, device=self.device)  # shape [8, 196]
-            fine_type_ids = torch.ones((32, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
-            mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
-            fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
-            print(f"recurrent_memory shape : {recurrent_memory.shape}, updated_image_segment shape : {updated_image_segment.shape}")
-            recurrent_memory = recurrent_memory + mem_type_embeds
-            updated_image_segment = updated_image_segment + fine_type_embeds
-            combined_feature = torch.cat((recurrent_memory, updated_image_segment), dim=0)
-            memory_augmented_features.append(combined_feature)
-
-            image_features = memory_augmented_features
 
             # Key Memory Selection Module
-            for index, image_feature in enumerate(image_features):
                 # print(input_ids.shape)
-                cur_input_ids = input_ids[index]
+                cur_input_ids = input_ids[idx]
                 # print(cur_input_ids)
 
                 ############################## Conversation Template
@@ -530,7 +511,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                         # Then find the next occurrence of the <|im_end|> token after the <image> token.
                         idx_im_end = tokens.index(im_end_token_id, idx_image)
                         # Extract tokens after the <image> token up to (but not including) the <|im_end|> token.
-                        query_tokens = tokens[idx_image + 2: idx_im_end]  # Skip the <image> token and the space token.
+                        query_tokens = tokens[
+                                       idx_image + 2: idx_im_end]  # Skip the <image> token and the space token.
                         query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
                         return query_tensor
                     except ValueError:
@@ -542,13 +524,24 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 query_feature = self.get_model().embed_tokens(query)
                 print(query_feature.shape)  # [1, n, 3584]
 
-                # Project the query feature
-                query_feature = self.get_model().query_projector(query_feature)
                 # Apply visual attention
                 visual_bank = torch.cat(recurrent_model.memory_cache, dim=0)
                 print(f"visual_bank shape : {visual_bank.shape}")
                 context = self.get_model().visual_attention(query_feature, visual_bank)
                 print(f"context shape : {context.shape}")
+
+            mem_type_ids = torch.zeros((context.shape[0], context.shape[1]), dtype=torch.long, device=self.device)  # shape [8, 196]
+            fine_type_ids = torch.ones((32, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
+            mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
+            fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
+            print(f"recurrent_memory shape : {recurrent_memory.shape}, updated_image_segment shape : {updated_image_segment.shape}")
+            recurrent_memory = recurrent_memory + mem_type_embeds
+            updated_image_segment = updated_image_segment + fine_type_embeds
+            combined_feature = torch.cat((recurrent_memory, updated_image_segment), dim=0)
+            memory_augmented_features.append(combined_feature)
+
+            image_features = memory_augmented_features
+
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

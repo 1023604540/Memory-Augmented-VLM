@@ -543,11 +543,11 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(query_feature.shape)  # [1, n, 3584]
 
                 # Project the query feature
-                query_feature = self.query_projector(query_feature)
+                query_feature = self.get_model().query_projector(query_feature)
                 # Apply visual attention
                 visual_bank = torch.cat(recurrent_model.memory_cache, dim=0)
                 print(f"visual_bank shape : {visual_bank.shape}")
-                context = self.visual_attention(query_feature, visual_bank)
+                context = self.get_model().visual_attention(query_feature, visual_bank)
                 print(f"context shape : {context.shape}")
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

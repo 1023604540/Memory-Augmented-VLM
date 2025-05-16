@@ -489,9 +489,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
             # Key Memory Selection Module
             for index, image_feature in enumerate(image_features):
-                print(input_ids.shape)
+                # print(input_ids.shape)
                 cur_input_ids = input_ids[index]
-                print(cur_input_ids)
+                # print(cur_input_ids)
 
                 ############################## Conversation Template
                 # < | im_start | > system
@@ -530,9 +530,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                         return []
 
                 query = extract_user_query_tokens(cur_input_ids)
-                print(f"the query is : {query}")
+                # print(f"the query is : {query}")
                 query_feature = self.get_model().embed_tokens(query)
-                print(query_feature.shape)  # [1, n, 3584]
+                # print(query_feature.shape)  # [1, n, 3584]
 
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")

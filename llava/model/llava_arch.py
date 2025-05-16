@@ -487,53 +487,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
             image_features = memory_augmented_features
 
-            # Key Memory Selection Module
-            for index, image_feature in enumerate(image_features):
-                # print(input_ids.shape)
-                cur_input_ids = input_ids[index]
-                # print(cur_input_ids)
-
-                ############################## Conversation Template
-                # < | im_start | > system
-                # You are a helpful assistant. < | im_end | >
-                # < | im_start | > user
-                # < image >
-                # tell me what is going on in this video. < | im_end | >
-                # < | im_start | > assistant
-                ##############################
-                IM_END_TOKEN_ID = 151645  # "<|im_end|>"
-                IMAGE_TOKEN_ID = -200  # "<image>"
-
-                def extract_user_query_tokens(input_ids, image_token_id=IMAGE_TOKEN_ID,
-                                              im_end_token_id=IM_END_TOKEN_ID):
-                    """
-                    Extract tokens from the user message that come after the <image> token
-                    and before the next <|im_end|> token.
-                    """
-                    # Ensure we work with a list of ints.
-                    if isinstance(input_ids, torch.Tensor):
-                        tokens = input_ids.tolist()
-                    else:
-                        tokens = input_ids
-
-                    try:
-                        # Find the first occurrence of the <image> token.
-                        idx_image = tokens.index(image_token_id)
-                        # Then find the next occurrence of the <|im_end|> token after the <image> token.
-                        idx_im_end = tokens.index(im_end_token_id, idx_image)
-                        # Extract tokens after the <image> token up to (but not including) the <|im_end|> token.
-                        query_tokens = tokens[idx_image + 2: idx_im_end]  # Skip the <image> token and the space token.
-                        query_tensor = torch.tensor(query_tokens, dtype=torch.long).unsqueeze(0).to(self.device)
-                        return query_tensor
-                    except ValueError:
-                        # If the expected tokens are not found, return an empty list.
-                        return []
-
-                query = extract_user_query_tokens(cur_input_ids)
-                # print(f"the query is : {query}")
-                query_feature = self.get_model().embed_tokens(query)
-                # print(query_feature.shape)  # [1, n, 3584]
-
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")

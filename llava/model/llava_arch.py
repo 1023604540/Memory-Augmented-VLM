@@ -528,7 +528,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 visual_bank = torch.cat(recurrent_model.memory_cache, dim=0)
                 print(f"visual_bank shape : {visual_bank.shape}")
                 context, attn_weight = self.get_model().visual_attention(query_feature, visual_bank)
-                print(f"context shape : {context.shape}, attn_weight shape: {attn_weight.shape}")
+                print(f"context shape : {context.shape}")
 
 
             ####### Modality Embedding Part ##########

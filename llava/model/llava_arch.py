@@ -527,17 +527,21 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Apply visual attention
                 visual_bank = torch.cat(recurrent_model.memory_cache, dim=0)
                 print(f"visual_bank shape : {visual_bank.shape}")
-                context = self.get_model().visual_attention(query_feature, visual_bank)
-                print(f"context shape : {context.shape}")
+                context, attn_weight = self.get_model().visual_attention(query_feature, visual_bank)
+                print(f"context shape : {context.shape}, attn_weight shape: {attn_weight.shape}")
 
-            mem_type_ids = torch.zeros((context.shape[0], context.shape[1]), dtype=torch.long, device=self.device)  # shape [8, 196]
-            fine_type_ids = torch.ones((32, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
-            mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
-            fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
-            print(f"recurrent_memory shape : {recurrent_memory.shape}, updated_image_segment shape : {updated_image_segment.shape}")
-            recurrent_memory = recurrent_memory + mem_type_embeds
-            updated_image_segment = updated_image_segment + fine_type_embeds
-            combined_feature = torch.cat((recurrent_memory, updated_image_segment), dim=0)
+
+            ####### Modality Embedding Part ##########
+            # mem_type_ids = torch.zeros((context.shape[0], context.shape[1]), dtype=torch.long, device=self.device)  # shape [8, 196]
+            # fine_type_ids = torch.ones((32, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
+            # mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
+            # fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
+            # print(f"recurrent_memory shape : {recurrent_memory.shape}, updated_image_segment shape : {updated_image_segment.shape}")
+            # recurrent_memory = recurrent_memory + mem_type_embeds
+            # updated_image_segment = updated_image_segment + fine_type_embeds
+            ####### Modality Embedding Part ##########
+
+            combined_feature = context
             memory_augmented_features.append(combined_feature)
 
             image_features = memory_augmented_features

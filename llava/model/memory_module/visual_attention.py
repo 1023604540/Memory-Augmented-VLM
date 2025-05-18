@@ -12,7 +12,7 @@ class VisualAttention(nn.Module):
             nn.GELU(),
             nn.Linear(D_in, D_in)
         ).to(self.device)
-    def forward(self, query_input, visual_bank):
+    def forward(self, query_input, visual_bank, return_attn_weights=True):
         query_input = self.query_projector(query_input)  # [B, T_q, D_in]
         B, T_q, _ = query_input.shape
         N, T_k, _ = visual_bank.shape
@@ -34,5 +34,15 @@ class VisualAttention(nn.Module):
 
         # Weighted sum
         context = torch.bmm(attn_weights, V)  # [B, T_q, D_model]
-
+        if return_attn_weights:
+            importance = attn_weights.mean(dim=(0, 1))  # shape: [N*T_k]
+            print("importance:", importance)
+            importance = importance.view(N, T_k)
+            print("importance:", importance)
+            importance = importance.mean(dim=1)
+            print("importance:", importance)
+            sorted_indices = torch.argsort(importance, descending=True)  # [N]
+            important_batch_indices = sorted_indices.tolist()
+            print("important_batch_indices:", important_batch_indices)
+            return context, important_batch_indices
         return context

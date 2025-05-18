@@ -36,11 +36,11 @@ class VisualAttention(nn.Module):
         context = torch.bmm(attn_weights, V)  # [B, T_q, D_model]
         if return_attn_weights:
             importance = attn_weights.mean(dim=(0, 1))  # shape: [N*T_k]
-            print("importance:", importance)
+            print("importance:", importance.shape)
             importance = importance.view(N, T_k)
-            print("importance:", importance)
+            print("importance:", importance.shape)
             importance = importance.mean(dim=1)
-            print("importance:", importance)
+            print("importance:", importance.shape)
             sorted_indices = torch.argsort(importance, descending=True)  # [N]
             important_batch_indices = sorted_indices.tolist()
             print("important_batch_indices:", important_batch_indices)

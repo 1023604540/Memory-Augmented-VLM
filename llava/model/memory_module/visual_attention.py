@@ -11,7 +11,7 @@ class VisualAttention(nn.Module):
             nn.Linear(D_in, D_in),
             nn.GELU(),
             nn.Linear(D_in, D_in)
-        ).to(self.device)
+        )
     def forward(self, query_input, visual_bank, return_attn_weights=True):
         query_input = self.query_projector(query_input)  # [B, T_q, D_in]
         B, T_q, _ = query_input.shape

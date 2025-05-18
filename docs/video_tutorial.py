@@ -121,7 +121,7 @@ def dynamic_load_video(video_path):
 
 print("load video")
 # Load and process video
-video_path = "docs/needle_32.mp4"
+video_path = "docs/jobs.mp4"
 # video_path = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/QJ6sjg7SXOQ.mp4"
 # video_frames = load_video(video_path, 64)
 video_frames = load_video(video_path, 128)
@@ -138,7 +138,7 @@ conv_template = "qwen_1_5"
 
 # question = f"{DEFAULT_IMAGE_TOKEN}\n The screen is split into two sections, and in the small section on the far right, what is the man wearing a hat doing in front of a brown horse?\nA. Walking the horse\nB. Punching towards the camera\nC. Riding the horse\nD. Kneeling down\nE. Extending his palm forward while facing the camera\nAnswer with the option's letter from the given choices directly.\n"
 question = f"{DEFAULT_IMAGE_TOKEN}\nDescribe what's happening in this video."
-question = f"{DEFAULT_IMAGE_TOKEN}\nIs there a woman in the video? What is she doing?"
+
 conv = copy.deepcopy(conv_templates[conv_template])
 conv.append_message(conv.roles[0], question)
 conv.append_message(conv.roles[1], None)

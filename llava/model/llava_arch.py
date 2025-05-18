@@ -541,7 +541,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             # updated_image_segment = updated_image_segment + fine_type_embeds
             ####### Modality Embedding Part ##########
 
-            combined_feature = context
+            combined_feature = context.requires_grad_()
             memory_augmented_features.append(combined_feature)
 
             image_features = memory_augmented_features

@@ -38,7 +38,7 @@ from llava.model.memory_module.bigru import TemporalGRUEncoder
 from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
 import time
 from llava.model.memory_module.visual_attention import VisualAttention
-from llava.model.memory_module.FuseFormer import FuseFormer
+
 
 ################################################################
 # Llava OneVision config
@@ -129,7 +129,7 @@ class LlavaMetaModel:
             learnable=False
         ).to(self.device)
         # self.token_type_embedding = nn.Embedding(2, 896).to(self.device)
-        self.FuseFormer = FuseFormer(dim=LLM_hidden_dim, heads=8, layers=2, ffn_mult=4).to(self.device)
+
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
         if type(vision_tower) is list:

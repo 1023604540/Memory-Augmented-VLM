@@ -38,7 +38,7 @@ from llava.model.memory_module.bigru import TemporalGRUEncoder
 from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
 import time
 from llava.model.memory_module.visual_attention import VisualAttention
-
+from llava.model.memory_module.FuseFormer import FuseFormer
 
 ################################################################
 # Llava OneVision config
@@ -129,6 +129,7 @@ class LlavaMetaModel:
             learnable=False
         ).to(self.device)
         # self.token_type_embedding = nn.Embedding(2, 896).to(self.device)
+        self.FuseFormer = FuseFormer(dim=LLM_hidden_dim, heads=8, layers=2, ffn_mult=4).to(self.device)
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
         if type(vision_tower) is list:
@@ -884,49 +885,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 
-    def inject_memory_as_kv(self, memory_readout, old_cache=None):
-        """
-        Inserts memory tensors into the past_key_values (key-value cache) for all layers.
-
-        Args:
-            memory_readout (torch.Tensor): Memory tensor of shape [T, hidden_dim].
-            old_cache (list or None): Existing past_key_values, a list of tuples [(key, value), ...].
-                                      If None, it is treated as empty.
-
-        Returns:
-            list: Updated past_key_values with memory tensors concatenated.
-        """
-        B = 1  # Batch size, adjust if needed
-        T = memory_readout.shape[0]  # Number of memory tokens
-        H = self.config.num_key_value_heads  # Number of attention heads
-        L = self.config.num_hidden_layers  # Number of layers
-        Dh = 64  # Dimension per head, confirm from your model config
-
-        new_cache = []
-
-        # Iterate over all layers
-        for i in range(L):
-            # Project memory_readout to key and value for the current layer
-            mem_key = self.model.memory_key_projs[i](memory_readout).view(B, T, H, Dh)
-            mem_key = mem_key.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
-            mem_value = self.model.memory_value_projs[i](memory_readout).view(B, T, H, Dh)
-            mem_value = mem_value.permute(0, 2, 1, 3).contiguous()  # [B, H, T, Dh]
-
-            # Handle the case where old_cache is None or empty
-            if old_cache is None or len(old_cache) == 0:
-                old_key = torch.empty(B, H, 0, Dh, dtype=memory_readout.dtype, device=memory_readout.device)
-                old_value = torch.empty_like(old_key)
-            else:
-                old_key, old_value = old_cache[i]
-
-            # Concatenate memory tensors with the old cache
-            new_key = torch.cat([mem_key, old_key], dim=2)  # [B, H, T + old_len, Dh]
-            new_value = torch.cat([mem_value, old_value], dim=2)  # [B, H, T + old_len, Dh]
-
-            # Append the updated key-value pair to the new cache
-            new_cache.append((new_key, new_value))
-
-        return new_cache
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):
         if model_args.mm_use_im_patch_token:

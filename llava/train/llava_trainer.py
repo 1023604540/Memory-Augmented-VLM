@@ -382,7 +382,7 @@ class LLaVATrainer(Trainer):
                 lr_mapper["recurrent_memory_transformer"] = self.args.memory_transformer_lr
             if self.args.memory_key_value_lr is not None:
                 # Apply memory_key_value_lr to memory_key_projs and memory_value_projs
-                lr_mapper["visual_attention"] = self.args.memory_key_value_lr
+                lr_mapper["FuseFormer"] = self.args.memory_key_value_lr
 
             if len(lr_mapper) > 0:
                 special_lr_parameters = [name for name, _ in opt_model.named_parameters() if any(module_keyword in name for module_keyword in lr_mapper)]

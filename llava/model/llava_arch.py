@@ -37,7 +37,7 @@ from llava.model.memory_module.MemoryController import TransformerProjector
 from llava.model.memory_module.bigru import TemporalGRUEncoder
 from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
 import time
-from llava.model.memory_module.visual_attention import VisualAttention
+
 from llava.model.memory_module.FuseFormer import FuseFormer
 
 ################################################################
@@ -116,7 +116,7 @@ class LlavaMetaModel:
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
 
         # Define visual attention module
-        self.visual_attention = VisualAttention(LLM_hidden_dim, LLM_hidden_dim).to(self.device)
+
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
 
@@ -471,14 +471,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
                 image_initial_memory_index = torch.linspace(0, image.shape[0]-1, steps=8)  # Sample 8 frames as initial memory
                 image_initial_memory = image[image_initial_memory_index.long()]
-                recurrent_model.memory_cache.append(image_initial_memory)
-                for image_segment in image_segments:
-                    # rank_print(f"Image segment shape : {image_segment.shape}")
-                    # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
-                    # rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
-                    recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-
-            # Key Memory Selection Module
+                # Key Memory Selection Module
                 # print(input_ids.shape)
                 cur_input_ids = input_ids[idx]
                 # print(cur_input_ids)
@@ -526,11 +519,17 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 print(query_feature.shape)  # [1, n, 3584]
 
                 # Apply visual attention
-                visual_bank = torch.cat(recurrent_model.memory_cache, dim=0)
+                visual_bank = image_initial_memory
                 print(f"visual_bank shape : {visual_bank.shape}")
-                context, attn_weight = self.get_model().visual_attention(query_feature, visual_bank)
+                _, context = self.get_model().FuseFormer(query_feature, visual_bank)
                 print(f"context shape : {context.shape}")
 
+                recurrent_model.memory_cache.append(context)
+                for image_segment in image_segments:
+                    # rank_print(f"Image segment shape : {image_segment.shape}")
+                    # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
+                    # rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
+                    recurrent_memory, updated_image_segment = recurrent_model(image_segment)
 
             ####### Modality Embedding Part ##########
             # mem_type_ids = torch.zeros((context.shape[0], context.shape[1]), dtype=torch.long, device=self.device)  # shape [8, 196]
@@ -542,7 +541,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             # updated_image_segment = updated_image_segment + fine_type_embeds
             ####### Modality Embedding Part ##########
 
-            combined_feature = context.requires_grad_()
+            combined_feature = torch.cat((recurrent_memory, updated_image_segment), dim=0)  # [8+32, 196, 3584]
             memory_augmented_features.append(combined_feature)
 
             image_features = memory_augmented_features

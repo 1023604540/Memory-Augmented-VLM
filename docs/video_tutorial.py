@@ -22,7 +22,8 @@ from memory import KMeansMemory
 print("load model")
 warnings.filterwarnings("ignore")
 # Load the OneVision model
-pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov"   # Use this for 7B model
+# pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov"   # Use this for 7B model
+pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"  # Use this for 14B model
 model_name = "llava_qwen"
 device = "cuda"
 device_map = "auto"
@@ -48,7 +49,7 @@ def load_video(video_path, max_frames_num):
 
 print("load video")
 # Load and process video
-video_path = "/home/hpc/b232dd/b232dd16/LLaVA-OV/docs/needle_32.mp4"
+video_path = "docs/needle_32.mp4"
 video_frames = load_video(video_path, 32)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []

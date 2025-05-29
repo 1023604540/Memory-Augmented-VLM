@@ -1,7 +1,9 @@
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0
-export NCCL_IB_GID_INDEX=0
-export NCCL_SOCKET_IFNAME=ib0
+
+export NCCL_DEBUG=DEBUG
+export USE_PYTORCH_KERNEL_CACHE=0
+
 # export NCCL_DEBUG=INFO   # Uncomment for debugging
 export NCCL_DEBUG_SUBSYS=ALL
 export NCCL_TIMEOUT=3600  # 1 hour
@@ -26,8 +28,8 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_query_dependent"
-PREV_STAGE_CHECKPOINT="/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
+RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_FuseFormer"
+PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
@@ -49,9 +51,9 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/memory_train.yaml \
-    --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
-    --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/llava-video/videos \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/long_train.yaml \
+    --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
+    --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
     --mm_tunable_parts="larimar_model,recurrent_model,mm_language_model" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
@@ -75,7 +77,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --save_strategy "steps" \
     --save_steps 100 \
     --save_total_limit 3 \
-    --learning_rate 1e-6 \
+    --learning_rate 1e-5 \
     --memory_transformer_lr 1e-4 \
     --memory_key_value_lr 1e-4 \
     --weight_decay 0. \
@@ -84,8 +86,8 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --logging_steps 1 \
     --tf32 True \
     --model_max_length 32768 \
-    --gradient_checkpointing False \
-    --dataloader_num_workers 2 \
+    --gradient_checkpointing True \
+    --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb \
     --torch_compile True \

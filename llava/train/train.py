@@ -1694,6 +1694,8 @@ def train(attn_implementation=None):
                 rank0_print("Unfreezing larimar_weights")
                 for p in model.get_model().FuseFormer.parameters():
                     p.requires_grad = True
+                for p in model.get_model().token_type_embedding.parameters():
+                    p.requires_grad = True
             if "mm_vision_resampler" in tunable_parts:
                 for p in model.get_model().vision_resampler.parameters():
                     p.requires_grad = True

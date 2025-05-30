@@ -13,11 +13,12 @@ export NCCL_P2P_DISABLE=1
 export CUTLASS_PATH=/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/cutlass
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
-export MASTER_ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
-export MASTER_PORT=12355
-export WORLD_SIZE=$SLURM_NTASKS
-export RANK=$SLURM_PROCID
-export CUDA_VISIBLE_DEVICES=$SLURM_LOCALID
+
+NNODES=${SLURM_JOB_NUM_NODES}
+NODE_RANK=${SLURM_NODEID}
+NUM_GPUS_PER_NODE=$(nvidia-smi -L | wc -l)
+MASTER_ADDR=$(scontrol show hostname ${SLURM_JOB_NODELIST} | head -n 1)
+MASTER_PORT=29500  # You can pick any free port
 
 # <<< END IMPORTANT >>>
 
@@ -28,7 +29,13 @@ PROMPT_VERSION="qwen_1_5"
 RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_adapter_GC"
 PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov"
 
-python llava/train/train_mem.py \
+ACCELERATE_CPU_AFFINITY=1 torchrun \
+    --nproc_per_node=${NUM_GPUS_PER_NODE} \
+    --nnodes=${NNODES} \
+    --node_rank=${NODE_RANK} \
+    --master_addr=${MASTER_ADDR} \
+    --master_port=${MASTER_PORT} \
+    llava/train/train_mem.py \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \

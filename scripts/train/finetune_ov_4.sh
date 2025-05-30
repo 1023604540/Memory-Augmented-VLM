@@ -28,7 +28,7 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_initial_variant"
+RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_initial_variant_moredata"
 PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"

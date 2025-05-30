@@ -17,6 +17,7 @@ export MASTER_ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
 export MASTER_PORT=12355
 export WORLD_SIZE=$SLURM_NTASKS
 export RANK=$SLURM_PROCID
+export CUDA_VISIBLE_DEVICES=$SLURM_LOCALID
 
 # <<< END IMPORTANT >>>
 

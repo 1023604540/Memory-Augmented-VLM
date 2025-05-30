@@ -1,4 +1,5 @@
 #!/bin/bash
+export CUDA_VISIBLE_DEVICES=$SLURM_LOCALID
 
 # Export your environment variables
 export OMP_NUM_THREADS=8
@@ -17,7 +18,7 @@ export MASTER_ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
 export MASTER_PORT=12355
 export WORLD_SIZE=$SLURM_NTASKS
 export RANK=$SLURM_PROCID
-export LOCAL_RANK=$SLURM_LOCALID
+export LOCAL_RANK=0
 # <<< END IMPORTANT >>>
 
 LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"

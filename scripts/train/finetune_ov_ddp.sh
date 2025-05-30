@@ -39,9 +39,9 @@ ACCELERATE_CPU_AFFINITY=1 torchrun \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test.yaml \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/long_train.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
-    --video_folder /home/hk-project-p0022560/tum_tyz7686/llava-video/videos \
+    --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
     --mm_tunable_parts="larimar_model,recurrent_model" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \

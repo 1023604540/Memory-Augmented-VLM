@@ -70,7 +70,7 @@ python llava/train/train_mem.py \
     --dataloader_num_workers 2 \
     --lazy_preprocess True \
     --report_to wandb \
-    --torch_compile True \
+    --torch_compile False \
     --torch_compile_backend "inductor" \
     --dataloader_drop_last True \
     --force_sample False \

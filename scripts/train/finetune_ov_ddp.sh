@@ -1,5 +1,5 @@
 #!/bin/bash
-export CUDA_VISIBLE_DEVICES=$SLURM_LOCALID
+export CUDA_VISIBLE_DEVICES="$SLURM_LOCALID"
 
 # Export your environment variables
 export OMP_NUM_THREADS=8

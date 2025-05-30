@@ -18,7 +18,7 @@ NNODES=${SLURM_JOB_NUM_NODES}
 NODE_RANK=${SLURM_NODEID}
 NUM_GPUS_PER_NODE=$(nvidia-smi -L | wc -l)
 MASTER_ADDR=$(scontrol show hostname ${SLURM_JOB_NODELIST} | head -n 1)
-MASTER_PORT=29500  # You can pick any free port
+MASTER_PORT=29510  # You can pick any free port
 
 # <<< END IMPORTANT >>>
 

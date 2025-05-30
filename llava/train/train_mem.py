@@ -1,5 +1,5 @@
-import torch._dynamo
-torch._dynamo.config.optimize_ddp = False
+# import torch._dynamo
+# torch._dynamo.config.optimize_ddp = False
 import os
 
 print(f"[RANK={os.environ.get('RANK')}] CUDA_VISIBLE_DEVICES={os.environ.get('CUDA_VISIBLE_DEVICES')}")

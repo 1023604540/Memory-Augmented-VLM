@@ -1,41 +1,32 @@
 #!/bin/bash
 
-# Export important env variables
+# Export your environment variables
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0
-export NCCL_DEBUG=INFO
+export NCCL_DEBUG=DEBUG
+export USE_PYTORCH_KERNEL_CACHE=0
 export NCCL_DEBUG_SUBSYS=ALL
 export NCCL_TIMEOUT=3600
 export NCCL_P2P_DISABLE=1
-export USE_PYTORCH_KERNEL_CACHE=0
 export CUTLASS_PATH=/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/cutlass
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
-LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"
-LLM_VERSION_CLEAN="${LLM_VERSION//\//_}"
-VISION_MODEL_VERSION="google/siglip-so400m-patch14-384"
-VISION_MODEL_VERSION_CLEAN="${VISION_MODEL_VERSION//\//_}"
+# <<< IMPORTANT PART >>>
+# Setup PyTorch DDP env vars using Slurm info:
+export MASTER_ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
+export MASTER_PORT=12355
+export WORLD_SIZE=$SLURM_NTASKS
+export RANK=$SLURM_PROCID
+export LOCAL_RANK=$SLURM_LOCALID
+# <<< END IMPORTANT >>>
 
-############### Finetune ################
+LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"
+VISION_MODEL_VERSION="google/siglip-so400m-patch14-384"
 
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_variant_ddp"
+RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_adapter_GC"
 PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov"
 
-echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
-echo "RUN_NAME: ${RUN_NAME}"
-
-# Set local rank and device
-export LOCAL_RANK=${SLURM_LOCALID}
-export RANK=${SLURM_PROCID}
-export WORLD_SIZE=${SLURM_NTASKS}
-
-# Important: PyTorch will use these environment variables to initialize DDP
-echo "LOCAL_RANK=${LOCAL_RANK}"
-echo "RANK=${RANK}"
-echo "WORLD_SIZE=${WORLD_SIZE}"
-
-# Launch training
 python llava/train/train_mem.py \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
@@ -43,8 +34,8 @@ python llava/train/train_mem.py \
     --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/long_train.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
-    --mm_tunable_parts "larimar_model,recurrent_model" \
-    --mm_vision_tower_lr 2e-6 \
+    --mm_tunable_parts="larimar_model,recurrent_model" \
+    --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
@@ -52,7 +43,7 @@ python llava/train/train_mem.py \
     --mm_use_im_patch_token False \
     --group_by_modality_length True \
     --image_aspect_ratio anyres_max_9 \
-    --image_grid_pinpoints "(1x1),...,(6x6)" \
+    --image_grid_pinpoints  "(1x1),...,(6x6)" \
     --mm_patch_merge_type spatial_unpad \
     --mm_newline_position one_token \
     --bf16 True \
@@ -85,4 +76,3 @@ python llava/train/train_mem.py \
     --force_sample False \
     --frames_upbound 250 \
     --attn_implementation "flash_attention_2"
-

@@ -1,6 +1,6 @@
 #!/bin/bash
 export CUDA_VISIBLE_DEVICES="$SLURM_LOCALID"
-
+echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
 # Export your environment variables
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0

@@ -24,7 +24,7 @@ class FuseFormer(nn.Module):
         # 1) project query into the same stats space as memory
         q = self.query_proj(query_emb)             # [1, q, 896]
         # 2) concat and run a few self-attn layers
-        frame, patch, dim = memory_emb.shape.unpack
+        frame, patch, dim = memory_emb.shape
         memory_emb = memory_emb.view(1, -1, dim)  # [1, M, 896]
         x = torch.cat([q, memory_emb], dim=1)      # [B, q+M, 896]
         for blk in self.blocks:

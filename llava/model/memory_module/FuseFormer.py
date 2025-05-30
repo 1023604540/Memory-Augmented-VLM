@@ -25,10 +25,10 @@ class FuseFormer(nn.Module):
         q = self.query_proj(query_emb)             # [1, q, 896]
         # 2) concat and run a few self-attn layers
         frame, patch, dim = memory_emb.shape
-        memory_emb = memory_emb.view(1, -1, dim)  # [1, M, 896]
+        memory_emb = memory_emb.reshape(1, -1, dim)  # [1, M, 896]
         x = torch.cat([q, memory_emb], dim=1)      # [B, q+M, 896]
         for blk in self.blocks:
             x = blk(x)
         q_out, mem_out = x.split([q.size(1), memory_emb.size(1)], dim=1)
-        mem_out = mem_out.view(frame, patch, dim)
+        mem_out = mem_out.reshape(frame, patch, dim)
         return q_out, mem_out

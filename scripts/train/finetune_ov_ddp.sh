@@ -29,7 +29,7 @@ PROMPT_VERSION="qwen_1_5"
 RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_adapter_GC"
 PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov"
 
-ACCELERATE_CPU_AFFINITY=1 torchrun \
+srun --cpu-bind=cores ACCELERATE_CPU_AFFINITY=1 torchrun \
     --nproc_per_node=${NUM_GPUS_PER_NODE} \
     --nnodes=${NNODES} \
     --node_rank=${NODE_RANK} \

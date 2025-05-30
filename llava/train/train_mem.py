@@ -1,5 +1,4 @@
-# import torch._dynamo
-# torch._dynamo.config.optimize_ddp = False
+
 import os
 import torch
 

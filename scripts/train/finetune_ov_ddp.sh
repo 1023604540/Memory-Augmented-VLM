@@ -1,7 +1,8 @@
 #!/bin/bash
 
-echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
-# Export your environment variables
+# No need to modify CUDA_VISIBLE_DEVICES
+# No need to set LOCAL_RANK
+
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0
 export NCCL_DEBUG=DEBUG
@@ -12,13 +13,10 @@ export NCCL_P2P_DISABLE=1
 export CUTLASS_PATH=/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/cutlass
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
-# <<< IMPORTANT PART >>>
-# Setup PyTorch DDP env vars using Slurm info:
 export MASTER_ADDR=$(scontrol show hostname $SLURM_NODELIST | head -n 1)
 export MASTER_PORT=12355
 export WORLD_SIZE=$SLURM_NTASKS
 export RANK=$SLURM_PROCID
-export LOCAL_RANK=$SLURM_LOCALID
 
 # <<< END IMPORTANT >>>
 

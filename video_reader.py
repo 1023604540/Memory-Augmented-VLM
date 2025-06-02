@@ -17,12 +17,6 @@ OUTPUT_FOLDER = "/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos_tens
 # Create output directory if not exist
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-# Image preprocessing (resize to match SigLIP vision tower)
-transform = transforms.Compose([
-    transforms.Resize((384, 384)),
-    transforms.ToTensor()
-])
-
 # Load YAML file and parse full list_data_dict
 def load_all_samples_from_yaml(yaml_path):
     with open(yaml_path, "r") as f:

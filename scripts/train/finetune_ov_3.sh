@@ -79,7 +79,8 @@ torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK
     --tf32 True \
     --model_max_length 32768 \
     --gradient_checkpointing True \
-    --dataloader_num_workers 2 \
+    --dataloader_num_workers 0 \
+    --dataloader_pin_memory False \
     --lazy_preprocess True \
     --report_to wandb \
     --torch_compile True \

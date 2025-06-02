@@ -51,6 +51,7 @@ def load_all_samples_from_yaml(yaml_path):
 
 def process_one(item):
     video_file = item.get("video")
+    print(f"Processing {item.get('video')} in PID {os.getpid()}")
     video_path = os.path.join(VIDEO_FOLDER, video_file)
     save_path = os.path.join(OUTPUT_FOLDER, video_file + ".pt")
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -65,7 +66,7 @@ def process_one(item):
         frame_idx = [i for i in range(0, total_frame_num, avg_fps_round)]
         video = vr.get_batch(frame_idx).asnumpy()
         torch.save(video, save_path)
-        vr.seek(0)
+
     except Exception as e:
         print(f"Failed to decode {video_file}. Exception: {e}")
 

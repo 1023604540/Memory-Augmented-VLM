@@ -69,6 +69,7 @@ def process_one(item):
 
 if __name__ == "__main__":
     # Load and deduplicate video list
+    print(f"Loading video list from {DATA_YAML}", flush=True)
     all_samples = load_all_samples_from_yaml(DATA_YAML)
     unique_samples = deduplicate(all_samples)
     print(f"Loaded {len(all_samples)} entries, deduplicated to {len(unique_samples)} unique videos.", flush=True)

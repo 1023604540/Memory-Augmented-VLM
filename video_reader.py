@@ -54,6 +54,7 @@ for item in tqdm(list_data_dict):
     video_file = item.get("video")
     video_path = os.path.join(VIDEO_FOLDER, video_file)
     save_path = os.path.join(OUTPUT_FOLDER, video_file + ".pt")
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     if os.path.exists(save_path):
         continue

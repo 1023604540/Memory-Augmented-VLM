@@ -49,8 +49,8 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
     --data_path /home/hpc/b232dd/b232dd16/LLaVA-OV/scripts/train/sharegpt_train.yaml \
-    --image_folder /anvme/workspace/b232dd21-zyr/llava-data \
-    --video_folder /anvme/workspace/b232dd16-LLaVA-OV/long_videos/video_data \
+    --image_folder /anvme/workspace/b232dd16-datasets/llava-videos/videos \
+    --video_folder /anvme/workspace/b232dd16-datasets/llava-videos/videos \
     --mm_tunable_parts="larimar_model,recurrent_model,mm_language_model" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \

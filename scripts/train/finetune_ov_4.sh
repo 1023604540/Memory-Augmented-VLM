@@ -51,7 +51,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/long_train.yaml \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
     --mm_tunable_parts="larimar_model,recurrent_model,mm_language_model" \
@@ -87,8 +87,8 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --tf32 True \
     --model_max_length 32768 \
     --gradient_checkpointing True \
-    --dataloader_num_workers 4 \
-    --lazy_preprocess True \
+    --dataloader_num_workers 10 \
+    --lazy_preprocess False \
     --report_to wandb \
     --torch_compile True \
     --torch_compile_backend "inductor" \

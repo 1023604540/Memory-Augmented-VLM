@@ -51,7 +51,7 @@ def load_all_samples_from_yaml(yaml_path):
 
 def process_one(item):
     video_file = item.get("video")
-    print(f"Processing {item.get('video')} in PID {os.getpid()}")
+    print(f"Processing {item.get('video')} in PID {os.getpid()}", flush=True)
     video_path = os.path.join(VIDEO_FOLDER, video_file)
     save_path = os.path.join(OUTPUT_FOLDER, video_file + ".pt")
     os.makedirs(os.path.dirname(save_path), exist_ok=True)

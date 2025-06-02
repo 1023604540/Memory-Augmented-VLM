@@ -114,16 +114,16 @@ class LlavaMetaModel:
 
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
 
-
-
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
-
-        # self.recurrent_memory_transformer.apply(kaiming_init_linear)
-        self.memory_readout_cache = None
+        self.memory_fuser = nn.Linear(
+            in_features=LLM_hidden_dim,
+            out_features=LLM_hidden_dim,
+            bias=True
+        ).to(self.device)
         # Initialize positional encoding
         self.positional_encoding = TemporalPositionalEncoding(
-            max_frames=250,
+            max_frames=300,
             embed_dim=LLM_hidden_dim,
             learnable=False
         ).to(self.device)
@@ -430,7 +430,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             encoded_image_features = torch.split(encoded_image_features, split_sizes)
 
 
-            # print(f"image_features shape : {[x.shape for x in image_features]}, self.get_model().memory_readout_cache shape : {self.get_model().memory_readout_cache.shape}")
+
             # rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]
 
 
@@ -453,38 +453,42 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     continue
                 # Add positional encoding
                 image = self.get_model().positional_encoding(image)
+                num_frames = image.shape[0]
+                num_samples = min(32, num_frames)  # can't sample more than you have!
 
+                # Get linearly spaced float indices, then round to nearest int
+                original_frames_idx = torch.linspace(0, num_frames - 1, steps=num_samples)
+                original_frames_idx = torch.round(original_frames_idx).long()
+
+                # Clamp just to be 100% safe
+                original_frames_idx = torch.clamp(original_frames_idx, 0, num_frames - 1)
+
+                # Now index safely
+                original_frames = image[original_frames_idx]
                 # Init recurrent memory module
                 # rank_print(f"image shape : {image.shape}")
                 boundaries = uniform_segment(image.mean(dim=1), d=32)
                 rank_print(f"boundaries : {boundaries}")
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
-                updated_image_segment = None
                 recurrent_model.memory_cache = []
 
-                # print(f"Encoded features shape : {encoded_features.shape}")
-                # encoded_features = encoded_features.requires_grad_()
-                # rank_print(f"boundaries : {boundaries}")
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
-                image_initial_memory_index = torch.linspace(0, image.shape[0]-1, steps=8)  # Sample 8 frames as initial memory
-                image_initial_memory = image[image_initial_memory_index.long()]
-                recurrent_model.memory_cache.append(image_initial_memory)
-                for image_segment in image_segments:
-                    # rank_print(f"Image segment shape : {image_segment.shape}")
-                    # rank0_print(torch.cuda.memory_allocated() / 1024 ** 3, "GB allocated")
-                    # rank0_print(torch.cuda.memory_reserved() / 1024 ** 3, "GB reserved")
-                    recurrent_memory, updated_image_segment = recurrent_model(image_segment)
-            mem_type_ids = torch.zeros((8, 196), dtype=torch.long, device=self.device)  # shape [8, 196]
-            fine_type_ids = torch.ones((32, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
-            mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
-            fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
-            print(f"recurrent_memory shape : {recurrent_memory.shape}, updated_image_segment shape : {updated_image_segment.shape}")
-            recurrent_memory = recurrent_memory + mem_type_embeds
-            updated_image_segment = updated_image_segment + fine_type_embeds
-            combined_feature = torch.cat((recurrent_memory, updated_image_segment), dim=0)
 
-            memory_augmented_features.append(combined_feature)
+                for image_segment in image_segments:
+                    memory_cache = recurrent_model(image_segment)
+                memory_cache = torch.cat(memory_cache, dim=0)
+                memory_cache = self.get_model().memory_fuser(memory_cache)
+                mem_type_ids = torch.zeros((memory_cache.shape[0], 196), dtype=torch.long, device=self.device)  # shape [8, 196]
+                fine_type_ids = torch.ones((num_samples, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
+                mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
+                fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
+                print(f"memory_cache shape : {memory_cache.shape}")
+                memory_cache = memory_cache + mem_type_embeds
+                original_frames = original_frames + fine_type_embeds
+                combined_feature = torch.cat((memory_cache, original_frames), dim=0)
+
+                memory_augmented_features.append(combined_feature)
 
             image_features = memory_augmented_features
 
@@ -768,61 +772,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             right_add = random.randint(left_add, self.config.pos_skipping_range)
             position_ids[:, :split_position] += left_add
             position_ids[:, split_position:] += right_add
-        # import pdb; pdb.set_trace()
-        # rank_print(f"Finish preparing")
-        # print(f"new_input_embeds shape: {new_input_embeds.shape}, new_labels shape: {new_labels.shape if new_labels is not None else None}, position_ids shape: {position_ids.shape if position_ids is not None else None}, attention_mask shape: {attention_mask.shape if attention_mask is not None else None}, past_key_values shape: {past_key_values[0].shape if past_key_values is not None else None}")
-        # if past_key_values is None:
-        #     if self.get_model().memory_readout_cache is not None:
-        #         print("Memory readout injecting")
-        #         memory_readout = self.get_model().memory_readout_cache.to(dtype=self.dtype, device=self.device).flatten(0, 1)
-        #         print(f"memory_readout shape, {memory_readout.shape}")
-        #         T_mem = memory_readout.shape[0]  # memory tokens
-        #
-        #         # === 1. Inject past_key_values ===
-        #         past_key_values = self.inject_memory_as_kv(memory_readout, past_key_values)
-        #         self.get_model().memory_readout_cache = None
-        # print(f"past_key_values shape: {past_key_values[0][0].shape if past_key_values is not None else None}")
 
-        # num_memory_layers = 4
-        # memory_length = 5  # number of memory tokens
-        # hidden_size = 896
-        # memory_prompt = torch.randn(num_memory_layers, memory_length, hidden_size).to(dtype=self.dtype, device=self.device)
-        # memory_prompt_stack = torch.rand([10, 27840, 896]).to(dtype=self.dtype, device=self.device)
-
-        ############### This is for PCA visualization ################
-        # import numpy as np
-        # import matplotlib
-        # matplotlib.use('Agg')  # 非交互式后端
-        # import matplotlib.pyplot as plt
-        # from sklearn.decomposition import PCA
-        #
-        # def save_memory_pca(memory_cache, filename="memory_pca_projection.png", n_components=2):
-        #     """
-        #     memory_cache: list of tensors or arrays [num_tokens, patch, dim]
-        #     filename: 图像保存路径
-        #     """
-        #     mems = [m.detach().cpu().numpy().reshape(m.shape[0], -1)
-        #             for m in memory_cache]
-        #     all_data = np.concatenate(mems, axis=0)
-        #     pca = PCA(n_components=n_components)
-        #     proj = pca.fit_transform(all_data)
-        #
-        #     num_tokens = mems[0].shape[0]
-        #     iters = len(mems)
-        #
-        #     plt.figure(figsize=(6, 6))
-        #     for i in range(iters):
-        #         pts = proj[i * num_tokens:(i + 1) * num_tokens]
-        #         plt.scatter(pts[:, 0], pts[:, 1], label=f'iter {i}', alpha=0.7)
-        #     plt.legend()
-        #     plt.title('Memory Token PCA 投影')
-        #     plt.xlabel('PC1')
-        #     plt.ylabel('PC2')
-        #     plt.tight_layout()
-        #     plt.savefig(filename)
-        #     print(f"PCA 投影图已保存为 {filename}")
-        # save_memory_pca(recurrent_model.memory_cache)
-        ############### This is for PCA visualization ################
 
         return None, position_ids, attention_mask, past_key_values, new_input_embeds, new_labels
 

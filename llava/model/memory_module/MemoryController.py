@@ -292,15 +292,15 @@ class TransformerProjector(nn.Module):
         # (5) Reshape, split memory vs. image
         hidden_4d = hidden_states.view(B, L, P_, D_)
         new_memory_tokens = hidden_4d[:, : self.num_memory_tokens, :, :]  # => (1, n, P, D)
-        updated_image_features = hidden_4d[:, self.num_memory_tokens :, :, :]  # => (1, F, P, D)
+        # updated_image_features = hidden_4d[:, self.num_memory_tokens :, :, :]  # => (1, F, P, D)
 
         # (6) Cache new memory tokens
         self.memory_cache.append(new_memory_tokens.squeeze(0))  # Should i have detach here? No!
-        MAX_BACKPROP_STEPS = 4
+        MAX_BACKPROP_STEPS = 10
         if len(self.memory_cache) > MAX_BACKPROP_STEPS:
             self.memory_cache = self.memory_cache[-MAX_BACKPROP_STEPS:]
         # Return new memory tokens (or updated image if you prefer)
-        return new_memory_tokens.squeeze(0), updated_image_features.squeeze(0)
+        return self.memory_cache
 
 
 #

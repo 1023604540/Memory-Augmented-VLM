@@ -31,7 +31,7 @@ PROMPT_VERSION="qwen_1_5"
 RUN_NAME="0.5b_FAU_llava_onevision_qwen2_8tokens_catmemory"
 # PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov" # replace it with your last checkpoint training from single image collection
 # PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-0.5b-ov"
-PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/checkpoints/0.5b_FAU_llava_onevision_qwen2_8tokens_initial_2ndEpoch_first50"
+PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 

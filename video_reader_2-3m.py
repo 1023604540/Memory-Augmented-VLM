@@ -12,7 +12,7 @@ import time
 DATA_YAML = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test2-3.yaml"
 VIDEO_FOLDER = "/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos"
 OUTPUT_FOLDER = "/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos_tensors"
-PROCESS_COUNT = 16     # Try 8, 16, 32, 64 -- tune for your node!
+PROCESS_COUNT = 64     # Try 8, 16, 32, 64 -- tune for your node!
 DECOD_THREADS = 1       # Tune per process; 1 is usually best unless you use fewer processes
 SKIP_EXISTING = True    # Skip videos that are already processed
 ERROR_LOG = os.path.join(OUTPUT_FOLDER, "error_log.txt")

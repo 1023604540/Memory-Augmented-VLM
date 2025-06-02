@@ -71,5 +71,5 @@ def process_one(item):
 
 list_data_dict = load_all_samples_from_yaml(DATA_YAML)
 
-with multiprocessing.Pool(processes=32) as pool:  # Adjust process count depending on your CPU cores
+with multiprocessing.Pool(processes=64) as pool:  # Adjust process count depending on your CPU cores
     list(tqdm(pool.imap(process_one, list_data_dict), total=len(list_data_dict)))

@@ -16,6 +16,7 @@ SHARED_OUTPUT_FOLDER = "/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/vide
 PROCESS_COUNT = 8
 DECOD_THREADS = 1
 SKIP_EXISTING = True
+BATCH_SIZE = 1000   # <<<<----- Adjust to fit your $TMPDIR disk space
 # TMPDIR is set by the job system; fall back to /tmp
 TMPDIR = os.environ.get("TMPDIR", "/tmp")
 LOCAL_VIDEO_FOLDER = os.path.join(TMPDIR, "videos")
@@ -46,7 +47,6 @@ def deduplicate(items):
 
 def stage_in(videos_to_copy):
     print(f"Staging in {len(videos_to_copy)} videos to {LOCAL_VIDEO_FOLDER}...", flush=True)
-    os.makedirs(LOCAL_VIDEO_FOLDER, exist_ok=True)
     for video_file in tqdm(videos_to_copy, desc="Copying videos"):
         src = os.path.join(SHARED_VIDEO_FOLDER, video_file)
         dst = os.path.join(LOCAL_VIDEO_FOLDER, video_file)
@@ -90,6 +90,22 @@ def stage_out(videos_to_copy):
             shutil.copy2(local_pt, shared_pt)
     print("Stage-out complete.", flush=True)
 
+def clean_up(videos_to_clean):
+    # Remove videos and tensors from local TMPDIR to free space for next batch
+    for video_file in videos_to_clean:
+        local_video = os.path.join(LOCAL_VIDEO_FOLDER, video_file)
+        local_tensor = os.path.join(LOCAL_OUTPUT_FOLDER, video_file + ".pt")
+        try:
+            if os.path.exists(local_video):
+                os.remove(local_video)
+        except Exception as e:
+            print(f"Warning: could not delete {local_video}: {e}", flush=True)
+        try:
+            if os.path.exists(local_tensor):
+                os.remove(local_tensor)
+        except Exception as e:
+            print(f"Warning: could not delete {local_tensor}: {e}", flush=True)
+
 if __name__ == "__main__":
     print(f"Loading video list from {DATA_YAML}", flush=True)
     all_samples = load_all_samples_from_yaml(DATA_YAML)
@@ -98,14 +114,28 @@ if __name__ == "__main__":
 
     print(f"Loaded {len(all_samples)} entries, deduplicated to {len(unique_samples)} unique videos.", flush=True)
     print(f"Using {PROCESS_COUNT} processes and {DECOD_THREADS} decord threads per process.", flush=True)
+    print(f"Processing in batches of {BATCH_SIZE}", flush=True)
 
-    # --- 1. Stage in: copy videos to local scratch ---
-    stage_in(video_file_list)
-
-    # --- 2. Process videos using local input/output ---
+    # Make sure TMPDIR folders exist
+    os.makedirs(LOCAL_VIDEO_FOLDER, exist_ok=True)
     os.makedirs(LOCAL_OUTPUT_FOLDER, exist_ok=True)
-    with multiprocessing.Pool(processes=PROCESS_COUNT) as pool:
-        list(tqdm(pool.imap(process_one, unique_samples), total=len(unique_samples)))
 
-    # --- 3. Stage out: copy results back to shared output folder ---
-    stage_out(video_file_list)
+    # Process in batches
+    for batch_start in range(0, len(unique_samples), BATCH_SIZE):
+        batch_samples = unique_samples[batch_start:batch_start + BATCH_SIZE]
+        batch_files = [item['video'] for item in batch_samples]
+
+        print(f"\n--- Batch {batch_start//BATCH_SIZE + 1} ({len(batch_files)} videos) ---", flush=True)
+
+        # 1. Stage in this batch
+        stage_in(batch_files)
+
+        # 2. Process this batch
+        with multiprocessing.Pool(processes=PROCESS_COUNT) as pool:
+            list(tqdm(pool.imap(process_one, batch_samples), total=len(batch_samples)))
+
+        # 3. Stage out this batch
+        stage_out(batch_files)
+
+        # 4. Clean up TMPDIR for next batch
+        clean_up(batch_files)

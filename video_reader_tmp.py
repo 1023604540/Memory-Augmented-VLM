@@ -8,7 +8,7 @@ from decord import VideoReader, cpu
 import json
 import multiprocessing
 import time
-
+from math import ceil
 # =================== CONFIGURATION =====================
 DATA_YAML = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test2-3.yaml"
 SHARED_VIDEO_FOLDER = "/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos"
@@ -120,22 +120,25 @@ if __name__ == "__main__":
     os.makedirs(LOCAL_VIDEO_FOLDER, exist_ok=True)
     os.makedirs(LOCAL_OUTPUT_FOLDER, exist_ok=True)
 
+    total_batches = ceil(len(unique_samples) / BATCH_SIZE)
     # Process in batches
-    for batch_start in range(0, len(unique_samples), BATCH_SIZE):
-        batch_samples = unique_samples[batch_start:batch_start + BATCH_SIZE]
-        batch_files = [item['video'] for item in batch_samples]
+    with tqdm(total=total_batches, desc="Batch Progress") as batch_pbar:
+        for batch_start in range(0, len(unique_samples), BATCH_SIZE):
+            batch_samples = unique_samples[batch_start:batch_start + BATCH_SIZE]
+            batch_files = [item['video'] for item in batch_samples]
 
-        print(f"\n--- Batch {batch_start//BATCH_SIZE + 1} ({len(batch_files)} videos) ---", flush=True)
+            print(f"\n--- Batch {batch_start//BATCH_SIZE + 1} ({len(batch_files)} videos) ---", flush=True)
 
-        # 1. Stage in this batch
-        stage_in(batch_files)
+            # 1. Stage in this batch
+            stage_in(batch_files)
 
-        # 2. Process this batch
-        with multiprocessing.Pool(processes=PROCESS_COUNT) as pool:
-            list(tqdm(pool.imap(process_one, batch_samples), total=len(batch_samples)))
+            # 2. Process this batch
+            with multiprocessing.Pool(processes=PROCESS_COUNT) as pool:
+                list(tqdm(pool.imap(process_one, batch_samples), total=len(batch_samples)))
 
-        # 3. Stage out this batch
-        stage_out(batch_files)
+            # 3. Stage out this batch
+            stage_out(batch_files)
 
-        # 4. Clean up TMPDIR for next batch
-        clean_up(batch_files)
+            # 4. Clean up TMPDIR for next batch
+            clean_up(batch_files)
+            batch_pbar.update(1)

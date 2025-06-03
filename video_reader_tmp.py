@@ -17,7 +17,7 @@ PROCESS_COUNT = 8
 DECOD_THREADS = 1
 SKIP_EXISTING = True
 BATCH_SIZE = 1000   # <<<<----- Adjust to fit your $TMPDIR disk space
-# TMPDIR is set by the job system; fall back to /tmp
+# If TMPDIR is set by the job system; fall back to /tmp
 TMPDIR = os.environ.get("TMPDIR", "/tmp")
 LOCAL_VIDEO_FOLDER = os.path.join(TMPDIR, "videos")
 LOCAL_OUTPUT_FOLDER = os.path.join(TMPDIR, "videos_tensors")
@@ -59,10 +59,16 @@ def process_one(item):
     video_file = item.get("video")
     video_path = os.path.join(LOCAL_VIDEO_FOLDER, video_file)
     save_path = os.path.join(LOCAL_OUTPUT_FOLDER, video_file + ".pt")
+    shared_save_path = os.path.join(SHARED_OUTPUT_FOLDER, video_file + ".pt")
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
     if SKIP_EXISTING and os.path.exists(save_path):
         print(f"Skipping {video_file}, already exists.", flush=True)
+        return
+
+    # Skip if file already exists in SHARED_OUTPUT_FOLDER (main check for resuming)
+    if SKIP_EXISTING and os.path.exists(shared_save_path):
+        print(f"Skipping {video_file}, .pt already exists in shared output.", flush=True)
         return
 
     try:

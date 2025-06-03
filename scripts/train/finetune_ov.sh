@@ -28,10 +28,10 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="0.5b_FAU_llava_onevision_qwen2_8tokens_catmemory"
+RUN_NAME="0.5b_FAU_llava_onevision_qwen2_8tokens_catmemory_secondHalf"
 # PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-7b-ov" # replace it with your last checkpoint training from single image collection
 # PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-0.5b-ov"
-PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
+PREV_STAGE_CHECKPOINT="/anvme/workspace/b232dd16-LLaVA-OV/checkpoints/0.5b_FAU_llava_onevision_qwen2_8tokens_catmemory/checkpoint-4000" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
@@ -73,7 +73,7 @@ ACCELERATE_CPU_AFFINITY=0 torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NN
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 200 \
-    --save_total_limit 3 \
+    --save_total_limit 4 \
     --learning_rate 2e-6 \
     --memory_transformer_lr 1e-5 \
     --memory_key_value_lr 1e-5 \

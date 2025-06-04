@@ -380,6 +380,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             for image in images:
                 if image.ndim == 4:
                     images_list.append(image)
+                    print(f"image shape : {image.shape}")
                 else:
                     images_list.append(image.unsqueeze(0))
 
@@ -466,7 +467,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Now index safely
                 original_frames = image[original_frames_idx]
                 # Init recurrent memory module
-                # rank_print(f"image shape : {image.shape}")
+                rank_print(f"image shape : {image.shape}")
                 boundaries = uniform_segment(image.mean(dim=1), d=32)
                 rank_print(f"boundaries : {boundaries}")
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)

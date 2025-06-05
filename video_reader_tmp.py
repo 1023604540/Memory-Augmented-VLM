@@ -129,7 +129,7 @@ if __name__ == "__main__":
     total_batches = ceil(len(unique_samples) / BATCH_SIZE)
     # Process in batches
     with tqdm(total=total_batches, desc="Batch Progress") as batch_pbar:
-        for batch_start in range(20000, len(unique_samples), BATCH_SIZE):
+        for batch_start in range(0, len(unique_samples), BATCH_SIZE):
             batch_samples = unique_samples[batch_start:batch_start + BATCH_SIZE]
             batch_files = [item['video'] for item in batch_samples]
 

@@ -10,7 +10,7 @@ import multiprocessing
 import time
 from math import ceil
 # =================== CONFIGURATION =====================
-DATA_YAML = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test.yaml"
+DATA_YAML = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test2-3.yaml"
 SHARED_VIDEO_FOLDER = "/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos"
 SHARED_OUTPUT_FOLDER = "/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos_tensors"
 PROCESS_COUNT = 8
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     total_batches = ceil(len(unique_samples) / BATCH_SIZE)
     # Process in batches
     with tqdm(total=total_batches, desc="Batch Progress") as batch_pbar:
-        for batch_start in range(0, len(unique_samples), BATCH_SIZE):
+        for batch_start in range(20000, len(unique_samples), BATCH_SIZE):
             batch_samples = unique_samples[batch_start:batch_start + BATCH_SIZE]
             batch_files = [item['video'] for item in batch_samples]
 

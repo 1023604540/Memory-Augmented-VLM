@@ -16,7 +16,7 @@ SHARED_OUTPUT_FOLDER = "/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/vide
 PROCESS_COUNT = 8
 DECOD_THREADS = 1
 SKIP_EXISTING = True
-BATCH_SIZE = 1000   # <<<<----- Adjust to fit your $TMPDIR disk space
+BATCH_SIZE = 2000   # <<<<----- Adjust to fit your $TMPDIR disk space
 # If TMPDIR is set by the job system; fall back to /tmp
 TMPDIR = os.environ.get("TMPDIR", "/tmp")
 LOCAL_VIDEO_FOLDER = os.path.join(TMPDIR, "videos")

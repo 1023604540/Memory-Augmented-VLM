@@ -491,8 +491,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     memory_cache = recurrent_model(image_segment)
                 memory_cache = torch.cat(memory_cache, dim=0)
                 memory_cache = self.get_model().memory_fuser(memory_cache)
-                # Replace memory_cache with random tensor for ablation test
-                memory_cache = torch.randn_like(memory_cache)
 
                 mem_type_ids = torch.zeros((memory_cache.shape[0], 196), dtype=torch.long, device=self.device)  # shape [8, 196]
                 fine_type_ids = torch.ones((num_samples, 196), dtype=torch.long, device=self.device)  # shape [32, 196]

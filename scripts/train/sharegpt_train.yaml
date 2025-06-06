@@ -12,37 +12,37 @@ datasets:
 #  - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/30_60_s_academic_mc_v0_1_qa_processed.json
 #    sampling_strategy: "end:80%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/1_2_m_youtube_oe_v0_1_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/1_2_m_youtube_v0_1_cap_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/1_2_m_academic_oe_v0_1_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/1_2_m_academic_v0_1_cap_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
   #  - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/1_2_m_academic_mc_v0_1_qa_processed.json
 #    sampling_strategy: "end:80%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/1_2_m_nextqa_oe_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
 #  - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/1_2_m_nextqa_mc_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
 #    sampling_strategy: "all"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/1_2_m_activitynetqa_oe_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_academic_oe_v0_1_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_academic_v0_1_cap_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
 #  - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_academic_mc_v0_1_qa_processed.json
 #    sampling_strategy: "first:50%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_youtube_oe_v0_1_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_youtube_v0_1_cap_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
 #  - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_youtube_mc_v0_1_qa_processed.json
 #    sampling_strategy: "first:50%"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_nextqa_oe_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
 #  - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_nextqa_mc_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
 #    sampling_strategy: "all"
   - json_path: /anvme/workspace/b232dd16-datasets/llava-videos/metadata/2_3_m_activitynetqa_oe_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "end:50%"
+    sampling_strategy: "first:50%"
 

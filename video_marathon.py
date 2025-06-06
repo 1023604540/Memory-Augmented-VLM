@@ -20,6 +20,7 @@ def download_video(row):
 
     if not os.path.exists(filename):  # Avoid re-downloading
         try:
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
             response = requests.get(url, stream=True, timeout=30)
             if response.status_code == 200:
                 with open(filename, 'wb') as f:

@@ -4,12 +4,12 @@ import json
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-
+import yt_dlp
 # Load parquet file
 df = pd.read_parquet('/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videomarathon/videomarathon/data/train-00000-of-00001.parquet')
 
 # Ensure video folder exists
-video_folder = '/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videomarathon/videomarathon/videos'
+video_folder = '/hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videomarathon/videos'
 os.makedirs(video_folder, exist_ok=True)
 
 # Download function
@@ -18,17 +18,29 @@ def download_video(row):
     url = row['URL']
     filename = os.path.join(video_folder, relative_path)
 
-    if not os.path.exists(filename):  # Avoid re-downloading
-        try:
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-            response = requests.get(url, stream=True, timeout=30)
-            if response.status_code == 200:
-                with open(filename, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
-        except Exception as e:
-            print(f"Failed to download {url}: {e}")
+    if os.path.exists(filename):
+        return row
+
+    try:
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+
+        ydl_opts = {
+            'outtmpl': filename,  # full path with subfolders
+            'format': 'bestvideo+bestaudio/best',
+            'merge_output_format': 'mp4',
+            'quiet': True,
+            'noplaylist': True,
+            'retries': 10
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+    except Exception as e:
+        print(f"Failed to download {url}: {e}")
+
     return row  # return row unchanged for further processing
+
 
 # Parallel downloading
 max_workers = 16  # Adjust this according to your SLURM node CPU count
@@ -63,10 +75,10 @@ for _, row in df.iterrows():
         oe_list.append(entry)
 
 # Save JSON
-with open('mc_questions.json', 'w') as f:
-    json.dump(mc_list, f, indent=4)
-
-with open('oe_questions.json', 'w') as f:
-    json.dump(oe_list, f, indent=4)
+# with open('mc_questions.json', 'w') as f:
+#     json.dump(mc_list, f, indent=4)
+#
+# with open('oe_questions.json', 'w') as f:
+#     json.dump(oe_list, f, indent=4)
 
 print("Finished processing.")

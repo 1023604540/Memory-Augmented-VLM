@@ -30,7 +30,8 @@ def download_video(row):
             'merge_output_format': 'mp4',
             'quiet': True,
             'noplaylist': True,
-            'retries': 10
+            'retries': 10,
+            'cookiefile':'/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/cookies.txt'
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

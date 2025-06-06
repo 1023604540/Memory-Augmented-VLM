@@ -402,10 +402,22 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 for pos, enc in zip(non_video_positions, splits):
                     images_list[pos] = enc
 
-
+            sampled_images = []
             # # Now support only batch size of 1
-            concat_images = torch.cat([image for image in images_list], dim=0)
-            split_sizes = [image.shape[0] for image in images_list]
+            for image in images_list:
+                num_frames = image.shape[0]
+
+                if num_frames < 32:
+                    sampled_tensor = image
+                else:
+                    sample_frames = (num_frames // 32) * 32
+                    indices = torch.linspace(0, num_frames - 1, steps=sample_frames).long()
+                    sampled_tensor = image[indices]
+
+                sampled_images.append(sampled_tensor)
+
+            concat_images = torch.cat([image for image in sampled_images], dim=0)
+            split_sizes = [image.shape[0] for image in sampled_images]
 
             chunk_wise_encode = False
             if chunk_wise_encode:

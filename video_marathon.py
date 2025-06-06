@@ -16,7 +16,7 @@ os.makedirs(video_folder, exist_ok=True)
 def download_video(row):
     relative_path = row['video']
     url = row['URL']
-    filename = os.path.join(video_folder, relative_path.split('/')[-1])
+    filename = os.path.join(video_folder, relative_path)
 
     if not os.path.exists(filename):  # Avoid re-downloading
         try:

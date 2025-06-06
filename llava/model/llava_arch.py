@@ -122,12 +122,13 @@ class LlavaMetaModel:
             bias=True
         ).to(self.device)
         # Initialize positional encoding
-        self.positional_encoding = TemporalPositionalEncoding(
-            max_frames=300,
-            embed_dim=LLM_hidden_dim,
-            learnable=False
-        ).to(self.device)
+        # self.positional_encoding = TemporalPositionalEncoding(
+        #     max_frames=300,
+        #     embed_dim=LLM_hidden_dim,
+        #     learnable=False
+        # ).to(self.device)
         self.token_type_embedding = nn.Embedding(2, 896).to(self.device)
+        self.gru_encoder = TemporalGRUEncoder().to(self.device)
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)
         if type(vision_tower) is list:
@@ -279,6 +280,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         image_features = self.get_model().get_vision_tower()(images)
         # image_features = self.get_model().vision_resampler(image_features, images=images)
         image_features = self.get_model().mm_projector(image_features)
+        image_features = self.get_model().gru_encoder(image_features)
         return image_features
 
     def encode_multimodals(self, videos_or_images, video_idx_in_batch, split_sizes=None):

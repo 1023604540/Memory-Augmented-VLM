@@ -26,8 +26,7 @@ def download_video(row):
 
         ydl_opts = {
             'outtmpl': filename,  # full path with subfolders
-            'format': 'bestvideo+bestaudio/best',
-            'merge_output_format': 'mp4',
+            'format': 'bestvideo[ext=mp4]/best[ext=mp4]',
             'quiet': True,
             'noplaylist': True,
             'retries': 10,

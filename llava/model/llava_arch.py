@@ -466,7 +466,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_positions.append(idx)
                     continue
                 # Add positional encoding
-                image = self.get_model().positional_encoding(image)
+                # image = self.get_model().positional_encoding(image)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!
 

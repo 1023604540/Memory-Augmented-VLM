@@ -496,7 +496,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 fine_type_ids = torch.ones((num_samples, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
                 mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
                 fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
-                print(f"memory_cache shape : {memory_cache.shape}")
+                # print(f"memory_cache shape : {memory_cache.shape}")
                 memory_cache = memory_cache + mem_type_embeds
                 original_frames = original_frames + fine_type_embeds
                 combined_feature = torch.cat((memory_cache, original_frames), dim=0)

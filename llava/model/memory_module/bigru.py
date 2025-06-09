@@ -14,8 +14,8 @@ def build_sine_time_table(max_frames: int, dim: int, device: torch.device):
 class TemporalGRUEncoder(nn.Module):
     def __init__(
         self,
-        input_dim: int = 1152,
-        hidden_size: int = 576,      # so 2*576 == 1152
+        input_dim: int = 896,
+        hidden_size: int = 448,      # so 2*448 == 896
         num_layers: int = 1,
         bidirectional: bool = True,
         max_frames: int = 300,

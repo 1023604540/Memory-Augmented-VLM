@@ -41,36 +41,28 @@ class TemporalGRUEncoder(nn.Module):
             )
 
     def forward(self, visual_feats: torch.Tensor) -> torch.Tensor:
-        # visual_feats: [F, P, D], probably in bfloat16 under autocast
+        # visual_feats: [F, P, D]
         F, P, D = visual_feats.shape
 
-        # 1) per-frame pooling → [F, D]
+        # 1. Mean-pool across patches → [F, D]
         frame_vecs = visual_feats.mean(dim=1)
 
-        # 2) optional temporal PE
+        # 2. Optional positional encoding
         if self.use_pe:
             pe = self.temporal_pe[:F].to(frame_vecs.device)
             frame_vecs = frame_vecs + pe
 
-        # 3) to seq shape [T=F, B=1, D]
-        # seq = frame_vecs.unsqueeze(1)
+        # 3. Format for GRU input and cast to float32
+        seq = frame_vecs.unsqueeze(1).to(torch.float32)  # ← critical fix
 
-        # # ─── Autocast override: run GRU in FLOAT32 ───
-        # # this makes both weights & input float32 during the call
-        # with torch.cuda.amp.autocast(enabled=True, dtype=torch.float32):
-        #     output_fp32, _ = self.gru(seq)
-        # # back to the original dtype (bfloat16)
-        # output = output_fp32.to(seq.dtype)
-        # # ─────────────────────────────────────────────
+        # 4. GRU forward
+        output, _ = self.gru(seq)  # float32 input guaranteed
 
-        # 4. GRU forward (no dtype casting)
-        seq = frame_vecs.unsqueeze(1).to(torch.float32)
-        output, _ = self.gru(seq)  # output: [F, 1, D]
-        # 4) broadcast back to patches
-        frame_ctx = output.squeeze(1)              # [F, D]
-        temporal_term = frame_ctx.unsqueeze(1)         # [F, 1, D]
-        temporal_term = temporal_term.expand(-1, P, -1)
+        # 5. Broadcast GRU output back to [F, P, D]
+        temporal_term = output.squeeze(1).unsqueeze(1).expand(-1, P, -1)
+        temporal_term = temporal_term.to(visual_feats.dtype)
 
-        # 5) residual add
-        enriched_feats = visual_feats + temporal_term   # [F, P, D]
+        # 6. Residual add
+        enriched_feats = visual_feats + temporal_term
         return enriched_feats
+

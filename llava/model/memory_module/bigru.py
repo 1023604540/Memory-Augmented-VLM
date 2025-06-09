@@ -53,7 +53,7 @@ class TemporalGRUEncoder(nn.Module):
             frame_vecs = frame_vecs + pe
 
         # 3) to seq shape [T=F, B=1, D]
-        seq = frame_vecs.unsqueeze(1)
+        # seq = frame_vecs.unsqueeze(1)
 
         # # ─── Autocast override: run GRU in FLOAT32 ───
         # # this makes both weights & input float32 during the call
@@ -64,6 +64,7 @@ class TemporalGRUEncoder(nn.Module):
         # # ─────────────────────────────────────────────
 
         # 4. GRU forward (no dtype casting)
+        seq = frame_vecs.unsqueeze(1).to(torch.float32)
         output, _ = self.gru(seq)  # output: [F, 1, D]
         # 4) broadcast back to patches
         frame_ctx = output.squeeze(1)              # [F, D]

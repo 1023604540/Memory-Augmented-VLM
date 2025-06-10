@@ -31,7 +31,8 @@
         "reduce_scatter": true,
         "reduce_bucket_size": 5e7,
         "contiguous_gradients": true,
-        "ignore_unused_parameters": true
+        "ignore_unused_parameters": true,
+        "custom_cuda_allreduce": false
     },
     "gradient_accumulation_steps": "auto",
     "gradient_clipping": "auto",

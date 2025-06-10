@@ -3,7 +3,7 @@ export NCCL_IB_DISABLE=0
 
 export NCCL_DEBUG=DEBUG
 export USE_PYTORCH_KERNEL_CACHE=0
-export NCCL_BLOCKING_WAIT=1
+export DS_DISABLE_CUSTOM_ALLREDUCE=1
 
 # export NCCL_DEBUG=INFO   # Uncomment for debugging
 export NCCL_DEBUG_SUBSYS=ALL

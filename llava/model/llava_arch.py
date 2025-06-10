@@ -125,7 +125,7 @@ class LlavaMetaModel:
         self.positional_encoding = TemporalPositionalEncoding(
             max_frames=300,
             embed_dim=LLM_hidden_dim,
-            learnable=True
+            learnable=False
         ).to(self.device)
         self.token_type_embedding = nn.Embedding(2, 896).to(self.device)
     def get_vision_tower(self):

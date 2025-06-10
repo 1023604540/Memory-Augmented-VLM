@@ -63,7 +63,7 @@ class TemporalGRUEncoder(nn.Module):
         # output = output_fp32.to(seq.dtype)
         # # ─────────────────────────────────────────────
         with torch.cuda.amp.autocast(enabled=True):
-            output, _ = self.gru(seq)
+            output, _ = self.gru(seq).to(seq.dtype)
 
         # 4) broadcast back to patches
         frame_ctx = output.squeeze(1)              # [F, D]

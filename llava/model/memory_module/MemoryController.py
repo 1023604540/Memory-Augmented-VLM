@@ -134,8 +134,8 @@ class MemoryModule(nn.Module):
         for layer in self.memory_fusion_layers:
             N, P, D = memory.shape
             M, Q, D_ = image_features.shape
-            memory_2d = memory.view(1, N * P, D)
-            image_2d = image_features.view(1, M * Q, D_)
+            memory_2d = memory.reshape(1, N * P, D)
+            image_2d = image_features.reshape(1, M * Q, D_)
             memory_2d = layer(memory_2d, image_2d)
             memory = memory_2d.view(1, N, P, D).squeeze(0)
 

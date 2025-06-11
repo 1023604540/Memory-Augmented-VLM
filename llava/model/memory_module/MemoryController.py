@@ -132,7 +132,7 @@ class MemoryModule(nn.Module):
             memory = self._update_memory_with_cache(memory)
 
         for layer in self.memory_fusion_layers:
-            B, N, P, D = memory.shape
+            N, P, D = memory.shape
             M, Q, D_ = image_features.shape
             memory_2d = memory.view(1, N * P, D)
             image_2d = image_features.view(1, M * Q, D_)

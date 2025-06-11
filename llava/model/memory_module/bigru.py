@@ -19,7 +19,7 @@ class TemporalGRUEncoder(nn.Module):
         num_layers: int = 1,
         bidirectional: bool = True,
         max_frames: int = 300,
-        use_positional_encoding: bool = False
+        use_positional_encoding: bool = True
     ):
         super().__init__()
         self.use_pe = use_positional_encoding

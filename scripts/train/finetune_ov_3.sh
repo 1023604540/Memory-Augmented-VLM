@@ -1,51 +1,13 @@
-#!/bin/bash
-
-# Set environment variables as before
-export OMP_NUM_THREADS=8
-export NCCL_IB_DISABLE=0
-export NCCL_DEBUG=DEBUG
-export USE_PYTORCH_KERNEL_CACHE=0
-export NCCL_DEBUG_SUBSYS=ALL
-export NCCL_TIMEOUT=3600
-export NCCL_P2P_DISABLE=1
-export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
-
-# Add numactl binding here (assuming you are running on NUMA node 0)
-export NUMACTL_CMD="numactl --cpunodebind=0 --membind=0"
-
-LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"
-VISION_MODEL_VERSION="google/siglip-so400m-patch14-384"
-BASE_RUN_NAME="llavanext"
-echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
-
-PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_catmemory_test"
-PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov"
-echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
-echo "MID_RUN_NAME: ${RUN_NAME}"
-
-NUM_GPUS=4
-NNODES=$SLURM_NNODES
-RANK=$SLURM_NODEID
-
-MASTER_NODE=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n1)
-export MASTER_ADDR=$(getent hosts $MASTER_NODE | awk '{print $1}')
-export MASTER_PORT=$(shuf -i 49152-65535 -n 1)
-
-echo "[RANK $RANK] MASTER_ADDR=$MASTER_ADDR, MASTER_PORT=$MASTER_PORT"
-
-# The KEY change: remove srun here to avoid additional scheduling issues
-# Apply numactl only on the local launch
-${NUMACTL_CMD} \
-torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
+srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
+  torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
     llava/train/train_mem.py \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test.yaml \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/long_train.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
-    --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
+    --video_folder //hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos_tensors \
     --mm_tunable_parts="larimar_model,recurrent_model,mm_language_model" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
@@ -67,9 +29,9 @@ torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK
     --gradient_accumulation_steps 4 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 100 \
+    --save_steps 200 \
     --save_total_limit 3 \
-    --learning_rate 1e-5 \
+    --learning_rate 4e-6 \
     --memory_transformer_lr 1e-4 \
     --memory_key_value_lr 1e-4 \
     --weight_decay 0. \
@@ -78,9 +40,8 @@ torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK
     --logging_steps 1 \
     --tf32 True \
     --model_max_length 32768 \
-    --gradient_checkpointing True \
-    --dataloader_num_workers 0 \
-    --dataloader_pin_memory False \
+    --gradient_checkpointing False \
+    --dataloader_num_workers 2 \
     --lazy_preprocess True \
     --report_to wandb \
     --torch_compile True \
@@ -89,5 +50,3 @@ torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK
     --force_sample False \
     --frames_upbound 300 \
     --attn_implementation "flash_attention_2"
-
-exit 0

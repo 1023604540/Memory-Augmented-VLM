@@ -151,4 +151,4 @@ class MemoryModule(nn.Module):
             self.memory_cache[0] = self.memory_cache[0].detach()
             self.memory_cache = self.memory_cache[-10:]
 
-        return self.memory_cache, attn_scores_collector
+        return self.memory_cache, self.attn_scores_collector

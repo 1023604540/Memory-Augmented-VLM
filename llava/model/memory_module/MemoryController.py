@@ -108,6 +108,7 @@ class MemoryModule(nn.Module):
         nn.init.xavier_uniform_(self.initial_memory)
 
         self.memory_cache: List[torch.Tensor] = []
+        self.attn_scores_collector = []
 
     def _update_memory_with_cache(self, current_memory):
         if not self.memory_cache:
@@ -125,7 +126,7 @@ class MemoryModule(nn.Module):
     def forward(self, image_features: torch.Tensor):
         device = image_features.device
         dtype = image_features.dtype
-        attn_scores_collector = []
+
 
         if not self.memory_cache:
             memory = self.initial_memory.to(device=device, dtype=dtype)
@@ -143,7 +144,7 @@ class MemoryModule(nn.Module):
             output, attn_probs = layer(memory_2d, image_2d)
             print(f"attn_probs.shape, {attn_probs.shape}")
             memory = output.view(1, N, P, D).squeeze(0)
-            attn_scores_collector.append(attn_probs)
+            self.attn_scores_collector.append(attn_probs)
 
         self.memory_cache.append(memory)
         if len(self.memory_cache) > 10:

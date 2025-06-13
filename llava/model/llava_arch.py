@@ -498,7 +498,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
 
                 for image_segment in image_segments:
-                    memory_cache = recurrent_model(image_segment)
+                    memory_cache, attn_stats = recurrent_model(image_segment)
                 memory_cache = torch.cat(memory_cache, dim=0)
                 memory_cache = self.get_model().memory_fuser(memory_cache)
 

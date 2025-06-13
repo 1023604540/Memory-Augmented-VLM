@@ -119,7 +119,7 @@ class MemoryModule(nn.Module):
         query_2d = query.view(B, Lq * P, D)
         keyval_2d = past_memory.view(1, -1, D)
 
-        updated = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
+        updated, _ = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
         return updated.view(B, Lq, P, D).squeeze(0)
 
     def forward(self, image_features: torch.Tensor):

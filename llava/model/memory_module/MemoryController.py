@@ -70,8 +70,9 @@ class Attention(nn.Module):
 
         context = torch.matmul(probs, value).permute(0, 2, 1, 3).contiguous()
         context = context.view(context.size(0), -1, self.hidden_size)
+        context = self.residual(context, hidden_states)
 
-        return self.residual(context, hidden_states)
+        return context, probs
 
 
 class CrossAttentionBlock(nn.Module):
@@ -85,9 +86,11 @@ class CrossAttentionBlock(nn.Module):
         self.residual = Residual(config.mm_intermediate_size, config.mm_hidden_size, config)
 
     def forward(self, memory_states, image_states):
-        attention_output = self.cross_attention(memory_states, kv_hidden_states=image_states)
+        attention_output, attn_weights = self.cross_attention(memory_states, kv_hidden_states=image_states)
         ffn_output = self.mlp(attention_output)
-        return self.residual(ffn_output, attention_output)
+        out = self.residual(ffn_output, attention_output)
+        summed_attn = attn_weights.sum(dim=1).sum(dim=1).detach()
+        return out, summed_attn
 
 
 class MemoryModule(nn.Module):
@@ -122,6 +125,7 @@ class MemoryModule(nn.Module):
     def forward(self, image_features: torch.Tensor):
         device = image_features.device
         dtype = image_features.dtype
+        attn_scores_collector = []
 
         if not self.memory_cache:
             memory = self.initial_memory.to(device=device, dtype=dtype)
@@ -136,12 +140,14 @@ class MemoryModule(nn.Module):
             M, Q, D_ = image_features.shape
             memory_2d = memory.reshape(1, N * P, D)
             image_2d = image_features.reshape(1, M * Q, D_)
-            memory_2d = layer(memory_2d, image_2d)
-            memory = memory_2d.view(1, N, P, D).squeeze(0)
+            output, attn_probs = layer(memory_2d, image_2d)
+            print(f"attn_probs.shape, {attn_probs.shape}")
+            memory = output.view(1, N, P, D).squeeze(0)
+            attn_scores_collector.append(attn_probs)
 
         self.memory_cache.append(memory)
         if len(self.memory_cache) > 10:
             self.memory_cache[0] = self.memory_cache[0].detach()
             self.memory_cache = self.memory_cache[-10:]
 
-        return self.memory_cache
+        return self.memory_cache, attn_scores_collector

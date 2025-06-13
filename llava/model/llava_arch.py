@@ -36,6 +36,7 @@ import numpy as np
 from llava.model.memory_module.MemoryController import MemoryModule
 from llava.model.memory_module.bigru import TemporalGRUEncoder
 from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
+from llava.model.memory_module.MemoryFuser import MemoryFuser
 import time
 
 
@@ -116,10 +117,17 @@ class LlavaMetaModel:
 
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = MemoryModule().to(self.device)
-        self.memory_fuser = nn.Linear(
-            in_features=LLM_hidden_dim,
-            out_features=LLM_hidden_dim,
-            bias=True
+        # self.memory_fuser = nn.Linear(
+        #     in_features=LLM_hidden_dim,
+        #     out_features=LLM_hidden_dim,
+        #     bias=True
+        # ).to(self.device)
+        self.memory_fuser = MemoryFuser(
+            hidden_dim=LLM_hidden_dim,
+            num_layers=2,
+            num_heads=4,
+            dropout=0.1,
+            device=self.device
         ).to(self.device)
         # Initialize positional encoding
         self.positional_encoding = TemporalPositionalEncoding(

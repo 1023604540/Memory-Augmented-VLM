@@ -1700,8 +1700,6 @@ def train(attn_implementation=None):
                     p.requires_grad = True
                 for p in model.get_model().memory_fuser.parameters():
                     p.requires_grad = True
-                for p in model.get_model().gru_encoder.parameters():
-                    p.requires_grad = True
             if "mm_vision_resampler" in tunable_parts:
                 for p in model.get_model().vision_resampler.parameters():
                     p.requires_grad = True

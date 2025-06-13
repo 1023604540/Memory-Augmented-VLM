@@ -142,7 +142,7 @@ class MemoryModule(nn.Module):
             memory_2d = memory.reshape(1, N * P, D)
             image_2d = image_features.reshape(1, M * Q, D_)
             output, attn_probs = layer(memory_2d, image_2d)
-            frame_scores = attn_probs.view(32, 196).mean(dim=1).mean(dim=1)
+            frame_scores = attn_probs.view(32, 196).mean(dim=1)
             print(f"frame_scores.shape, {frame_scores.shape}")
             memory = output.view(1, N, P, D).squeeze(0)
             self.attn_scores_collector.append(frame_scores)

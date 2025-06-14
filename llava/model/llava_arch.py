@@ -124,7 +124,7 @@ class LlavaMetaModel:
         # ).to(self.device)
         self.memory_fuser = MemoryFuser(
             hidden_dim=LLM_hidden_dim,
-            num_layers=2,
+            num_layers=1,
             num_heads=4,
             dropout=0.1,
             device=self.device

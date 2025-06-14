@@ -113,7 +113,7 @@ class LlavaMetaModel:
             if "unpad" in getattr(config, "mm_patch_merge_type", ""):
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
-        LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
+        LLM_hidden_dim = getattr(config, "hidden_dim", 896)
 
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)

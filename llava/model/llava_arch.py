@@ -33,7 +33,7 @@ from llava.model.memory_module.memory_builder import NeuralTuringMachine, Multim
 from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment
 import heapq
 import numpy as np
-from llava.model.memory_module.MemoryController import MemoryModule
+from llava.model.memory_module.MemoryController import TransformerProjector
 from llava.model.memory_module.bigru import TemporalGRUEncoder
 from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
 from llava.model.memory_module.MemoryFuser import MemoryFuser
@@ -116,7 +116,7 @@ class LlavaMetaModel:
         LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
 
         # Define recurrent memory transformer
-        self.recurrent_memory_transformer = MemoryModule().to(self.device)
+        self.recurrent_memory_transformer = TransformerProjector().to(self.device)
         # self.memory_fuser = nn.Linear(
         #     in_features=LLM_hidden_dim,
         #     out_features=LLM_hidden_dim,

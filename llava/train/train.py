@@ -1856,12 +1856,6 @@ def train(attn_implementation=None):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
-        if trainer.lr_scheduler is not None:
-            lrs = trainer.lr_scheduler.get_last_lr()
-            for i, lr in enumerate(lrs):
-                print(f"[create_scheduler] Scheduler LR for group {i}: {lr}")
-        else:
-            print("[create_scheduler] No scheduler applied.")
     trainer.save_state()
 
     model.config.use_cache = True

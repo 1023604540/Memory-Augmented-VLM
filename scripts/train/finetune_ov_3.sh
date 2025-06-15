@@ -1,7 +1,7 @@
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0
 
-export NCCL_DEBUG=DEBUG
+export NCCL_DEBUG=WARN
 export USE_PYTORCH_KERNEL_CACHE=0
 
 # export NCCL_DEBUG=INFO   # Uncomment for debugging

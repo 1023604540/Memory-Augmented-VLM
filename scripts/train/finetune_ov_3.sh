@@ -90,7 +90,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --model_max_length 32768 \
     --gradient_checkpointing True \
     --dataloader_num_workers 2 \
-    --lazy_preprocess True \
+    --lazy_preprocess False \
     --report_to wandb \
     --torch_compile True \
     --torch_compile_backend "inductor" \

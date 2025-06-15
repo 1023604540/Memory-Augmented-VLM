@@ -11,8 +11,7 @@ export NCCL_TIMEOUT=3600  # 1 hour
 
 # The next line is very important! Solves the WatchDog TimeOut Issue
 export NCCL_P2P_DISABLE=1
-export NCCL_BLOCKING_WAIT=1
-export NCCL_OPERATION_TIMEOUT=3600
+
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
 LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"

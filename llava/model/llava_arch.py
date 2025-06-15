@@ -33,8 +33,7 @@ from llava.model.memory_module.memory_builder import NeuralTuringMachine, Multim
 from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment
 import heapq
 import numpy as np
-from llava.model.memory_module.MemoryController import TransformerProjector
-from llava.model.memory_module.bigru import TemporalGRUEncoder
+from llava.model.memory_module.MemoryController import TransformerProjector, Config
 from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
 import time
 
@@ -112,10 +111,22 @@ class LlavaMetaModel:
             if "unpad" in getattr(config, "mm_patch_merge_type", ""):
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
-        LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
+        LLM_hidden_dim = getattr(config, "hidden_size", 896)
+        custom_config = Config
+        custom_config.mm_hidden_size = LLM_hidden_dim  # Hidden size 896 for 0.5b, 3584 for 7b
+        custom_config.mm_hidden_act = "relu"
+        custom_config.mm_num_attention_heads = 8
+        custom_config.patch_size = 196  # Patch size
+        custom_config.mm_attention_probs_dropout_prob = 0.1  # Attention dropout
+        custom_config.mm_layer_norm_eps = 1e-12  # LayerNorm epsilon
+        custom_config.mm_hidden_dropout_prob = 0.1  # Residual dropout
+        custom_config.mm_intermediate_size = 4 * custom_config.mm_hidden_size  # Feedforward hidden layer size
+        custom_config.num_memory_tokens = 8  # Number of memory tokens
+        custom_config.depth = 1  # Number of Transformer layers
+        custom_config.mm_dtype = torch.float16
 
         # Define recurrent memory transformer
-        self.recurrent_memory_transformer = TransformerProjector().to(self.device)
+        self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)
         self.memory_fuser = nn.Linear(
             in_features=LLM_hidden_dim,
             out_features=LLM_hidden_dim,

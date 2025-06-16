@@ -127,10 +127,10 @@ class LlavaMetaModel:
 
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)
-        self.memory_fuser = nn.Linear(
-            in_features=LLM_hidden_dim,
-            out_features=LLM_hidden_dim,
-            bias=True
+        self.memory_fuser = nn.Sequential(
+            nn.Linear(LLM_hidden_dim, LLM_hidden_dim * 4),
+            nn.GELU(),
+            nn.Linear(LLM_hidden_dim * 4, LLM_hidden_dim)
         ).to(self.device)
         # Initialize positional encoding
         self.positional_encoding = TemporalPositionalEncoding(
@@ -475,7 +475,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_positions.append(idx)
                     continue
                 # Add positional encoding
-                # image = self.get_model().positional_encoding(image)
+                image = self.get_model().positional_encoding(image)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!
 

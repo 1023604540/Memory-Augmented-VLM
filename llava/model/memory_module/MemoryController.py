@@ -93,8 +93,8 @@ class TransformerProjector(nn.Module):
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]
 
-        memory_2d = memory_tokens.view(B, self.num_memory_tokens * P, D)
-        image_2d = image_features.view(B, F * P, D)
+        memory_2d = memory_tokens.reshape(B, self.num_memory_tokens * P, D)
+        image_2d = image_features.reshape(B, F * P, D)
         frame_attn_scores = []
 
         for layer in self.layers:

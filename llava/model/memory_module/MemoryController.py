@@ -197,7 +197,7 @@ class TransformerProjector(nn.Module):
         if len(self.memory_cache) > 10:
             self.memory_cache = self.memory_cache[-10:]
 
-        return self.memory_cache, self.final_attn_score
+        return self.memory_cache, self.frame_attn_scores
 
 
 #

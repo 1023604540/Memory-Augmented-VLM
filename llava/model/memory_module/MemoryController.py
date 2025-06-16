@@ -1,44 +1,32 @@
 import math
-from typing import Optional, List, Tuple, Union
-from einops import rearrange, repeat, pack, unpack
-
+from typing import Optional, List, Tuple
 import torch
 from torch import nn
 from transformers.activations import ACT2FN
 
-
 class Config:
-    mm_hidden_size = 896  # Hidden size 896 for 0.5b, 3584 for 7b
+    mm_hidden_size = 896
     mm_hidden_act = "relu"
     mm_num_attention_heads = 8
-    patch_size = 196  # Patch size
-    mm_attention_probs_dropout_prob = 0.1  # Attention dropout
-    mm_layer_norm_eps = 1e-12  # LayerNorm epsilon
-    mm_hidden_dropout_prob = 0.1  # Residual dropout
-    mm_intermediate_size = 4 * mm_hidden_size  # Feedforward hidden layer size
-    num_memory_tokens = 8  # Number of memory tokens
-    depth = 1  # Number of Transformer layers
+    patch_size = 196
+    mm_attention_probs_dropout_prob = 0.1
+    mm_layer_norm_eps = 1e-12
+    mm_hidden_dropout_prob = 0.1
+    mm_intermediate_size = 4 * mm_hidden_size
+    num_memory_tokens = 8
+    depth = 1
     mm_dtype = torch.float16
-
 
 class Residual(nn.Module):
     def __init__(self, input_size, output_size, config):
         super().__init__()
-        # Define layers with a specified dtype, but do NOT force a device here
-        self.dense = nn.Linear(
-            input_size, output_size, dtype=config.mm_dtype
-        )
-        self.layernorm = nn.LayerNorm(
-            output_size, eps=config.mm_layer_norm_eps, dtype=config.mm_dtype
-        )
-        # self.dropout = nn.Dropout(config.mm_hidden_dropout_prob)
+        self.dense = nn.Linear(input_size, output_size, dtype=config.mm_dtype)
+        self.layernorm = nn.LayerNorm(output_size, eps=config.mm_layer_norm_eps, dtype=config.mm_dtype)
 
     def forward(self, hidden_states: torch.Tensor, input_tensor: torch.Tensor):
         hidden_states = self.dense(hidden_states)
-        # hidden_states = self.dropout(hidden_states)
         hidden_states = self.layernorm(hidden_states + input_tensor)
         return hidden_states
-
 
 class Attention(nn.Module):
     def __init__(self, config):
@@ -56,41 +44,16 @@ class Attention(nn.Module):
         x = x.view(new_x_shape)
         return x.permute(0, 2, 1, 3)
 
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.FloatTensor] = None,
-        head_mask: Optional[torch.FloatTensor] = None,
-        kv_hidden_states: Optional[torch.FloatTensor] = None,
-        kv_attention_mask: Optional[torch.FloatTensor] = None,
-        past_key_value: Optional[Tuple[Tuple[torch.FloatTensor]]] = None,
-        output_attentions: Optional[bool] = True,
-    ):
+    def forward(self, hidden_states, kv_hidden_states=None, output_attentions=True):
         query = self.transpose_for_scores(self.q_proj(hidden_states))
-
-        if kv_hidden_states is not None:
-            key = self.transpose_for_scores(self.k_proj(kv_hidden_states))
-            value = self.transpose_for_scores(self.v_proj(kv_hidden_states))
-        else:
-            key = self.transpose_for_scores(self.k_proj(hidden_states))
-            value = self.transpose_for_scores(self.v_proj(hidden_states))
-
-        attention_scores = torch.matmul(query, key.transpose(-1, -2)) / math.sqrt(self.attention_head_size)
-        if attention_mask is not None:
-            attention_scores += attention_mask
-
-        attention_probs = nn.functional.softmax(attention_scores, dim=-1)
-
-        if head_mask is not None:
-            attention_probs = attention_probs * head_mask
-
-        context = torch.matmul(attention_probs, value)
-        context = context.permute(0, 2, 1, 3).contiguous()
-        new_context_shape = context.size()[:-2] + (self.hidden_size,)
-        context = context.view(new_context_shape)
-
+        key = self.transpose_for_scores(self.k_proj(kv_hidden_states if kv_hidden_states is not None else hidden_states))
+        value = self.transpose_for_scores(self.v_proj(kv_hidden_states if kv_hidden_states is not None else hidden_states))
+        scores = torch.matmul(query, key.transpose(-1, -2)) / math.sqrt(self.attention_head_size)
+        probs = torch.nn.functional.softmax(scores, dim=-1)
+        context = torch.matmul(probs, value)
+        context = context.permute(0, 2, 1, 3).contiguous().view(context.size(0), -1, self.hidden_size)
         output = self.residual(context, hidden_states)
-        return output, attention_probs  # always return attention_probs for saliency
+        return output, probs
 
 class TransformerLayer(nn.Module):
     def __init__(self, config):
@@ -98,130 +61,53 @@ class TransformerLayer(nn.Module):
         self.self_attention = Attention(config)
         self.mlp = nn.Sequential(
             nn.Linear(config.mm_hidden_size, config.mm_intermediate_size, dtype=config.mm_dtype),
-            ACT2FN[config.mm_hidden_act],
+            ACT2FN[config.mm_hidden_act]
         )
         self.residual = Residual(config.mm_intermediate_size, config.mm_hidden_size, config)
 
-    def ffn(self, attention_output):
-        intermediate_output = self.mlp(attention_output)
-        layer_output = self.residual(intermediate_output, attention_output)
-        return layer_output
-
-    def forward(self, hidden_states: torch.Tensor):
-        attention_output, attention_probs = self.self_attention(hidden_states, output_attentions=True)
-        layer_output = self.ffn(attention_output)
+    def forward(self, query_states, kv_states):
+        attention_output, attention_probs = self.self_attention(query_states, kv_hidden_states=kv_states, output_attentions=True)
+        layer_output = self.residual(self.mlp(attention_output), attention_output)
         return layer_output, attention_probs
-
 
 class TransformerProjector(nn.Module):
     def __init__(self, config=None):
         super().__init__()
-        self.config = config if config is not None else Config()
-
-        self.layers = nn.ModuleList(
-            [TransformerLayer(self.config) for _ in range(self.config.depth)]
-        )
-
-        self.memory_retrieval_attention = Attention(self.config)
-
+        self.config = config or Config()
+        self.layers = nn.ModuleList([TransformerLayer(self.config) for _ in range(self.config.depth)])
         self.num_memory_tokens = self.config.num_memory_tokens
         self.hidden_size = self.config.mm_hidden_size
         self.patch_size = self.config.patch_size
-
-        self.initial_memory = nn.Parameter(
-            torch.empty(self.num_memory_tokens, self.patch_size, self.hidden_size)
-        )
+        self.initial_memory = nn.Parameter(torch.empty(self.num_memory_tokens, self.patch_size, self.hidden_size))
         nn.init.xavier_uniform_(self.initial_memory)
-
         self.memory_cache: List[torch.Tensor] = []
         self.frame_attn_scores = []
-
-    def _update_memory_tokens_with_cache(self, current_memory: torch.Tensor) -> torch.Tensor:
-        if not self.memory_cache:
-            return current_memory
-
-        past_memory = torch.cat(self.memory_cache, dim=0).unsqueeze(0)
-        query = current_memory.unsqueeze(0)
-
-        B, Lq, P, D = query.shape
-        query_2d = query.view(B, Lq * P, D)
-        keyval_2d = past_memory.view(1, -1, D)
-
-        updated_2d, _ = self.memory_retrieval_attention(query_2d, kv_hidden_states=keyval_2d)
-        updated_4d = updated_2d.view(B, Lq, P, D)
-
-        return updated_4d.squeeze(0)
 
     def forward(self, image_features: torch.Tensor):
         device = image_features.device
         dtype = image_features.dtype
+        B = 1
+        F, P, D = image_features.shape
 
-        if not self.memory_cache:
-            current_memory = self.initial_memory.to(device=device, dtype=dtype)
-        else:
-            current_memory = self.memory_cache[-1].to(device=device, dtype=dtype)
+        memory_tokens = self.initial_memory.to(device=device, dtype=dtype)
+        if self.memory_cache:
+            memory_tokens = self.memory_cache[-1]
 
-        if len(self.memory_cache) > 1:
-            current_memory = self._update_memory_tokens_with_cache(current_memory)
-
-        combined = torch.cat([current_memory, image_features], dim=0)  # [F+n, P, D]
-        combined = combined.unsqueeze(0)  # [1, F+n, P, D]
-        B, L, P_, D_ = combined.shape
-        combined_2d = combined.view(B, L * P_, D_)
-
-        hidden_states = combined_2d
-        patch_per_frame = self.patch_size
-        num_memory = self.num_memory_tokens
-        current_frame_attn_scores = []
+        memory_2d = memory_tokens.view(B, self.num_memory_tokens * P, D)
+        image_2d = image_features.view(B, F * P, D)
+        frame_attn_scores = []
 
         for layer in self.layers:
-            hidden_states, attn_probs = layer(hidden_states)  # attn_probs: [B, H, T, T]
+            memory_2d, attn_probs = layer(memory_2d, image_2d)
+            attn_sum = attn_probs.sum(dim=1).sum(dim=1).squeeze(0)  # [F * P]
+            frame_scores = attn_sum.view(F, P).mean(dim=1)
+            frame_attn_scores.append(frame_scores)
 
-            # Focus on attention from memory tokens to image patches
-            total_tokens = image_features.shape[0] * patch_per_frame
-            mem_q_len = num_memory * patch_per_frame
-            img_kv_len = total_tokens
-
-            attn_to_image = attn_probs[:, :, :mem_q_len, mem_q_len:]  # [B, H, mem_q, img_kv]
-            attn_sum = attn_to_image.sum(dim=1).sum(dim=1)  # [B, img_kv]
-            frame_scores = attn_sum.view(-1, patch_per_frame).mean(dim=1)  # [frames]
-            current_frame_attn_scores.append(frame_scores)
-
-        final_attn_score = torch.stack(current_frame_attn_scores).mean(dim=0)  # average across layers
-        self.frame_attn_scores.append(final_attn_score)
-        # Post-transformer reshape
-        hidden_4d = hidden_states.view(B, L, P_, D_)
-        new_memory_tokens = hidden_4d[:, :self.num_memory_tokens, :, :]  # [1, n, P, D]
-        self.memory_cache.append(new_memory_tokens.squeeze(0))
-
+        final_memory = memory_2d.view(B, self.num_memory_tokens, P, D)
+        self.memory_cache.append(final_memory.squeeze(0))
         if len(self.memory_cache) > 10:
             self.memory_cache = self.memory_cache[-10:]
 
+        final_score = torch.stack(frame_attn_scores).mean(dim=0)
+        self.frame_attn_scores.append(final_score)
         return self.memory_cache, self.frame_attn_scores
-
-
-#
-# EXAMPLE USAGE (no explicit "meta" mention here):
-#
-if __name__ == "__main__":
-    # 1) Create config
-    config = Config()
-
-    # 2) Instantiate the model (where you place it on "meta" or real device is up to you)
-    proj = TransformerProjector(config)
-
-    # Example: move the model to CPU
-    proj.to("cpu")
-
-    # 3) Initialize weights on CPU
-    proj.init_weights_()
-
-    # 4) Forward pass with dummy data
-    dummy_input = torch.randn(10, 729, 1152, dtype=torch.float16, device="cpu")
-    out = proj(dummy_input)
-    print("Output shape after first call:", out.shape)
-
-    # Another pass
-    dummy_input2 = torch.randn(12, 729, 1152, dtype=torch.float16, device="cpu")
-    out2 = proj(dummy_input2)
-    print("Output shape after second call:", out2.shape)

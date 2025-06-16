@@ -113,29 +113,29 @@ class LlavaMetaModel:
             if "unpad" in getattr(config, "mm_patch_merge_type", ""):
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
-        LLM_hidden_dim = getattr(config, "llm_hidden_dim", 896)
+        LLM_hidden_dim = getattr(config, "hidden_size", 896)
 
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector().to(self.device)
-        # self.memory_fuser = nn.Linear(
-        #     in_features=LLM_hidden_dim,
-        #     out_features=LLM_hidden_dim,
-        #     bias=True
-        # ).to(self.device)
-        self.memory_fuser = MemoryFuser(
-            hidden_dim=LLM_hidden_dim,
-            num_layers=1,
-            num_heads=4,
-            dropout=0.1,
-            device=self.device
+        self.memory_fuser = nn.Sequential(
+            nn.Linear(LLM_hidden_dim, LLM_hidden_dim * 4),
+            nn.GELU(),
+            nn.Linear(LLM_hidden_dim * 4, LLM_hidden_dim)
         ).to(self.device)
+        # self.memory_fuser = MemoryFuser(
+        #     hidden_dim=LLM_hidden_dim,
+        #     num_layers=1,
+        #     num_heads=4,
+        #     dropout=0.1,
+        #     device=self.device
+        # ).to(self.device)
         # Initialize positional encoding
         self.positional_encoding = TemporalPositionalEncoding(
             max_frames=300,
             embed_dim=LLM_hidden_dim,
             learnable=False
         ).to(self.device)
-        self.token_type_embedding = nn.Embedding(2, 896).to(self.device)
+        self.token_type_embedding = nn.Embedding(2, LLM_hidden_dim).to(self.device)
         # self.gru_encoder = TemporalGRUEncoder().to(self.device)
     def get_vision_tower(self):
         vision_tower = getattr(self, "vision_tower", None)

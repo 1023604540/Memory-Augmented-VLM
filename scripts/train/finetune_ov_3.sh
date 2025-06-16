@@ -29,8 +29,8 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-qwen2_KIT_recurrent_8tokens_catmemory_pe_fuser"
-PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
+RUN_NAME="llava-onevision-7b-qwen2_KIT_recurrent_8tokens_catmemory_pe_mlp"
+PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-7b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
@@ -54,7 +54,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --version $PROMPT_VERSION \
     --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/long_train.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
-    --video_folder //hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos_tensors \
+    --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos_tensors \
     --mm_tunable_parts="larimar_model,recurrent_model,mm_language_model" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
@@ -73,14 +73,14 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 4 \
+    --gradient_accumulation_steps 2 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 200 \
     --save_total_limit 3 \
-    --learning_rate 4e-6 \
-    --memory_transformer_lr 1e-4 \
-    --memory_key_value_lr 1e-4 \
+    --learning_rate 2e-6 \
+    --memory_transformer_lr 2e-5 \
+    --memory_key_value_lr 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \

@@ -134,6 +134,7 @@ class TransformerProjector(nn.Module):
         nn.init.xavier_uniform_(self.initial_memory)
 
         self.memory_cache: List[torch.Tensor] = []
+        self.frame_attn_scores = []
 
     def _update_memory_tokens_with_cache(self, current_memory: torch.Tensor) -> torch.Tensor:
         if not self.memory_cache:
@@ -171,7 +172,7 @@ class TransformerProjector(nn.Module):
         hidden_states = combined_2d
         patch_per_frame = self.patch_size
         num_memory = self.num_memory_tokens
-        frame_attn_scores = []
+        current_frame_attn_scores = []
 
         for layer in self.layers:
             hidden_states, attn_probs = layer(hidden_states)  # attn_probs: [B, H, T, T]
@@ -184,10 +185,10 @@ class TransformerProjector(nn.Module):
             attn_to_image = attn_probs[:, :, :mem_q_len, mem_q_len:]  # [B, H, mem_q, img_kv]
             attn_sum = attn_to_image.sum(dim=1).sum(dim=1)  # [B, img_kv]
             frame_scores = attn_sum.view(-1, patch_per_frame).mean(dim=1)  # [frames]
-            frame_attn_scores.append(frame_scores)
+            current_frame_attn_scores.append(frame_scores)
 
-        final_attn_score = torch.stack(frame_attn_scores).mean(dim=0)  # average across layers
-
+        final_attn_score = torch.stack(current_frame_attn_scores).mean(dim=0)  # average across layers
+        self.frame_attn_scores.append(final_attn_score)
         # Post-transformer reshape
         hidden_4d = hidden_states.view(B, L, P_, D_)
         new_memory_tokens = hidden_4d[:, :self.num_memory_tokens, :, :]  # [1, n, P, D]
@@ -196,7 +197,7 @@ class TransformerProjector(nn.Module):
         if len(self.memory_cache) > 10:
             self.memory_cache = self.memory_cache[-10:]
 
-        return self.memory_cache, final_attn_score
+        return self.memory_cache, self.final_attn_score
 
 
 #

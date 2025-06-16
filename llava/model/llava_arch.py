@@ -499,7 +499,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 for image_segment in image_segments:
                     memory_cache, attn_stats = recurrent_model(image_segment)
-                print(len(attn_stats), attn_stats[0].shape)
+                print(len(attn_stats), attn_stats[0])
                 memory_cache = torch.cat(memory_cache, dim=0)
                 memory_cache = self.get_model().memory_fuser(memory_cache)
 

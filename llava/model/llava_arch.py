@@ -33,7 +33,7 @@ from llava.model.memory_module.memory_builder import NeuralTuringMachine, Multim
 from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment
 import heapq
 import numpy as np
-from llava.model.memory_module.MemoryController import TransformerProjector
+from llava.model.memory_module.MemoryController import TransformerProjector, Config
 from llava.model.memory_module.bigru import TemporalGRUEncoder
 from llava.model.memory_module.position_encoding import TemporalPositionalEncoding
 from llava.model.memory_module.MemoryFuser import MemoryFuser
@@ -114,9 +114,20 @@ class LlavaMetaModel:
                 self.image_newline = nn.Parameter(torch.empty(config.hidden_size, dtype=self.dtype))
 
         LLM_hidden_dim = getattr(config, "hidden_size", 896)
-
+        custom_config = Config()
+        custom_config.mm_hidden_size = LLM_hidden_dim
+        custom_config.mm_hidden_act = "relu"
+        custom_config.mm_num_attention_heads = 8
+        custom_config.patch_size = 196
+        custom_config.mm_attention_probs_dropout_prob = 0.1
+        custom_config.mm_layer_norm_eps = 1e-12
+        custom_config.mm_hidden_dropout_prob = 0.1
+        custom_config.mm_intermediate_size = 4 * custom_config.mm_hidden_size
+        custom_config.num_memory_tokens = 8
+        custom_config.depth = 1
+        custom_config.mm_dtype = torch.float16
         # Define recurrent memory transformer
-        self.recurrent_memory_transformer = TransformerProjector().to(self.device)
+        self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)
         self.memory_fuser = nn.Sequential(
             nn.Linear(LLM_hidden_dim, LLM_hidden_dim * 4),
             nn.GELU(),

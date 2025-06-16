@@ -58,7 +58,7 @@ class Attention(nn.Module):
 class TransformerLayer(nn.Module):
     def __init__(self, config):
         super().__init__()
-        self.self_attention = Attention(config)
+        self.memory_segment_fusion_attention = Attention(config)
         self.mlp = nn.Sequential(
             nn.Linear(config.mm_hidden_size, config.mm_intermediate_size, dtype=config.mm_dtype),
             ACT2FN[config.mm_hidden_act]
@@ -66,7 +66,7 @@ class TransformerLayer(nn.Module):
         self.residual = Residual(config.mm_intermediate_size, config.mm_hidden_size, config)
 
     def forward(self, query_states, kv_states):
-        attention_output, attention_probs = self.self_attention(query_states, kv_hidden_states=kv_states, output_attentions=True)
+        attention_output, attention_probs = self.memory_segment_fusion_attention(query_states, kv_hidden_states=kv_states, output_attentions=True)
         layer_output = self.residual(self.mlp(attention_output), attention_output)
         return layer_output, attention_probs
 
@@ -81,7 +81,7 @@ class TransformerProjector(nn.Module):
         self.initial_memory = nn.Parameter(torch.empty(self.num_memory_tokens, self.patch_size, self.hidden_size))
         nn.init.xavier_uniform_(self.initial_memory)
         self.memory_cache: List[torch.Tensor] = []
-        self.memory_retrieval_attention = Attention(self.config)
+        self.memory_update_attention = Attention(self.config)
         self.frame_attn_scores: List[torch.Tensor] = []
 
     def _update_memory_tokens_with_cache(self, current_memory: torch.Tensor) -> torch.Tensor:
@@ -92,7 +92,7 @@ class TransformerProjector(nn.Module):
         B, Lq, P, D = query.shape
         query_2d = query.view(B, Lq * P, D)
         keyval_2d = past_memory.view(1, -1, D)
-        updated_2d, _ = self.memory_retrieval_attention(query_2d, kv_hidden_states=keyval_2d)
+        updated_2d, _ = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
         updated_4d = updated_2d.view(B, Lq, P, D)
         return updated_4d.squeeze(0)
 

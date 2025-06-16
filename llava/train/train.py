@@ -46,7 +46,7 @@ from llava.train.llava_trainer_eval import LLaVAEvalTrainer
 from llava import conversation as conversation_lib
 from llava.model import *
 from llava.mm_utils import process_highres_image, process_anyres_image, process_highres_image_crop_split, tokenizer_image_token
-from llava.utils import rank0_print, process_video_with_pyav, process_video_with_decord, dynamic_process_video_with_decord
+from llava.utils import rank0_print, rank_print, process_video_with_pyav, process_video_with_decord, dynamic_process_video_with_decord
 from deepspeed.runtime.fp16.loss_scaler import LossScaler
 import wandb
 from transformers import TrainerCallback, TrainerControl, TrainerState
@@ -1797,7 +1797,7 @@ def train(attn_implementation=None):
                             if p is param_ref:
                                 lr = group["lr"]
                                 break
-                    rank0_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
+                    rank_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
                     return grad
 
                 return hook

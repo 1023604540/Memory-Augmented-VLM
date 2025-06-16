@@ -28,7 +28,7 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="llava-onevision-0.5b-qwen2_KIT_position_8tokens_catmemory_adapterOFF_noPE_7b_short"
+RUN_NAME="llava-onevision-7b-qwen2_KIT_position_8tokens_catmemory_adapterOFF_noPE_short"
 # PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-7b-ov"
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
@@ -67,7 +67,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --image_grid_pinpoints  "(1x1),...,(6x6)" \
     --mm_patch_merge_type spatial_unpad \
     --mm_newline_position one_token \
-    --bf16 True \
+    --bf16 False \
     --run_name $RUN_NAME \
     --output_dir /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/$RUN_NAME \
     --num_train_epochs 1 \

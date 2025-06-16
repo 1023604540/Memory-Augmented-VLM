@@ -81,7 +81,20 @@ class TransformerProjector(nn.Module):
         self.initial_memory = nn.Parameter(torch.empty(self.num_memory_tokens, self.patch_size, self.hidden_size))
         nn.init.xavier_uniform_(self.initial_memory)
         self.memory_cache: List[torch.Tensor] = []
-        self.frame_attn_scores = []
+        self.memory_retrieval_attention = Attention(self.config)
+        self.frame_attn_scores: List[torch.Tensor] = []
+
+    def _update_memory_tokens_with_cache(self, current_memory: torch.Tensor) -> torch.Tensor:
+        if not self.memory_cache:
+            return current_memory
+        past_memory = torch.cat(self.memory_cache, dim=0).unsqueeze(0)
+        query = current_memory.unsqueeze(0)
+        B, Lq, P, D = query.shape
+        query_2d = query.view(B, Lq * P, D)
+        keyval_2d = past_memory.view(1, -1, D)
+        updated_2d, _ = self.memory_retrieval_attention(query_2d, kv_hidden_states=keyval_2d)
+        updated_4d = updated_2d.view(B, Lq, P, D)
+        return updated_4d.squeeze(0)
 
     def forward(self, image_features: torch.Tensor):
         device = image_features.device
@@ -93,8 +106,11 @@ class TransformerProjector(nn.Module):
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]
 
-        memory_2d = memory_tokens.reshape(B, self.num_memory_tokens * P, D)
-        image_2d = image_features.reshape(B, F * P, D)
+        if len(self.memory_cache) > 1:
+            memory_tokens = self._update_memory_tokens_with_cache(memory_tokens)
+
+        memory_2d = memory_tokens.view(B, self.num_memory_tokens * P, D)
+        image_2d = image_features.view(B, F * P, D)
         frame_attn_scores = []
 
         for layer in self.layers:
@@ -109,5 +125,7 @@ class TransformerProjector(nn.Module):
             self.memory_cache = self.memory_cache[-10:]
 
         final_score = torch.stack(frame_attn_scores).mean(dim=0)
-        self.frame_attn_scores.append(final_score)
+        self.frame_attn_scores.append(final_score.detach())
         return self.memory_cache, self.frame_attn_scores
+
+

@@ -73,7 +73,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 2 \
+    --gradient_accumulation_steps 1 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 200 \
@@ -87,7 +87,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --logging_steps 1 \
     --tf32 True \
     --model_max_length 32768 \
-    --gradient_checkpointing False \
+    --gradient_checkpointing True \
     --dataloader_num_workers 2 \
     --lazy_preprocess True \
     --report_to wandb \

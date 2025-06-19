@@ -499,9 +499,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Now index safely
                 original_frames = image[original_frames_idx]
                 # Init recurrent memory module
-                rank0_print(f"sample image shape : {image.shape}")
+                rank_print(f"sample image shape : {image.shape}")
                 boundaries = uniform_segment(image.mean(dim=1), d=32)
-                rank0_print(f"boundaries : {boundaries}")
+                # rank0_print(f"boundaries : {boundaries}")
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 recurrent_model.memory_cache = []
@@ -510,10 +510,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 for image_segment in image_segments:
                     memory_cache, attn_stats = recurrent_model(image_segment)
-                if len(attn_stats) > 1:
-                    rank_print(f"Attention stats 1: {attn_stats[1]}")
-                else:
-                    rank_print(f"Attention stats 0: {attn_stats[0]}")
+                # if len(attn_stats) > 1:
+                #     rank_print(f"Attention stats 1: {attn_stats[1]}")
+                # else:
+                #     rank_print(f"Attention stats 0: {attn_stats[0]}")
                 memory_cache = torch.cat(memory_cache, dim=0)
                 memory_cache = self.get_model().memory_fuser(memory_cache)
 
@@ -521,7 +521,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 fine_type_ids = torch.ones((num_samples, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
                 mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
                 fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
-                rank0_print(f"memory_cache shape : {memory_cache.shape}")
+                # rank0_print(f"memory_cache shape : {memory_cache.shape}")
                 memory_cache = memory_cache + mem_type_embeds
                 original_frames = original_frames + fine_type_embeds
                 combined_feature = torch.cat((memory_cache, original_frames), dim=0)

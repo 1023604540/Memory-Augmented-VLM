@@ -1,8 +1,8 @@
 export OMP_NUM_THREADS=8
 export NCCL_IB_DISABLE=0
 export NCCL_CUMEM_ENABLE=1
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-export TORCH_EXTENSIONS_DIR=$TMPDIR/torch_extensions
+#export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+#export TORCH_EXTENSIONS_DIR=$TMPDIR/torch_extensions
 export NCCL_DEBUG=INFO
 export USE_PYTORCH_KERNEL_CACHE=0
 export NCCL_IB_PCI_RELAXED_ORDERING=1

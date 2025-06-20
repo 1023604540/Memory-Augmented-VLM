@@ -3,7 +3,7 @@ export NCCL_IB_DISABLE=0
 export NCCL_CUMEM_ENABLE=1
 #export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 #export TORCH_EXTENSIONS_DIR=$TMPDIR/torch_extensions
-export NCCL_DEBUG=INFO
+export NCCL_DEBUG=DEBUG
 export USE_PYTORCH_KERNEL_CACHE=0
 export NCCL_IB_PCI_RELAXED_ORDERING=1
 
@@ -75,7 +75,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 4 \
+    --gradient_accumulation_steps 6 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 200 \
@@ -90,7 +90,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --tf32 True \
     --model_max_length 32768 \
     --gradient_checkpointing True \
-    --dataloader_num_workers 0 \
+    --dataloader_num_workers 2 \
     --lazy_preprocess True \
     --report_to wandb \
     --torch_compile True \

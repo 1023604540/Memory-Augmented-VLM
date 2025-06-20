@@ -63,7 +63,6 @@ srun --mpi=pmix \
   -x MASTER_PORT \
   -x RANK \
   -x NUM_GPUS \
-  -x NNODES \
   --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
   torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \

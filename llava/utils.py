@@ -32,8 +32,7 @@ def process_video_with_decord(video_file, data_args):
     # New sampling logic
     if video_time >= 32:
         # Find which interval the video is in (32, 64, 96, ...)
-        n = int((video_time - 1) // 32) + 1  # E.g. 33s → n=2
-        n = 1
+        n = int((video_time - 1) // 32)   # E.g. 33s → n=2
         num_frames_to_sample = n * 32
         # Make sure we don't ask for more frames than available
         num_frames_to_sample = min(num_frames_to_sample, total_frame_num)

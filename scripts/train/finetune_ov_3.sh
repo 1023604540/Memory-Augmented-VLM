@@ -58,7 +58,13 @@ srun --mpi=pmix \
   -x NCCL_DEBUG_SUBSYS \
   -x NCCL_TIMEOUT \
   -x NCCL_P2P_DISABLE \
-  --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
+  -x WANDB_API_KEY \
+  -x MASTER_ADDR \
+  -x MASTER_PORT \
+  -x RANK \
+  -x NUM_GPUS \
+  -x NNODES \
+  ACCELERATE_CPU_AFFINITY=0 \
   torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
     llava/train/train_mem.py \

@@ -5,7 +5,7 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export TORCH_EXTENSIONS_DIR=$TMPDIR/torch_extensions
 export NCCL_DEBUG=INFO
 export USE_PYTORCH_KERNEL_CACHE=0
-
+export NCCL_IB_PCI_RELAXED_ORDERING=1
 
 # export NCCL_DEBUG=INFO   # Uncomment for debugging
 export NCCL_DEBUG_SUBSYS=ALL
@@ -48,23 +48,7 @@ export MASTER_PORT=$(shuf -i 49152-65535 -n 1)  # IANA动态端口范围
 echo "[RANK $RANK] MASTER_ADDR=$MASTER_ADDR, MASTER_PORT=$MASTER_PORT"
 
 srun --mpi=pmix \
-  -x OMP_NUM_THREADS \
-  -x NCCL_IB_DISABLE \
-  -x NCCL_CUMEM_ENABLE \
-  -x PYTORCH_CUDA_ALLOC_CONF \
-  -x TORCH_EXTENSIONS_DIR \
-  -x NCCL_DEBUG \
-  -x USE_PYTORCH_KERNEL_CACHE \
-  -x NCCL_DEBUG_SUBSYS \
-  -x NCCL_TIMEOUT \
-  -x NCCL_P2P_DISABLE \
-  -x WANDB_API_KEY \
-  -x MASTER_ADDR \
-  -x MASTER_PORT \
-  -x RANK \
-  -x NUM_GPUS \
-  -x NNODES \
-  ACCELERATE_CPU_AFFINITY=0 \
+  --export=ALL, ACCELERATE_CPU_AFFINITY=0 \
   torchrun --nproc_per_node="${NUM_GPUS}" --nnodes="${NNODES}" --node_rank="${RANK}" --rdzv_backend=c10d \
     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT} \
     llava/train/train_mem.py \

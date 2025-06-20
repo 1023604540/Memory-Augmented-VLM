@@ -1802,7 +1802,7 @@ def train(attn_implementation=None):
                             if p is param_ref:
                                 lr = group["lr"]
                                 break
-                    rank0_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
+                    rank_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
                     return grad
 
                 return hook

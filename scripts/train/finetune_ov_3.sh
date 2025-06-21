@@ -78,7 +78,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --gradient_accumulation_steps 6 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 200 \
+    --save_steps 100 \
     --save_total_limit 4 \
     --learning_rate 2e-6 \
     --memory_transformer_lr 4e-5 \

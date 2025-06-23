@@ -423,6 +423,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     images_list[pos] = enc
 
             sampled_images = []
+            frame_indices = []
             # # Now support only batch size of 1
             for image in images_list:
                 num_frames = image.shape[0]
@@ -434,7 +435,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     sample_frames = 128
                     indices = torch.linspace(0, num_frames - 1, steps=sample_frames).long()
                     sampled_tensor = image[indices]
-
+                    # Keep track of the frame indices for positional encoding
+                    frame_indices.append(indices)
                 sampled_images.append(sampled_tensor)
 
             concat_images = torch.cat([image for image in sampled_images], dim=0)
@@ -486,7 +488,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_positions.append(idx)
                     continue
                 # Add positional encoding
-                image = self.get_model().positional_encoding(image)
+                frame_idx = frame_indices[idx].to(image.device)
+                image = self.get_model().positional_encoding(image, frame_idx)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!
 

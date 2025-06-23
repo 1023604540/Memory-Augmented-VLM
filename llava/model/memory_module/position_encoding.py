@@ -56,9 +56,9 @@ class TemporalPositionalEncoding(nn.Module):
 
         if x.dim() == 3:
             pe = self._get_pe(frame_indices, x.device)  # (T, C)
-            x_norm = x.norm(dim=-1).mean().item()
-            pe_norm = pe.norm(dim=-1).mean().item()
-            print(f"Feature norm: {x_norm:.3f}, PE norm: {pe_norm:.3f}")
+            # x_norm = x.norm(dim=-1).mean().item()
+            # pe_norm = pe.norm(dim=-1).mean().item()
+            # print(f"Check Magnitude: Feature norm: {x_norm:.3f}, PE norm: {pe_norm:.3f}")
             return x + pe[:, None, :]  # (T, N, C)
         elif x.dim() == 4:
             pe = self._get_pe(frame_indices, x.device)  # (B, T, C)

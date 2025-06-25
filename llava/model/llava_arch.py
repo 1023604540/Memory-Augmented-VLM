@@ -515,7 +515,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 for image_segment in image_segments:
                     memory_cache, attn_stats = recurrent_model(image_segment)
                 if len(attn_stats) > 1:
+                    rank_print(f"Attention stats 1: {attn_stats[0]}")
                     rank_print(f"Attention stats 1: {attn_stats[1]}")
+                    rank_print(f"Attention stats 1: {attn_stats[2]}")
+                    rank_print(f"Attention stats 1: {attn_stats[3]}")
                 else:
                     rank_print(f"Attention stats 0: {attn_stats[0]}")
                 memory_cache = torch.cat(memory_cache, dim=0)

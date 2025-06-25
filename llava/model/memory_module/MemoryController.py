@@ -115,8 +115,11 @@ class TransformerProjector(nn.Module):
 
         for layer in self.layers:
             memory_2d, attn_probs = layer(memory_2d, image_2d)
+            print(f"attn_probs shape: {attn_probs.shape}")
             attn_sum = attn_probs.sum(dim=1).sum(dim=1).squeeze(0)  # [F * P]
+            print(f"attn_sum shape: {attn_sum.shape}")
             frame_scores = attn_sum.view(F, P).mean(dim=1)
+            print(f"frame_scores shape: {frame_scores.shape}")
             frame_attn_scores.append(frame_scores)
 
         final_memory = memory_2d.view(B, self.num_memory_tokens, P, D)
@@ -124,8 +127,7 @@ class TransformerProjector(nn.Module):
         if len(self.memory_cache) > 10:
             self.memory_cache = self.memory_cache[-10:]
 
-        # final_score = torch.stack(frame_attn_scores).mean(dim=0)
-        final_score = torch.stack(frame_attn_scores)
+        final_score = torch.stack(frame_attn_scores).mean(dim=0)
         self.frame_attn_scores.append(final_score.detach())
         return self.memory_cache, self.frame_attn_scores
 

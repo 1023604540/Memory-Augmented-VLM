@@ -1786,7 +1786,7 @@ def train(attn_implementation=None):
     trainer.create_optimizer()
     # torch.autograd.set_detect_anomaly(True)
     set_global_optimizer(trainer.optimizer)
-    print_grad_norm = False
+    print_grad_norm = True
     if print_grad_norm:
         for name, param in model.named_parameters():
             if not param.requires_grad:
@@ -1802,7 +1802,7 @@ def train(attn_implementation=None):
                             if p is param_ref:
                                 lr = group["lr"]
                                 break
-                    rank_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
+                    rank0_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
                     return grad
 
                 return hook

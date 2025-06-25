@@ -509,7 +509,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 recurrent_model.memory_cache = []
-
+                image_initial_memory_index = torch.linspace(0, image.shape[0] - 1,
+                                                            steps=8)  # Sample 8 frames as initial memory
+                image_initial_memory = image[image_initial_memory_index.long()]
+                recurrent_model.memory_cache.append(image_initial_memory)
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
 
                 for image_segment in image_segments:

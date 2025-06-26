@@ -433,6 +433,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 else:
                     sample_frames = (num_frames // 32) * 32
                     if sample_frames >= 96:
+                        print(f"Sampling {sample_frames} frames from {num_frames} total frames.")
                         sample_frames = 64
                     # sample_frames = 128
                     indices = torch.linspace(0, num_frames - 1, steps=sample_frames).long()

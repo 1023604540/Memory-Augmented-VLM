@@ -117,7 +117,7 @@ class TransformerProjector(nn.Module):
             memory_2d, attn_probs = layer(memory_2d, image_2d)
             # print(f"attn_probs shape: {attn_probs.shape}")
             attn_sum = attn_probs.sum(dim=1).sum(dim=1).squeeze(0)  # [F * P]
-            print(f"attn_sum shape: {attn_sum.shape}", "attn_sum:", attn_sum[:32])
+            # print(f"attn_sum shape: {attn_sum.shape}", "attn_sum:", attn_sum[:32])
             frame_scores = attn_sum.view(F, P).mean(dim=1)
             # print(f"frame_scores shape: {frame_scores.shape}")
             frame_attn_scores.append(frame_scores)

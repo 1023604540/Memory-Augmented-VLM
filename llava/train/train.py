@@ -1855,8 +1855,8 @@ def train(attn_implementation=None):
     # # start the background monitor
     # t = threading.Thread(target=monitor_gpu, args=(5,), daemon=True)
     # t.start()
-    print("====== CUDA Memory Summary BEFORE Training ======")
-    print(torch.cuda.memory_summary(device=torch.cuda.current_device(), abbreviated=False))
+    # print("====== CUDA Memory Summary BEFORE Training ======")
+    # print(torch.cuda.memory_summary(device=torch.cuda.current_device(), abbreviated=False))
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         torch.serialization.add_safe_globals([LossScaler])
         trainer.train(resume_from_checkpoint=True)

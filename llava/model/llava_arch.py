@@ -124,7 +124,7 @@ class LlavaMetaModel:
         custom_config.mm_hidden_dropout_prob = 0.1
         custom_config.mm_intermediate_size = 4 * custom_config.mm_hidden_size
         custom_config.num_memory_tokens = 8
-        custom_config.depth = 1
+        custom_config.depth = 2
         custom_config.mm_dtype = torch.float16
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)
@@ -432,9 +432,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     sampled_tensor = image
                 else:
                     sample_frames = (num_frames // 32) * 32
-                    if sample_frames < 96:
-                        print(f"Sampling {sample_frames} frames from {num_frames} total frames.")
-                        sample_frames = 96
+                    # if sample_frames < 96:
+                    #     print(f"Sampling {sample_frames} frames from {num_frames} total frames.")
+                    #     sample_frames = 96
                     # sample_frames = 128
                     indices = torch.linspace(0, num_frames - 1, steps=sample_frames).long()
                     sampled_tensor = image[indices]

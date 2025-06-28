@@ -14,7 +14,7 @@ class Config:
     mm_hidden_dropout_prob = 0.1
     mm_intermediate_size = 4 * mm_hidden_size
     num_memory_tokens = 8
-    depth = 1
+    depth = 2
     mm_dtype = torch.float16
 
 class Residual(nn.Module):

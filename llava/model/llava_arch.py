@@ -30,7 +30,7 @@ from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
-from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment
+from llava.model.memory_module.segment import segment, adjusted_segment, filter_redundant_frames
 import heapq
 import numpy as np
 from llava.model.memory_module.MemoryController import TransformerProjector, Config
@@ -124,7 +124,7 @@ class LlavaMetaModel:
         custom_config.mm_hidden_dropout_prob = 0.1
         custom_config.mm_intermediate_size = 4 * custom_config.mm_hidden_size
         custom_config.num_memory_tokens = 8
-        custom_config.depth = 2
+        custom_config.depth = 1
         custom_config.mm_dtype = torch.float16
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)
@@ -489,6 +489,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     continue
                 # Add positional encoding
                 frame_idx = frame_indices[idx].to(image.device)
+                key_frames = filter_redundant_frames(image)
+                print(key_frames)
                 image = self.get_model().positional_encoding(image, frame_idx)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!

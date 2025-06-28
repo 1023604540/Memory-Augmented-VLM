@@ -228,3 +228,32 @@ def segment_left(features, alpha=0.5, k=None):
 
     return boundaries
 
+
+def filter_redundant_frames(features: torch.Tensor, threshold: float = 0.95):
+    """
+    Filters out consecutive frames whose cosine similarity exceeds the threshold.
+
+    Args:
+        features: Tensor of shape (T, P, D)
+        threshold: cosine similarity above which the next frame is considered redundant
+
+    Returns:
+        kept_indices: list of indices of frames to keep
+    """
+    # first, aggregate each frame to a single vector
+    pooled_features = features.mean(dim=1)  # (T, D)
+
+    if pooled_features.shape[0] == 1:
+        return [0]
+
+    kept_indices = [0]
+    last_kept = pooled_features[0]
+
+    for i in range(1, pooled_features.shape[0]):
+        similarity = torch.nn.functional.cosine_similarity(last_kept, pooled_features[i], dim=0)
+        if similarity < threshold:
+            kept_indices.append(i)
+            last_kept = pooled_features[i]
+        # else: too similar, skip
+
+    return kept_indices

@@ -489,11 +489,14 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     continue
                 # Add positional encoding
                 frame_idx = frame_indices[idx].to(image.device)
+
                 key_frames = filter_redundant_frames(image)
                 rank_print(f"key_frames shape : {len(key_frames)}")
                 print(key_frames)
                 image = image[key_frames]  # [num_frames, 196, 3584]
-                frame_idx = key_frames.to(image.device)
+                frame_idx = frame_idx[key_frames]  # [num_frames]
+
+
                 image = self.get_model().positional_encoding(image, frame_idx)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!

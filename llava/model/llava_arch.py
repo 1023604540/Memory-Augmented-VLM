@@ -142,7 +142,7 @@ class LlavaMetaModel:
         # ).to(self.device)
         # Initialize positional encoding
         self.positional_encoding = TemporalPositionalEncoding(
-            max_frames=1000,
+            max_frames=300,
             embed_dim=LLM_hidden_dim,
             learnable=False
         ).to(self.device)
@@ -497,7 +497,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 frame_idx = frame_idx[key_frames]  # [num_frames]
 
 
-                image = self.get_model().positional_encoding(image, frame_idx)
+                # image = self.get_model().positional_encoding(image, frame_idx)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!
 

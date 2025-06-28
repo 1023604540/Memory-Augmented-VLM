@@ -30,7 +30,7 @@ from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
-from llava.model.memory_module.segment import segment, adjusted_segment, filter_redundant_frames
+from llava.model.memory_module.segment import segment, adjusted_segment, filter_redundant_frames, uniform_segment
 import heapq
 import numpy as np
 from llava.model.memory_module.MemoryController import TransformerProjector, Config

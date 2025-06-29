@@ -228,7 +228,7 @@ def segment_left(features, alpha=0.5, k=None):
 
     return boundaries
 
-def filter_redundant_frames(features: torch.Tensor, threshold: float = 0.96):
+def filter_redundant_frames(features: torch.Tensor, threshold: float = 0.98):
     """
     Filters out consecutive frames whose cosine similarity exceeds the threshold.
 

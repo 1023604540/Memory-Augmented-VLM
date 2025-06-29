@@ -515,8 +515,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #     rank_print(f"Attention stats 3: {attn_stats[3]}")
                 # else:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
-                mem_type_ids = torch.zeros((8 * len(memory_cache), 196), dtype=torch.long, device=self.device)  # shape [8, 196]
-                fine_type_ids = torch.ones((len(original_frames), 196), dtype=torch.long, device=self.device)  # shape [32, 196]
+                mem_type_ids = torch.zeros((8 * len(memory_cache), 196), dtype=torch.long, device=self.device)
+                fine_type_ids = torch.ones((len(original_frames), 196), dtype=torch.long, device=self.device)
                 mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
                 fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
                 # rank0_print(f"memory_cache shape : {memory_cache.shape}")

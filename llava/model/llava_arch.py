@@ -508,6 +508,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 for image_segment in image_segments:
                     memory_cache, attn_stats, original_frames = recurrent_model(image_segment)
                     print(f"Memory cache shape : {len(memory_cache)}, original frames shape : {len(original_frames)}")
+                    print(f"Memory cache shape : {memory_cache[0].shape}, original frames shape : {original_frames[0].shape}")
                 # if len(attn_stats) > 1:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
                 #     rank_print(f"Attention stats 1: {attn_stats[1]}")

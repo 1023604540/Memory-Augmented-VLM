@@ -537,8 +537,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Interleave memory tokens and original frames:
                 combined_feature = []
                 for i in range(len(memory_cache)):
-                    combined_feature.append(torch.cat((memory_cache[i], original_frames[i]), dim=0))
-                combined_feature = torch.stack(combined_feature, dim=0)
+                    combined_feature.append(torch.cat((original_frames[i], memory_cache[i]), dim=0))
+                combined_feature = torch.cat(combined_feature, dim=0)
                 print(f"Combined feature shape : {combined_feature.shape}")
                 combined_feature = self.get_model().memory_fuser(combined_feature)
                 print(f"Combined feature shape : {combined_feature.shape}")

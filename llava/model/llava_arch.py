@@ -30,7 +30,7 @@ from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
-from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment
+from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment, filter_redundant_frames
 import heapq
 import numpy as np
 from llava.model.memory_module.MemoryController import TransformerProjector, Config
@@ -475,6 +475,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_positions.append(idx)
                     continue
                 # Add positional encoding
+                key_frames = filter_redundant_frames(image)
+                image = image[key_frames]
+                print(f"key_frames shape : {len(key_frames)}, image shape : {image.shape}")
                 image = self.get_model().positional_encoding(image)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!

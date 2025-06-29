@@ -505,8 +505,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 for image_segment in image_segments:
                     memory_cache, attn_stats, original_frames = recurrent_model(image_segment)
-                    print(f"Memory cache shape : {len(memory_cache)}, original frames shape : {len(original_frames)}")
-                    print(f"Memory cache shape : {memory_cache[0].shape}, original frames shape : {original_frames[0].shape}")
+                    # print(f"Memory cache shape : {len(memory_cache)}, original frames shape : {len(original_frames)}")
+                    # print(f"Memory cache shape : {memory_cache[0].shape}, original frames shape : {original_frames[0].shape}")
                 # if len(attn_stats) > 1:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
                 #     rank_print(f"Attention stats 1: {attn_stats[1]}")
@@ -531,7 +531,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Split the encoded tensor back into individual parts.
                 memory_cache = torch.split(mem, mem_lengths, dim=0)
                 original_frames = torch.split(ori, ori_lengths, dim=0)
-                print(f"Memory cache shape : {[x.shape for x in memory_cache]}, {len(memory_cache)}")
+                # print(f"Memory cache shape : {[x.shape for x in memory_cache]}, {len(memory_cache)}")
                 # Interleave memory tokens and original frames:
                 combined_feature = []
                 for i in range(len(memory_cache)):

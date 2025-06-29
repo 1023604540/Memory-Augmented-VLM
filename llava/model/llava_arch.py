@@ -477,6 +477,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Add positional encoding
                 key_frames = filter_redundant_frames(image)
                 image = image[key_frames]
+                if len(key_frames) >= 300:
+                    print(f"Warning: Too many key frames {len(key_frames)} for video {idx}, only using 300")
+                    key_frames = key_frames[:300]
                 print(f"key_frames shape : {len(key_frames)}, image shape : {image.shape}")
                 image = self.get_model().positional_encoding(image)
                 num_frames = image.shape[0]

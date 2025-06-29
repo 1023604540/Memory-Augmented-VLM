@@ -124,7 +124,7 @@ class LlavaMetaModel:
         custom_config.mm_hidden_dropout_prob = 0.1
         custom_config.mm_intermediate_size = 4 * custom_config.mm_hidden_size
         custom_config.num_memory_tokens = 8
-        custom_config.depth = 1
+        custom_config.depth = 2
         custom_config.mm_dtype = torch.float16
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)
@@ -142,7 +142,7 @@ class LlavaMetaModel:
         # ).to(self.device)
         # Initialize positional encoding
         self.positional_encoding = TemporalPositionalEncoding(
-            max_frames=300,
+            max_frames=600,
             embed_dim=LLM_hidden_dim,
             learnable=False
         ).to(self.device)
@@ -493,18 +493,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Add positional encoding
                 frame_idx = frame_indices[idx].to(image.device)
                 image = self.get_model().positional_encoding(image, frame_idx)
-                num_frames = image.shape[0]
-                num_samples = min(32, num_frames)  # can't sample more than you have!
 
-                # Get linearly spaced float indices, then round to nearest int
-                original_frames_idx = torch.linspace(0, num_frames - 1, steps=num_samples)
-                original_frames_idx = torch.round(original_frames_idx).long()
-
-                # Clamp just to be 100% safe
-                original_frames_idx = torch.clamp(original_frames_idx, 0, num_frames - 1)
-
-                # Now index safely
-                original_frames = image[original_frames_idx]
                 # Init recurrent memory module
                 rank_print(f"sample image shape : {image.shape}")
                 boundaries = uniform_segment(image.mean(dim=1), d=32)
@@ -512,11 +501,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 recurrent_model.memory_cache = []
+                recurrent_model.original_frames = []
 
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
 
                 for image_segment in image_segments:
-                    memory_cache, attn_stats = recurrent_model(image_segment)
+                    memory_cache, attn_stats, original_frames = recurrent_model(image_segment)
+                    print(f"Memory cache shape : {memory_cache.shape}, original frames shape : {original_frames.shape}")
                 # if len(attn_stats) > 1:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
                 #     rank_print(f"Attention stats 1: {attn_stats[1]}")
@@ -524,18 +515,21 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #     rank_print(f"Attention stats 3: {attn_stats[3]}")
                 # else:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
-                memory_cache = torch.cat(memory_cache, dim=0)
-                memory_cache = self.get_model().memory_fuser(memory_cache)
-
                 mem_type_ids = torch.zeros((memory_cache.shape[0], 196), dtype=torch.long, device=self.device)  # shape [8, 196]
-                fine_type_ids = torch.ones((num_samples, 196), dtype=torch.long, device=self.device)  # shape [32, 196]
+                fine_type_ids = torch.ones((original_frames.shape[0], 196), dtype=torch.long, device=self.device)  # shape [32, 196]
                 mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
                 fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
                 # rank0_print(f"memory_cache shape : {memory_cache.shape}")
                 memory_cache = memory_cache + mem_type_embeds
                 original_frames = original_frames + fine_type_embeds
+                # Interleave memory tokens and original frames:
+                combined_feature = []
+                for i in memory_cache.shape[0]:
+                    combined_feature.append(torch.cat((memory_cache[i], original_frames[i]), dim=0))
+                combined_feature = torch.stack(combined_feature, dim=0)
+                memory_cache = self.get_model().memory_fuser(combined_feature)
                 combined_feature = torch.cat((memory_cache, original_frames), dim=0)
-
+                print(f"Combined feature shape : {combined_feature.shape}")
                 memory_augmented_features.append(combined_feature)
 
             image_features = memory_augmented_features

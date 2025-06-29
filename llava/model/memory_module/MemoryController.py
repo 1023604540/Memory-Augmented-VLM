@@ -83,6 +83,7 @@ class TransformerProjector(nn.Module):
         self.memory_cache: List[torch.Tensor] = []
         self.memory_update_attention = Attention(self.config)
         self.frame_attn_scores: List[torch.Tensor] = []
+        self.original_frames = []
 
     def _update_memory_tokens_with_cache(self, current_memory: torch.Tensor) -> torch.Tensor:
         if not self.memory_cache:
@@ -101,7 +102,8 @@ class TransformerProjector(nn.Module):
         dtype = image_features.dtype
         B = 1
         F, P, D = image_features.shape
-
+        # Extract the first frame and store it in original_frames
+        self.original_frames.append(image_features[0])
         memory_tokens = self.initial_memory.to(device=device, dtype=dtype)
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]
@@ -129,6 +131,6 @@ class TransformerProjector(nn.Module):
 
         final_score = frame_attn_scores[-1]
         self.frame_attn_scores.append(final_score.detach())
-        return self.memory_cache, self.frame_attn_scores
+        return self.memory_cache, self.frame_attn_scores, self.original_frames
 
 

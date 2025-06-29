@@ -520,8 +520,19 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
                 fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
                 # rank0_print(f"memory_cache shape : {memory_cache.shape}")
-                memory_cache = memory_cache + mem_type_embeds
-                original_frames = original_frames + fine_type_embeds
+
+                mem_lengths = [memory.shape[0] for memory in memory_cache]
+                ori_lengths = [frame.shape[0] for frame in original_frames]
+                # Concatenate them along the batch dimension.
+                concatenated_memory = torch.cat(memory_cache, dim=0)
+                concatenated_frames = torch.cat(original_frames, dim=0)
+                # Encode the concatenated tensor.
+                mem = concatenated_memory + mem_type_embeds
+                ori = concatenated_frames + fine_type_embeds
+                # Split the encoded tensor back into individual parts.
+                memory_cache = torch.split(mem, mem_lengths, dim=0)
+                original_frames = torch.split(ori, ori_lengths, dim=0)
+
                 # Interleave memory tokens and original frames:
                 combined_feature = []
                 for i in memory_cache.shape[0]:

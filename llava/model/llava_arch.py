@@ -533,12 +533,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Split the encoded tensor back into individual parts.
                 memory_cache = torch.split(mem, mem_lengths, dim=0)
                 original_frames = torch.split(ori, ori_lengths, dim=0)
-
+                print(f"Memory cache shape : {[x.shape for x in memory_cache]}, {len(memory_cache)}")
                 # Interleave memory tokens and original frames:
                 combined_feature = []
                 for i in range(len(memory_cache)):
                     combined_feature.append(torch.cat((memory_cache[i], original_frames[i]), dim=0))
                 combined_feature = torch.stack(combined_feature, dim=0)
+                print(f"Combined feature shape : {combined_feature.shape}")
                 combined_feature = self.get_model().memory_fuser(combined_feature)
                 print(f"Combined feature shape : {combined_feature.shape}")
                 memory_augmented_features.append(combined_feature)

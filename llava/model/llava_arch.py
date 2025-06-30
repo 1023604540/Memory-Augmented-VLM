@@ -492,8 +492,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     non_video_positions.append(idx)
                     continue
                 # Add positional encoding
+                print("before PE", torch.isnan(image).any())
                 frame_idx = frame_indices[idx].to(image.device)
                 image = self.get_model().positional_encoding(image, frame_idx)
+                print("after PE", torch.isnan(image).any())
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!
                 scene_aware_sample_index = sample_scenes_priority(image, sample_num=num_samples)

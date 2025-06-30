@@ -170,6 +170,31 @@ def uniform_segment(features, d=32):
 
     return boundaries
 
+
+def uniform_segment_variant(features, d=32):
+    """
+    Segment `features` into chunks of size d, placing any leftover frames at the end.
+
+    - Chunks of size d are created first.
+    - If T % d != 0, the leftover forms the final smaller chunk.
+
+    :param features: A tensor or array of shape (T, D), where T is the temporal length.
+    :param d: The fixed chunk size.
+    :return: A list of boundary indices (the ends of each chunk).
+    """
+    T = features.shape[0]
+    boundaries = [0]
+
+    current = 0
+    while current + d <= T:
+        current += d
+        boundaries.append(current)
+
+    # If there is leftover at the end
+    if current < T:
+        boundaries.append(T)
+
+    return boundaries
 def cal_left_depth_score(sim_scores):
     n = sim_scores.shape[0]
     depth_scores = torch.zeros(sim_scores.size(), dtype=sim_scores.dtype, device=sim_scores.device)

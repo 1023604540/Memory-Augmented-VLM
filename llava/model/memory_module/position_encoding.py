@@ -67,7 +67,12 @@ class TemporalPositionalEncoding(nn.Module):
             raise ValueError(f'Expected 3D or 4D input, got {x.dim()}D.')
 
     def _get_pe(self, indices, device):
+        indices = indices.to(device)
+        if torch.any(indices >= self.max_frames):
+            raise ValueError(f"indices exceed max_frames: max {indices.max().item()} vs limit {self.max_frames}")
+        if torch.any(indices < 0):
+            raise ValueError(f"indices contains negative values: min {indices.min().item()}")
         if self.learnable:
-            return self.frame_embed(indices.to(device))
+            return self.frame_embed(indices)
         else:
-            return self.frame_embed[indices.to(device)]
+            return self.frame_embed[indices]

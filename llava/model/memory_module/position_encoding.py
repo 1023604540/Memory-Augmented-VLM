@@ -56,6 +56,8 @@ class TemporalPositionalEncoding(nn.Module):
 
         if x.dim() == 3:
             pe = self._get_pe(frame_indices, x.device)  # (T, C)
+            if torch.isnan(pe).any():
+                raise ValueError("Position encoding contains NaN values.")
             # x_norm = x.norm(dim=-1).mean().item()
             # pe_norm = pe.norm(dim=-1).mean().item()
             # print(f"Check Magnitude: Feature norm: {x_norm:.3f}, PE norm: {pe_norm:.3f}")

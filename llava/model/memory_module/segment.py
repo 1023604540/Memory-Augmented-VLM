@@ -25,34 +25,29 @@ def cal_depth_score(sim_scores):
 
 
 def segment(features, alpha=0.5, k=None):
-    # input shape: t, d
-    # 对于每个时间点，计算相邻两个时间点的余弦相似度
-    if features.shape[0] == 1:  # 如果只有一个时间点
-        return [0]
+    if features.shape[0] == 1:
+        return [0], torch.zeros(1)
 
     sim_scores = torch.cosine_similarity(features[:-1, :], features[1:, :])
     depth_scores = cal_depth_score(sim_scores)
 
     if k is not None:
-        # select by top k
         boundaries = torch.topk(depth_scores, k).indices.sort()[0]
     else:
-        # select by threshold (original)
         std, mean = torch.std_mean(depth_scores)
         thresh = mean + alpha * std
         condition = depth_scores > thresh
         boundaries = condition.nonzero().squeeze(-1)
-        if len(boundaries) > 15: # limit max segments to prevent from OOM: 7 comes from RMT paper
-            boundaries = torch.topk(depth_scores, 15).indices.sort()[0]
-
+        # if len(boundaries) > 15:
+        #     boundaries = torch.topk(depth_scores, 15).indices.sort()[0]
     boundaries = boundaries.tolist()
 
     if type(boundaries) == int or boundaries == [] or boundaries[-1] != features.shape[0]-1:
         boundaries.append(features.shape[0])
 
-    boundaries = sorted(set(boundaries))  # 去重并排序
+    boundaries = sorted(set(boundaries))
+    return boundaries, depth_scores
 
-    return boundaries
 
 def adjusted_segment(features, alpha=0.5, k=None, min_distance=32, max_distance=64):
     """
@@ -253,3 +248,75 @@ def segment_left(features, alpha=0.5, k=None):
 
     return boundaries
 
+
+def sample_scenes_priority(features, n=32, alpha=0.5, k=None):
+    """
+    Sample n frames from features of shape [frames, patches, dim],
+    prioritizing surprising scenes if there are too many scenes.
+    """
+    T = features.shape[0]
+    frame_features = features.mean(dim=1)  # flatten spatial dimension
+
+    # segment with your provided function
+    # note we capture depth scores to prioritize
+    scene_boundaries, depth_scores = segment(frame_features, alpha=alpha, k=k)
+
+
+    # always include first and last
+    if 0 not in scene_boundaries:
+        scene_boundaries = [0] + scene_boundaries
+    if T not in scene_boundaries:
+        scene_boundaries.append(T)
+    scene_boundaries = sorted(set(scene_boundaries))
+
+    # number of scenes
+    num_scenes = len(scene_boundaries) - 1
+
+    # if scenes <= n, allocate normally
+    if num_scenes <= n:
+        frame_budget = [1] * num_scenes
+        remaining = n - num_scenes
+        scene_lengths = [scene_boundaries[i + 1] - scene_boundaries[i] for i in range(num_scenes)]
+        total_len = sum(scene_lengths)
+        for i in range(num_scenes):
+            frame_budget[i] += int(remaining * scene_lengths[i] / total_len)
+        # fix rounding mismatch
+        while sum(frame_budget) < n:
+            frame_budget[sum(frame_budget) % num_scenes] += 1
+        while sum(frame_budget) > n:
+            frame_budget[frame_budget.index(max(frame_budget))] -= 1
+        # sample
+        sampled_indices = []
+        for i in range(num_scenes):
+            start = scene_boundaries[i]
+            end = scene_boundaries[i + 1]
+            length = end - start
+            k = frame_budget[i]
+            if length <= k:
+                indices = list(range(start, end))
+            else:
+                indices = torch.linspace(start, end - 1, steps=k).round().long().tolist()
+            sampled_indices.extend(indices)
+        return sorted(set(sampled_indices))
+
+    else:
+        # too many scenes for n, pick most surprising scenes
+        # get the scores for the boundaries, map to scenes
+        # boundary i separates scene i and scene i+1, so
+        boundary_scores = []
+        for b in scene_boundaries[1:-1]:
+            boundary_scores.append(depth_scores[b - 1].item())  # note boundary is after b-1
+        # assign these scores to scenes
+        scene_scores = [0] + boundary_scores  # first scene gets 0
+        scored_scenes = list(enumerate(scene_scores))
+        # sort scenes by score descending
+        top_scenes = sorted(scored_scenes, key=lambda x: -x[1])[:n]
+        chosen_scenes = [x[0] for x in top_scenes]
+        # sample center frame of each chosen scene
+        sampled_indices = []
+        for i in chosen_scenes:
+            start = scene_boundaries[i]
+            end = scene_boundaries[i + 1]
+            center = (start + end) // 2
+            sampled_indices.append(center)
+        return sorted(sampled_indices)

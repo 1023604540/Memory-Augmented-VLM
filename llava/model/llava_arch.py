@@ -507,9 +507,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Now index safely
                 original_frames = image[original_frames_idx]
                 # Init recurrent memory module
-                rank_print(f"sample image shape : {image.shape}")
+                rank0_print(f"sample image shape : {image.shape}")
                 boundaries = uniform_segment_variant(image.mean(dim=1), d=32)
-                # rank0_print(f"boundaries : {boundaries}")
+                rank0_print(f"boundaries : {boundaries}")
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 recurrent_model.memory_cache = []

@@ -124,14 +124,14 @@ class LlavaMetaModel:
         custom_config.mm_hidden_dropout_prob = 0.1
         custom_config.mm_intermediate_size = 4 * custom_config.mm_hidden_size
         custom_config.num_memory_tokens = 8
-        custom_config.depth = 1
+        custom_config.depth = 2
         custom_config.mm_dtype = torch.float16
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)
         self.memory_fuser = nn.Sequential(
-            nn.Linear(LLM_hidden_dim, LLM_hidden_dim * 4),
-            nn.GELU(),
-            nn.Linear(LLM_hidden_dim * 4, LLM_hidden_dim)
+            nn.Linear(LLM_hidden_dim, LLM_hidden_dim),
+            # nn.GELU(),
+            # nn.Linear(LLM_hidden_dim * 4, LLM_hidden_dim)
         ).to(self.device)
         # self.memory_fuser = MemoryFuser(
         #     hidden_dim=LLM_hidden_dim,
@@ -142,7 +142,7 @@ class LlavaMetaModel:
         # ).to(self.device)
         # Initialize positional encoding
         self.positional_encoding = TemporalPositionalEncoding(
-            max_frames=300,
+            max_frames=600,
             embed_dim=LLM_hidden_dim,
             learnable=False
         ).to(self.device)
@@ -427,19 +427,20 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             # # Now support only batch size of 1
             for image in images_list:
                 num_frames = image.shape[0]
-
-                if num_frames < 32:
-                    sampled_tensor = image
-                else:
-                    sample_frames = (num_frames // 32) * 32
-                    # if sample_frames < 96:
-                    #     print(f"Sampling {sample_frames} frames from {num_frames} total frames.")
-                    #     sample_frames = 96
-                    # sample_frames = 128
-                    indices = torch.linspace(0, num_frames - 1, steps=sample_frames).long()
-                    sampled_tensor = image[indices]
-                    # Keep track of the frame indices for positional encoding
-                    frame_indices.append(indices)
+                #
+                # if num_frames < 32:
+                #     sampled_tensor = image
+                # else:
+                #     sample_frames = (num_frames // 32) * 32
+                #     # if sample_frames < 96:
+                #     #     print(f"Sampling {sample_frames} frames from {num_frames} total frames.")
+                #     #     sample_frames = 96
+                #     # sample_frames = 128
+                sample_frames = num_frames
+                indices = torch.linspace(0, num_frames - 1, steps=sample_frames).long()
+                sampled_tensor = image[indices]
+                # Keep track of the frame indices for positional encoding
+                frame_indices.append(indices)
                 sampled_images.append(sampled_tensor)
 
             concat_images = torch.cat([image for image in sampled_images], dim=0)

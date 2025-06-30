@@ -496,7 +496,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image = self.get_model().positional_encoding(image, frame_idx)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!
-                scene_aware_sample_index = sample_scenes_priority(image, n=num_samples)
+                scene_aware_sample_index = sample_scenes_priority(image, sample_num=num_samples)
                 print(f"scene_aware_sample_index : {scene_aware_sample_index}")
                 # Get linearly spaced float indices, then round to nearest int
                 original_frames_idx = torch.linspace(0, num_frames - 1, steps=num_samples)

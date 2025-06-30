@@ -249,7 +249,7 @@ def segment_left(features, alpha=0.5, k=None):
     return boundaries
 
 
-def sample_scenes_priority(features, n=32, alpha=0.5, k=None):
+def sample_scenes_priority(features, n=32, alpha=0.3, k=None):
     """
     Sample n frames from features of shape [frames, patches, dim],
     prioritizing surprising scenes if there are too many scenes.

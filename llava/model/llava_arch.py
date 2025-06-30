@@ -30,7 +30,7 @@ from llava.mm_utils import get_anyres_image_grid_shape
 from llava.utils import rank0_print, rank_print
 import random
 from llava.model.memory_module.memory_builder import NeuralTuringMachine, MultimodalOpsMixin
-from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment, uniform_segment_variant
+from llava.model.memory_module.segment import segment, adjusted_segment, uniform_segment, uniform_segment_variant, sample_scenes_priority
 import heapq
 import numpy as np
 from llava.model.memory_module.MemoryController import TransformerProjector, Config
@@ -496,7 +496,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image = self.get_model().positional_encoding(image, frame_idx)
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!
-
+                scene_aware_sample_index = sample_scenes_priority(image, num_samples=num_samples, device=self.device)
+                print(f"scene_aware_sample_index : {scene_aware_sample_index}")
                 # Get linearly spaced float indices, then round to nearest int
                 original_frames_idx = torch.linspace(0, num_frames - 1, steps=num_samples)
                 original_frames_idx = torch.round(original_frames_idx).long()

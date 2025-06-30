@@ -26,7 +26,7 @@ class TemporalPositionalEncoding(nn.Module):
         if learnable:
             self.frame_embed = nn.Embedding(max_frames, embed_dim)
         else:
-            pe = torch.zeros(max_frames, embed_dim)
+            pe = torch.zeros(max_frames, embed_dim, dtype=torch.float32)
             position = torch.arange(0, max_frames).unsqueeze(1).float()
             div_term = torch.exp(
                 torch.arange(0, embed_dim, 2).float() * -(math.log(10000.0) / embed_dim)
@@ -55,7 +55,7 @@ class TemporalPositionalEncoding(nn.Module):
                 raise ValueError(f'Expected 3D or 4D input, got {x.dim()}D.')
 
         if x.dim() == 3:
-            pe = self._get_pe(frame_indices, x.device)  # (T, C)
+            pe = self._get_pe(frame_indices, x.device).to(x.dtype)  # (T, C)
             if torch.isnan(pe).any():
                 raise ValueError("Position encoding contains NaN values.")
             # x_norm = x.norm(dim=-1).mean().item()

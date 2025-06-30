@@ -250,7 +250,7 @@ def segment_left(features, alpha=0.5, k=None):
     return boundaries
 
 
-def sample_scenes_priority(features, n=32, alpha=0.3, k=None):
+def sample_scenes_priority(features, sample_num=32, alpha=0.3, k=None):
     """
     Sample n frames from features of shape [frames, patches, dim],
     prioritizing surprising scenes if there are too many scenes.
@@ -275,18 +275,18 @@ def sample_scenes_priority(features, n=32, alpha=0.3, k=None):
     # number of scenes
     num_scenes = len(scene_boundaries) - 1
 
-    # if scenes <= n, allocate normally
-    if num_scenes <= n:
+    # if scenes <= sample_num, allocate normally
+    if num_scenes <= sample_num:
         frame_budget = [1] * num_scenes
-        remaining = n - num_scenes
+        remaining = sample_num - num_scenes
         scene_lengths = [scene_boundaries[i + 1] - scene_boundaries[i] for i in range(num_scenes)]
         total_len = sum(scene_lengths)
         for i in range(num_scenes):
             frame_budget[i] += int(remaining * scene_lengths[i] / total_len)
         # fix rounding mismatch
-        while sum(frame_budget) < n:
+        while sum(frame_budget) < sample_num:
             frame_budget[sum(frame_budget) % num_scenes] += 1
-        while sum(frame_budget) > n:
+        while sum(frame_budget) > sample_num:
             frame_budget[frame_budget.index(max(frame_budget))] -= 1
         # sample
         sampled_indices = []
@@ -313,7 +313,7 @@ def sample_scenes_priority(features, n=32, alpha=0.3, k=None):
         scene_scores = [0] + boundary_scores  # first scene gets 0
         scored_scenes = list(enumerate(scene_scores))
         # sort scenes by score descending
-        top_scenes = sorted(scored_scenes, key=lambda x: -x[1])[:n]
+        top_scenes = sorted(scored_scenes, key=lambda x: -x[1])[:sample_num]
         chosen_scenes = [x[0] for x in top_scenes]
         # sample center frame of each chosen scene
         sampled_indices = []

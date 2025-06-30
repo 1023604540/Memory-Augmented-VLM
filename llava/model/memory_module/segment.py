@@ -27,10 +27,7 @@ def cal_depth_score(sim_scores):
 def segment(features, alpha=0.5, k=None):
     if features.shape[0] == 1:
         return [0], torch.zeros(1)
-    print("features shape: ", features.shape)
     sim_scores = torch.cosine_similarity(features[:-1, :], features[1:, :], eps=1e-2)
-
-    print("sim_scores", sim_scores)
     sim_scores[0] = sim_scores[1]  # Ensure the first score is not zero to avoid division by zero in depth score calculation
     depth_scores = cal_depth_score(sim_scores)
 
@@ -258,9 +255,7 @@ def sample_scenes_priority(features, sample_num=32, alpha=0.3, k=None):
     prioritizing surprising scenes if there are too many scenes.
     """
     T = features.shape[0]
-    print("before flatten", torch.isnan(features).any())
     frame_features = features.mean(dim=1)  # flatten spatial dimension
-    print("after flatten",torch.isnan(frame_features).any())
 
     # segment with your provided function
     # note we capture depth scores to prioritize
@@ -273,8 +268,8 @@ def sample_scenes_priority(features, sample_num=32, alpha=0.3, k=None):
     if T not in scene_boundaries:
         scene_boundaries.append(T)
     scene_boundaries = sorted(set(scene_boundaries))
-    print("scene_boundaries: ", scene_boundaries)
-    print("depth_scores: ", depth_scores)
+    # print("scene_boundaries: ", scene_boundaries)
+    # print("depth_scores: ", depth_scores)
 
     # number of scenes
     num_scenes = len(scene_boundaries) - 1

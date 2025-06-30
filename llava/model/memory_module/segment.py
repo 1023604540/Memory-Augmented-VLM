@@ -258,8 +258,9 @@ def sample_scenes_priority(features, sample_num=32, alpha=0.3, k=None):
     prioritizing surprising scenes if there are too many scenes.
     """
     T = features.shape[0]
+    print("before flatten", torch.isnan(features).any())
     frame_features = features.mean(dim=1)  # flatten spatial dimension
-    print(torch.isnan(frame_features).any())
+    print("after flatten",torch.isnan(frame_features).any())
 
     # segment with your provided function
     # note we capture depth scores to prioritize

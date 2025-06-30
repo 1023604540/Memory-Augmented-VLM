@@ -268,6 +268,7 @@ def sample_scenes_priority(features, n=32, alpha=0.5, k=None):
     if T not in scene_boundaries:
         scene_boundaries.append(T)
     scene_boundaries = sorted(set(scene_boundaries))
+    print("scene_boundaries: ", scene_boundaries)
 
     # number of scenes
     num_scenes = len(scene_boundaries) - 1

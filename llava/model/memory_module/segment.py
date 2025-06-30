@@ -269,6 +269,7 @@ def sample_scenes_priority(features, n=32, alpha=0.3, k=None):
         scene_boundaries.append(T)
     scene_boundaries = sorted(set(scene_boundaries))
     print("scene_boundaries: ", scene_boundaries)
+    print(: "depth_scores: ", depth_scores)
 
     # number of scenes
     num_scenes = len(scene_boundaries) - 1

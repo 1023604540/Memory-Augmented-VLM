@@ -69,6 +69,7 @@ class TemporalPositionalEncoding(nn.Module):
 
     def _get_pe(self, indices, device):
         indices = indices.to(device)
+        print("indices", indices)
         if torch.any(indices >= self.max_frames):
             raise ValueError(f"indices exceed max_frames: max {indices.max().item()} vs limit {self.max_frames}")
         if torch.any(indices < 0):

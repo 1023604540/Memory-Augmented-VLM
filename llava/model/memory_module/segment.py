@@ -29,6 +29,7 @@ def segment(features, alpha=0.5, k=None):
         return [0], torch.zeros(1)
 
     sim_scores = torch.cosine_similarity(features[:-1, :], features[1:, :], eps=1e-8)
+    print(sim_scores, "sim_scores")
     depth_scores = cal_depth_score(sim_scores)
 
     if k is not None:

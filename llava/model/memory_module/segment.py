@@ -25,34 +25,29 @@ def cal_depth_score(sim_scores):
 
 
 def segment(features, alpha=0.5, k=None):
-    # input shape: t, d
-    # 对于每个时间点，计算相邻两个时间点的余弦相似度
-    if features.shape[0] == 1:  # 如果只有一个时间点
-        return [0]
-
-    sim_scores = torch.cosine_similarity(features[:-1, :], features[1:, :])
+    if features.shape[0] == 1:
+        return [0], torch.zeros(1)
+    sim_scores = torch.cosine_similarity(features[:-1, :], features[1:, :], eps=1e-2)
+    sim_scores[0] = sim_scores[1]  # Ensure the first score is not zero to avoid division by zero in depth score calculation
     depth_scores = cal_depth_score(sim_scores)
 
     if k is not None:
-        # select by top k
         boundaries = torch.topk(depth_scores, k).indices.sort()[0]
     else:
-        # select by threshold (original)
         std, mean = torch.std_mean(depth_scores)
         thresh = mean + alpha * std
         condition = depth_scores > thresh
         boundaries = condition.nonzero().squeeze(-1)
-        if len(boundaries) > 15: # limit max segments to prevent from OOM: 7 comes from RMT paper
-            boundaries = torch.topk(depth_scores, 15).indices.sort()[0]
-
+        # if len(boundaries) > 15:
+        #     boundaries = torch.topk(depth_scores, 15).indices.sort()[0]
     boundaries = boundaries.tolist()
 
     if type(boundaries) == int or boundaries == [] or boundaries[-1] != features.shape[0]-1:
         boundaries.append(features.shape[0])
 
-    boundaries = sorted(set(boundaries))  # 去重并排序
+    boundaries = sorted(set(boundaries))
+    return boundaries, depth_scores
 
-    return boundaries
 
 def adjusted_segment(features, alpha=0.5, k=None, min_distance=32, max_distance=64):
     """
@@ -170,6 +165,31 @@ def uniform_segment(features, d=32):
 
     return boundaries
 
+
+def uniform_segment_variant(features, d=32):
+    """
+    Segment `features` into chunks of size d, placing any leftover frames at the end.
+
+    - Chunks of size d are created first.
+    - If T % d != 0, the leftover forms the final smaller chunk.
+
+    :param features: A tensor or array of shape (T, D), where T is the temporal length.
+    :param d: The fixed chunk size.
+    :return: A list of boundary indices (the ends of each chunk).
+    """
+    T = features.shape[0]
+    boundaries = [0]
+
+    current = 0
+    while current + d <= T:
+        current += d
+        boundaries.append(current)
+
+    # If there is leftover at the end
+    if current < T:
+        boundaries.append(T)
+
+    return boundaries
 def cal_left_depth_score(sim_scores):
     n = sim_scores.shape[0]
     depth_scores = torch.zeros(sim_scores.size(), dtype=sim_scores.dtype, device=sim_scores.device)
@@ -227,4 +247,92 @@ def segment_left(features, alpha=0.5, k=None):
     # if index < features.shape[0]: segments.append(features[index:])
 
     return boundaries
+
+
+def sample_scenes_priority(features, sample_num=32, alpha=0.3, k=None):
+    """
+    Sample exactly `sample_num` unique frames from features of shape [frames, patches, dim],
+    prioritizing surprising scenes if there are many, and guaranteeing no repeated padding.
+
+    Arguments:
+        features: Tensor [frames, patches, dim]
+        sample_num: total number of frames to sample
+        alpha: threshold for segmentation
+        k: optional top-k for segmentation
+    Returns:
+        List of exactly sample_num unique frame indices
+    """
+    T = features.shape[0]
+    frame_features = features.mean(dim=1)  # flatten spatial dimension
+
+    # scene segmentation
+    scene_boundaries, depth_scores = segment(frame_features, alpha=alpha, k=k)
+
+    # always include first and last
+    if 0 not in scene_boundaries:
+        scene_boundaries = [0] + scene_boundaries
+    if T not in scene_boundaries:
+        scene_boundaries.append(T)
+    scene_boundaries = sorted(set(scene_boundaries))
+
+    num_scenes = len(scene_boundaries) - 1
+    sampled_indices = []
+
+    if num_scenes <= sample_num:
+        # allocate budget proportionally
+        frame_budget = [1] * num_scenes
+        remaining = sample_num - num_scenes
+        scene_lengths = [scene_boundaries[i + 1] - scene_boundaries[i] for i in range(num_scenes)]
+        total_len = sum(scene_lengths)
+        for i in range(num_scenes):
+            frame_budget[i] += int(remaining * scene_lengths[i] / total_len)
+
+        # fix rounding mismatch
+        while sum(frame_budget) < sample_num:
+            frame_budget[sum(frame_budget) % num_scenes] += 1
+        while sum(frame_budget) > sample_num:
+            frame_budget[frame_budget.index(max(frame_budget))] -= 1
+
+        # sample per scene
+        for i in range(num_scenes):
+            start = scene_boundaries[i]
+            end = scene_boundaries[i + 1]
+            length = end - start
+            k = frame_budget[i]
+            if length <= k:
+                indices = list(range(start, end))
+            else:
+                indices = torch.linspace(start, end - 1, steps=k).round().long().tolist()
+            sampled_indices.extend(indices)
+
+    else:
+        # too many scenes for n, pick most surprising scenes
+        boundary_scores = []
+        for b in scene_boundaries[1:-1]:
+            boundary_scores.append(depth_scores[b - 1].item())
+        scene_scores = [0] + boundary_scores
+        scored_scenes = list(enumerate(scene_scores))
+        top_scenes = sorted(scored_scenes, key=lambda x: -x[1])[:sample_num]
+        chosen_scenes = [x[0] for x in top_scenes]
+        for i in chosen_scenes:
+            start = scene_boundaries[i]
+            end = scene_boundaries[i + 1]
+            center = (start + end) // 2
+            sampled_indices.append(center)
+
+    # enforce exactly sample_num distinct frames
+    sampled_indices = sorted(set(sampled_indices))
+    if len(sampled_indices) < sample_num:
+        remaining_pool = set(range(T)) - set(sampled_indices)
+        remaining_pool = sorted(list(remaining_pool))
+        needed = sample_num - len(sampled_indices)
+        if len(remaining_pool) >= needed:
+            additional = torch.randperm(len(remaining_pool))[:needed].tolist()
+            sampled_indices.extend(remaining_pool[i] for i in additional)
+        else:
+            sampled_indices.extend(remaining_pool)
+
+    # final trim if overshot
+    sampled_indices = sorted(sampled_indices)[:sample_num]
+    return sampled_indices
 

@@ -16,4 +16,4 @@ datasets:
 #  - json_path: /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/metadata/2_3_m_nextqa_mc_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
 #    sampling_strategy: "all"
   - json_path: /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/metadata/2_3_m_activitynetqa_oe_qa_processed.json # will be released in next version of LLaVA-NeXT-Video
-    sampling_strategy: "first:50%"
+    sampling_strategy: "all"

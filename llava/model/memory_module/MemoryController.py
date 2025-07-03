@@ -103,6 +103,9 @@ class TransformerProjector(nn.Module):
         B = 1
         F, P, D = image_features.shape
         # Extract the first frame and store it in original_frames
+        if F == 1:
+            self.original_frames.append(image_features[0].unsqueeze(0))
+            return self.memory_cache, self.frame_attn_scores, self.original_frames
         self.original_frames.append(image_features[0].unsqueeze(0))
         memory_tokens = self.initial_memory.to(device=device, dtype=dtype)
         if self.memory_cache:

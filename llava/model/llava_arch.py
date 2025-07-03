@@ -515,23 +515,23 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #     rank_print(f"Attention stats 3: {attn_stats[3]}")
                 # else:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
-                mem_type_ids = torch.zeros((8 * len(memory_cache), 196), dtype=torch.long, device=self.device)
-                fine_type_ids = torch.ones((len(original_frames), 196), dtype=torch.long, device=self.device)
-                mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
-                fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
-                # rank0_print(f"memory_cache shape : {memory_cache.shape}")
+                # mem_type_ids = torch.zeros((8 * len(memory_cache), 196), dtype=torch.long, device=self.device)
+                # fine_type_ids = torch.ones((len(original_frames), 196), dtype=torch.long, device=self.device)
+                # mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
+                # fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
+                rank0_print(f"memory_cache shape : {memory_cache.shape}")
 
-                mem_lengths = [memory.shape[0] for memory in memory_cache]
-                ori_lengths = [frame.shape[0] for frame in original_frames]
+                # mem_lengths = [memory.shape[0] for memory in memory_cache]
+                # ori_lengths = [frame.shape[0] for frame in original_frames]
                 # Concatenate them along the batch dimension.
                 concatenated_memory = torch.cat(memory_cache, dim=0)
                 concatenated_frames = torch.cat(original_frames, dim=0)
                 # Encode the concatenated tensor.
-                mem = concatenated_memory + mem_type_embeds
-                ori = concatenated_frames + fine_type_embeds
+                # mem = concatenated_memory + mem_type_embeds
+                # ori = concatenated_frames + fine_type_embeds
                 # Split the encoded tensor back into individual parts.
-                memory_cache = torch.split(mem, mem_lengths, dim=0)
-                original_frames = torch.split(ori, ori_lengths, dim=0)
+                # memory_cache = torch.split(mem, mem_lengths, dim=0)
+                # original_frames = torch.split(ori, ori_lengths, dim=0)
                 # print(f"Memory cache shape : {[x.shape for x in memory_cache]}, {len(memory_cache)}")
                 # Interleave memory tokens and original frames:
                 combined_feature = []

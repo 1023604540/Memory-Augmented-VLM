@@ -108,7 +108,7 @@ class TransformerProjector(nn.Module):
         if F == 1:
             memory_tokens = memory_tokens.unsqueeze(0)
             types = ["frame"]
-            self.memory_cache.append(memory_tokens, types)
+            self.memory_cache.append((memory_tokens, types))
         # if len(self.memory_cache) > 1:
         #     memory_tokens = self._update_memory_tokens_with_cache(memory_tokens)
 
@@ -129,7 +129,7 @@ class TransformerProjector(nn.Module):
         final_memory = torch.cat([memory_tokens.unsqueeze(0), final_memory], dim=0)
         types = ["frame"] + ["memory"] * self.num_memory_tokens
         print(f"final_memory shape: {final_memory.shape}")
-        self.memory_cache.append(final_memory, types)
+        self.memory_cache.append((final_memory, types))
         # if len(self.memory_cache) > 10:
         #     self.memory_cache = self.memory_cache[-10:]
 

@@ -521,12 +521,35 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # fine_type_ids = torch.ones((len(original_frames), 196), dtype=torch.long, device=self.device)
                 # mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
                 # fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
+                all_tokens = []
+                all_type_embeds = []
 
+                for final_memory, types in memory_cache:
+                    num_tokens = final_memory.shape[0]  # 1 + num_memory_tokens
+                    P = final_memory.shape[1]
+                    token_type_ids = torch.empty(num_tokens, P, dtype=torch.long, device=self.device)
+
+                    for i, t in enumerate(types):
+                        if t == "frame":
+                            token_type_ids[i, :] = 1  # fine_type id
+                        else:
+                            token_type_ids[i, :] = 0  # mem_type id
+
+                    type_embeds = self.get_model().token_type_embedding(token_type_ids)  # [num_tokens, P, D]
+
+                    all_tokens.append(final_memory)  # [num_tokens, P, D]
+                    all_type_embeds.append(type_embeds)  # [num_tokens, P, D]
+
+                # 合并
+                all_tokens_cat = torch.cat(all_tokens, dim=0)  # [total_tokens, P, D]
+                all_type_embeds_cat = torch.cat(all_type_embeds, dim=0)  # [total_tokens, P, D]
+
+                # 最后加在一起
+                final_input = all_tokens_cat + all_type_embeds_cat  # [total_tokens, P, D]
 
                 # mem_lengths = [memory.shape[0] for memory in memory_cache]
                 # ori_lengths = [frame.shape[0] for frame in original_frames]
                 # Concatenate them along the batch dimension.
-                concatenated_memory = torch.cat(memory_cache, dim=0)
 
                 # Encode the concatenated tensor.
                 # mem = concatenated_memory + mem_type_embeds
@@ -537,7 +560,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # print(f"Memory cache shape : {[x.shape for x in memory_cache]}, {len(memory_cache)}")
                 # Interleave memory tokens and original frames:
 
-                combined_feature = self.get_model().memory_fuser(concatenated_memory)
+                combined_feature = self.get_model().memory_fuser(final_input)
                 print(f"Combined feature shape : {combined_feature.shape}")
                 memory_augmented_features.append(combined_feature)
 

@@ -506,8 +506,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 image_segments = [image[boundaries[i]:boundaries[i + 1]] for i in range(len(boundaries) - 1)]
 
                 for image_segment in image_segments:
-                    memory_cache, attn_stats, original_frames = recurrent_model(image_segment)
-                    print(f"Memory cache shape : {len(memory_cache)}, original frames shape : {len(original_frames)}")
+                    memory_cache, attn_stats = recurrent_model(image_segment)
+                    print(f"Memory cache shape : {len(memory_cache)}")
                     # print(f"Memory cache shape : {memory_cache[0].shape}, original frames shape : {original_frames[0].shape}")
                 # if len(attn_stats) > 1:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
@@ -526,7 +526,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # ori_lengths = [frame.shape[0] for frame in original_frames]
                 # Concatenate them along the batch dimension.
                 concatenated_memory = torch.cat(memory_cache, dim=0)
-                concatenated_frames = torch.cat(original_frames, dim=0)
+
                 # Encode the concatenated tensor.
                 # mem = concatenated_memory + mem_type_embeds
                 # ori = concatenated_frames + fine_type_embeds
@@ -535,12 +535,8 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # original_frames = torch.split(ori, ori_lengths, dim=0)
                 # print(f"Memory cache shape : {[x.shape for x in memory_cache]}, {len(memory_cache)}")
                 # Interleave memory tokens and original frames:
-                combined_feature = []
-                for i in range(len(memory_cache)):
-                    combined_feature.append(torch.cat((concatenated_memory[i], concatenated_frames[i]), dim=0))
-                combined_feature = torch.cat(combined_feature, dim=0)
 
-                combined_feature = self.get_model().memory_fuser(combined_feature)
+                combined_feature = self.get_model().memory_fuser(concatenated_memory)
                 print(f"Combined feature shape : {combined_feature.shape}")
                 memory_augmented_features.append(combined_feature)
 

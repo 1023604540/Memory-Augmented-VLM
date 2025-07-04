@@ -126,8 +126,8 @@ class TransformerProjector(nn.Module):
         final_memory = torch.cat([memory_tokens.unsqueeze(0), final_memory], dim=0)
         print(f"final_memory shape: {final_memory.shape}")
         self.memory_cache.append(final_memory)
-        if len(self.memory_cache) > 10:
-            self.memory_cache = self.memory_cache[-10:]
+        # if len(self.memory_cache) > 10:
+        #     self.memory_cache = self.memory_cache[-10:]
 
         final_score = frame_attn_scores[-1]
         self.frame_attn_scores.append(final_score.detach())

@@ -496,9 +496,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 rank_print(f"sample image shape : {image.shape}")
                 # boundaries = uniform_segment(image.mean(dim=1), d=32)
                 boundaries, depth_score = segment(image.mean(dim=1), alpha=0.7, k=None)
-                rank0_print(f"boundaries length : {len(boundaries)}")
-                rank0_print(f"boundaries : {boundaries}")
-                rank0_print(f"depth score : {depth_score}")
+                rank0_print(f"segments number : {len(boundaries)-1}")
+                # rank0_print(f"boundaries : {boundaries}")
+                # rank0_print(f"depth score : {depth_score}")
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 recurrent_model.memory_cache = []
@@ -508,7 +508,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 for image_segment in image_segments:
                     memory_cache, attn_stats = recurrent_model(image_segment)
-                    print(f"Memory cache shape : {len(memory_cache)}")
+                    # print(f"Memory cache shape : {len(memory_cache)}")
                     # print(f"Memory cache shape : {memory_cache[0].shape}, original frames shape : {original_frames[0].shape}")
                 # if len(attn_stats) > 1:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
@@ -542,9 +542,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 # 合并
                 all_tokens_cat = torch.cat(all_tokens, dim=0)  # [total_tokens, P, D]
-                print(f"All tokens shape : {all_tokens_cat.shape}")
+                # print(f"All tokens shape : {all_tokens_cat.shape}")
                 all_type_embeds_cat = torch.cat(all_type_embeds, dim=0)  # [total_tokens, P, D]
-                print(f"All type embeds shape : {all_type_embeds_cat.shape}")
+                # print(f"All type embeds shape : {all_type_embeds_cat.shape}")
 
                 # 最后加在一起
                 final_input = all_tokens_cat + all_type_embeds_cat  # [total_tokens, P, D]

@@ -495,7 +495,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # Init recurrent memory module
                 rank_print(f"sample image shape : {image.shape}")
                 # boundaries = uniform_segment(image.mean(dim=1), d=32)
-                boundaries, depth_score = segment(image.mean(dim=1), alpha=0.8)
+                boundaries, depth_score = segment(image.mean(dim=1), alpha=0.7, k=None)
                 rank0_print(f"boundaries length : {len(boundaries)}")
                 rank0_print(f"boundaries : {boundaries}")
                 rank0_print(f"depth score : {depth_score}")

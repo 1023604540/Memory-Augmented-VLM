@@ -534,7 +534,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                             token_type_ids[i, :] = 1  # fine_type id
                         else:
                             token_type_ids[i, :] = 0  # mem_type id
-                    print(f"token_type_ids",token_type_ids)
+                    # print(f"token_type_ids",token_type_ids)
                     type_embeds = self.get_model().token_type_embedding(token_type_ids)  # [num_tokens, P, D]
 
                     all_tokens.append(final_memory)  # [num_tokens, P, D]

@@ -507,7 +507,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 for image_segment in image_segments:
                     memory_cache, attn_stats, original_frames = recurrent_model(image_segment)
-                    # print(f"Memory cache shape : {len(memory_cache)}, original frames shape : {len(original_frames)}")
+                    print(f"Memory cache shape : {len(memory_cache)}, original frames shape : {len(original_frames)}")
                     # print(f"Memory cache shape : {memory_cache[0].shape}, original frames shape : {original_frames[0].shape}")
                 # if len(attn_stats) > 1:
                 #     rank_print(f"Attention stats 0: {attn_stats[0]}")
@@ -520,7 +520,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # fine_type_ids = torch.ones((len(original_frames), 196), dtype=torch.long, device=self.device)
                 # mem_type_embeds = self.get_model().token_type_embedding(mem_type_ids)  # [8, 196, 896]
                 # fine_type_embeds = self.get_model().token_type_embedding(fine_type_ids)  # [32, 196, 896]
-                rank0_print(f"memory_cache shape : {memory_cache.shape}")
+
 
                 # mem_lengths = [memory.shape[0] for memory in memory_cache]
                 # ori_lengths = [frame.shape[0] for frame in original_frames]

@@ -534,7 +534,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                             token_type_ids[i, :] = 1  # fine_type id
                         else:
                             token_type_ids[i, :] = 0  # mem_type id
-
+                    print(f"token_type_ids",token_type_ids)
                     type_embeds = self.get_model().token_type_embedding(token_type_ids)  # [num_tokens, P, D]
 
                     all_tokens.append(final_memory)  # [num_tokens, P, D]
@@ -542,7 +542,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                 # 合并
                 all_tokens_cat = torch.cat(all_tokens, dim=0)  # [total_tokens, P, D]
+                print(f"All tokens shape : {all_tokens_cat.shape}")
                 all_type_embeds_cat = torch.cat(all_type_embeds, dim=0)  # [total_tokens, P, D]
+                print(f"All type embeds shape : {all_type_embeds_cat.shape}")
 
                 # 最后加在一起
                 final_input = all_tokens_cat + all_type_embeds_cat  # [total_tokens, P, D]

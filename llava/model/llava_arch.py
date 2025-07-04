@@ -425,11 +425,11 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             # # Now support only batch size of 1
             for image in images_list:
                 num_frames = image.shape[0]
-
-                if num_frames < 32:
-                    sample_frames = num_frames
-                else:
-                    sample_frames = (num_frames // 32) * 32
+                sample_frames = num_frames
+                # if num_frames < 32:
+                #     sample_frames = num_frames
+                # else:
+                #     sample_frames = (num_frames // 32) * 32
                     # if sample_frames < 96:
                     #     print(f"Sampling {sample_frames} frames from {num_frames} total frames.")
                     #     sample_frames = 96
@@ -490,7 +490,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     continue
                 # Add positional encoding
                 frame_idx = frame_indices[idx].to(image.device)
-                # image = self.get_model().positional_encoding(image, frame_idx)
+                image = self.get_model().positional_encoding(image, frame_idx)
 
                 # Init recurrent memory module
                 rank_print(f"sample image shape : {image.shape}")

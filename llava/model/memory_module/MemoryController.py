@@ -82,7 +82,7 @@ class TransformerProjector(nn.Module):
         nn.init.xavier_uniform_(self.initial_memory)
         self.memory_cache: List[torch.Tensor] = []
         self.memory_update_attention = Attention(self.config)
-        self.frame_attn_scores: List[torch.Tensor] = []
+        # self.frame_attn_scores: List[torch.Tensor] = []
 
 
     def _update_memory_tokens_with_cache(self, current_memory: torch.Tensor) -> torch.Tensor:
@@ -103,7 +103,7 @@ class TransformerProjector(nn.Module):
         B = 1
         F, P, D = image_features.shape
         # Extract the first frame and store it in original_frames
-
+        # frame_attn_scores = []
         memory_tokens = image_features[0]
         if F == 1:
             memory_tokens = memory_tokens.unsqueeze(0)
@@ -116,16 +116,16 @@ class TransformerProjector(nn.Module):
             memory_2d = memory_tokens.repeat(self.num_memory_tokens, 1, 1)  # [num_mem, P, D]
             memory_2d = memory_2d.view(1, self.num_memory_tokens * P, D)
             image_2d = image_features.reshape(B, F * P, D)
-            frame_attn_scores = []
+
 
             for layer in self.layers:
                 memory_2d, attn_probs = layer(memory_2d, image_2d)
                 # print(f"attn_probs shape: {attn_probs.shape}")
                 attn_sum = attn_probs.sum(dim=1).sum(dim=1).squeeze(0)  # [F * P]
                 # print(f"attn_sum shape: {attn_sum.shape}", "attn_sum:", attn_sum[:32])
-                frame_scores = attn_sum.view(F, P).mean(dim=1)
+                # frame_scores = attn_sum.view(F, P).mean(dim=1)
                 # print(f"frame_scores shape: {frame_scores.shape}")
-                frame_attn_scores.append(frame_scores)
+                # frame_attn_scores.append(frame_scores)
 
             final_memory = memory_2d.view(B, self.num_memory_tokens, P, D).squeeze(0)
             final_memory = torch.cat([memory_tokens.unsqueeze(0), final_memory], dim=0)
@@ -135,8 +135,9 @@ class TransformerProjector(nn.Module):
         # if len(self.memory_cache) > 10:
         #     self.memory_cache = self.memory_cache[-10:]
 
-        final_score = frame_attn_scores[-1]
-        self.frame_attn_scores.append(final_score.detach())
-        return self.memory_cache, self.frame_attn_scores
+        # final_score = frame_attn_scores[-1]
+        # self.frame_attn_scores.append(final_score.detach())
+        # return self.memory_cache, self.frame_attn_scores
+        return self.memory_cache
 
 

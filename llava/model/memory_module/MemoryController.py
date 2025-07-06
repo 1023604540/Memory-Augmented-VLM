@@ -128,7 +128,7 @@ class TransformerProjector(nn.Module):
                 # frame_attn_scores.append(frame_scores)
 
             final_memory = memory_2d.view(B, self.num_memory_tokens, P, D).squeeze(0)
-            final_memory = torch.cat([memory_tokens.unsqueeze(0), final_memory], dim=0)
+            final_memory = torch.cat([memory_tokens, final_memory], dim=0)
             types = ["frame"] + ["memory"] * self.num_memory_tokens
             print(f"final_memory shape: {final_memory.shape}")
             self.memory_cache.append((final_memory, types))

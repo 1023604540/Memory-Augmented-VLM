@@ -78,7 +78,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --save_strategy "steps" \
     --save_steps 100 \
     --save_total_limit 4 \
-    --learning_rate 4e-6 \
+    --learning_rate 1e-5 \
     --memory_transformer_lr 1e-4 \
     --memory_key_value_lr 1e-4 \
     --weight_decay 0. \

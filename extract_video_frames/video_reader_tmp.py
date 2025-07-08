@@ -56,7 +56,9 @@ def stage_in(videos_to_copy):
                 shutil.copy2(src, dst)
             except Exception as e:
                 print(f"Failed to copy {src} to {dst}. Error: {e}", flush=True)
-                raise e
+                with open(ERROR_LOG, "a") as ef:
+                    ef.write(f"[stage_in] Failed to copy {src} to {dst}. Exception: {e}\n")
+                continue  # Skip this file and continue copying others
     print("Stage-in complete.", flush=True)
 
 def process_one(item):

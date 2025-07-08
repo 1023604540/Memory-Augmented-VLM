@@ -51,8 +51,12 @@ def stage_in(videos_to_copy):
         src = os.path.join(SHARED_VIDEO_FOLDER, video_file)
         dst = os.path.join(LOCAL_VIDEO_FOLDER, video_file)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
-        if not os.path.exists(dst):  # Only copy if not already there
-            shutil.copy2(src, dst)
+        if not os.path.exists(dst):
+            try:
+                shutil.copy2(src, dst)
+            except Exception as e:
+                print(f"Failed to copy {src} to {dst}. Error: {e}", flush=True)
+                raise e
     print("Stage-in complete.", flush=True)
 
 def process_one(item):

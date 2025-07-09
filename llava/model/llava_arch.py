@@ -718,7 +718,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         #rank_print("Inserting Images embedding")
         for batch_idx, cur_input_ids in enumerate(input_ids):
             num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
-            print(f"Batch {batch_idx} has {num_images} images")
             # rank0_print(num_images)
             if num_images == 0:
                 cur_image_features = image_features[cur_image_idx]

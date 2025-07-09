@@ -469,7 +469,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 encoded_image_features = self.encode_images(concat_images)
 
             encoded_image_features = torch.split(encoded_image_features, split_sizes)
-            print(f"Encoded image features Length: {len(encoded_image_features)}")
+
 
 
             # rank0_print(f"Encoded image feats : {[x.shape for x in image_features]}, after proj time {time.time() - start}")  # [frame_num, 729, 3584]
@@ -511,9 +511,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 original_frames = image[original_frames_idx]
 
                 # Init recurrent memory module
-                rank0_print(f"sample image shape : {image.shape}")
+                print(f"sample image shape : {image.shape}")
                 boundaries = uniform_segment_variant(image.mean(dim=1), d=32)
-                rank0_print(f"boundaries : {boundaries}")
+                print(f"boundaries : {boundaries}")
                 recurrent_model = self.get_model().recurrent_memory_transformer.to(self.device)
                 # Clear the memory cache to avoid memory leak across videos
                 recurrent_model.memory_cache = []
@@ -544,7 +544,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 memory_augmented_features.append(combined_feature)
 
             image_features = memory_augmented_features
-            print(f"Image features Length : {len(image_features)}")  # [8, 196, 3584] + [32, 196, 3584]
+
 
 
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
@@ -718,6 +718,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         #rank_print("Inserting Images embedding")
         for batch_idx, cur_input_ids in enumerate(input_ids):
             num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
+            print(f"Batch {batch_idx} has {num_images} images")
             # rank0_print(num_images)
             if num_images == 0:
                 cur_image_features = image_features[cur_image_idx]

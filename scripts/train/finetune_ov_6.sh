@@ -29,7 +29,7 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="KIT_0.5b_qwen2_recurrent_8tokens_catmemory_pe_linear_depth2_2_3_m_Act&NextQA"
+RUN_NAME="KIT_0.5b_qwen2_recurrent_8tokens_catmemory_pe_linear_depth2_fixLLM"
 PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
@@ -52,10 +52,10 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test2.yaml \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test1.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos_tensors \
-    --mm_tunable_parts="larimar_model,recurrent_model,mm_language_model" \
+    --mm_tunable_parts="larimar_model,recurrent_model" \
     --mm_vision_tower_lr=2e-6 \
     --vision_tower ${VISION_MODEL_VERSION} \
     --mm_projector_type mlp2x_gelu \
@@ -73,7 +73,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --num_train_epochs 1 \
     --per_device_train_batch_size 1 \
     --per_device_eval_batch_size 1 \
-    --gradient_accumulation_steps 4 \
+    --gradient_accumulation_steps 6 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
     --save_steps 100 \

@@ -436,9 +436,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 #     #     print(f"Sampling {sample_frames} frames from {num_frames} total frames.")
                 #     #     sample_frames = 96
                 #     # sample_frames = 128
-                sample_frames = num_frames
-                indices = torch.linspace(0, num_frames - 1, steps=sample_frames).long()
-                sampled_tensor = image[indices]
+                # sample_frames = num_frames
+                # indices = torch.linspace(0, num_frames - 1, steps=sample_frames).long()
+                indices = torch.arange(num_frames)
+                sampled_tensor = image
                 # Keep track of the frame indices for positional encoding
                 frame_indices.append(indices)
                 sampled_images.append(sampled_tensor)

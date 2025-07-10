@@ -94,7 +94,8 @@ class TransformerProjector(nn.Module):
         keyval_2d = past_memory.view(1, -1, D)
         updated_2d, _ = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
         updated_4d = updated_2d.view(B, Lq, P, D)
-        return updated_4d.squeeze(0)
+        # return updated_4d.squeeze(0)
+        return current_memory
 
     def forward(self, image_features: torch.Tensor):
         device = image_features.device

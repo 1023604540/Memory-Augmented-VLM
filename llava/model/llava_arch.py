@@ -464,11 +464,12 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     encoded_chunks.append(encoded_chunk)
 
                 # Concatenate all the encoded chunks
-                encoded_image_features = torch.cat(encoded_chunks, dim=0)
+                encoded_image_features = torch.cat(encoded_chunks, dim=0).detach()
             else:
-                encoded_image_features = self.encode_images(concat_images)
+                encoded_image_features = self.encode_images(concat_images).detach()
 
             encoded_image_features = torch.split(encoded_image_features, split_sizes)
+
 
 
 

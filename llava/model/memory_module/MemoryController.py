@@ -87,15 +87,14 @@ class TransformerProjector(nn.Module):
     def _update_memory_tokens_with_cache(self, current_memory: torch.Tensor) -> torch.Tensor:
         if not self.memory_cache:
             return current_memory
-        return current_memory
-        # past_memory = torch.cat(self.memory_cache, dim=0).unsqueeze(0)
-        # query = current_memory.unsqueeze(0)
-        # B, Lq, P, D = query.shape
-        # query_2d = query.view(B, Lq * P, D)
-        # keyval_2d = past_memory.view(1, -1, D)
-        # updated_2d, _ = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
-        # updated_4d = updated_2d.view(B, Lq, P, D)
-        # return updated_4d.squeeze(0)
+        past_memory = torch.cat(self.memory_cache, dim=0).unsqueeze(0)
+        query = current_memory.unsqueeze(0)
+        B, Lq, P, D = query.shape
+        query_2d = query.view(B, Lq * P, D)
+        keyval_2d = past_memory.view(1, -1, D)
+        updated_2d, _ = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
+        updated_4d = updated_2d.view(B, Lq, P, D)
+        return updated_4d.squeeze(0)
 
 
     def forward(self, image_features: torch.Tensor):

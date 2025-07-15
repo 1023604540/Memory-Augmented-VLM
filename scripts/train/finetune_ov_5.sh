@@ -3,7 +3,7 @@ export NCCL_IB_DISABLE=0
 
 export NCCL_DEBUG=DEBUG
 export USE_PYTORCH_KERNEL_CACHE=0
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+# export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # export NCCL_DEBUG=INFO   # Uncomment for debugging
 export NCCL_DEBUG_SUBSYS=ALL
@@ -12,7 +12,7 @@ export NCCL_TIMEOUT=3600  # 1 hour
 
 # The next line is very important! Solves the WatchDog TimeOut Issue
 export NCCL_P2P_DISABLE=1
-
+export TORCH_EXTENSIONS_DIR=$SCRATCH/torch_extensions
 export WANDB_API_KEY="638aa591e9881cd840eb171df3f625bcd7613d14"
 
 LLM_VERSION="Qwen/Qwen2-0.5B-Instruct"
@@ -79,9 +79,9 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --save_strategy "steps" \
     --save_steps 100 \
     --save_total_limit 4 \
-    --learning_rate 5e-6 \
-    --memory_transformer_lr 1e-5 \
-    --memory_key_value_lr 1e-5 \
+    --learning_rate 1e-5 \
+    --memory_transformer_lr 2e-5 \
+    --memory_key_value_lr 2e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \

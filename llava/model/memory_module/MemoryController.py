@@ -103,14 +103,14 @@ class TransformerProjector(nn.Module):
         dtype = image_features.dtype
         B = 1
         F, P, D = image_features.shape
-
+        print("memory module forward called")
         memory_tokens = self.initial_memory.to(device=device, dtype=dtype)
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]
 
         if len(self.memory_cache) > 1:
             memory_tokens = self._update_memory_tokens_with_cache(memory_tokens)
-
+            print("memory update called")
         memory_2d = memory_tokens.reshape(B, self.num_memory_tokens * P, D)
         image_2d = image_features.reshape(B, F * P, D)
         frame_attn_scores = []

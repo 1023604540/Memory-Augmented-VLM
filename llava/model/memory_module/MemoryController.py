@@ -94,7 +94,7 @@ class TransformerProjector(nn.Module):
         keyval_2d = past_memory.view(1, -1, D)
         updated_2d, memory_evolution_prob = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
         print(f"memory_evolution_prob shape: {memory_evolution_prob.shape}")
-        probs_sum = memory_evolution_prob.sum(dim=1).sum(dim=1).squeeze(0)  # [Lq * P]
+        probs_sum = memory_evolution_prob.sum(dim=2).squeeze(0)  # [Lq * P]
         print(f"probs_sum shape: {probs_sum.shape}")
         # Now: sum attention to each chunk
         attn_per_chunk = probs_sum.split(196, dim=-1)  # list of N tensors (B, S_q, 196)

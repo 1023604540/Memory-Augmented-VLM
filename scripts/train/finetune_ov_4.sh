@@ -80,8 +80,8 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --save_steps 100 \
     --save_total_limit 4 \
     --learning_rate 2e-6 \
-    --memory_transformer_lr 2e-5 \
-    --memory_key_value_lr 2e-5 \
+    --memory_transformer_lr 1e-5 \
+    --memory_key_value_lr 1e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \

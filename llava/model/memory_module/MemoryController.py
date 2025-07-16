@@ -93,9 +93,9 @@ class TransformerProjector(nn.Module):
         query_2d = query.view(B, Lq * P, D)
         keyval_2d = past_memory.view(1, -1, D)
         updated_2d, memory_evolution_prob = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
-        print(f"memory_evolution_prob shape: {memory_evolution_prob.shape}")
+        #print(f"memory_evolution_prob shape: {memory_evolution_prob.shape}")
         probs_sum = memory_evolution_prob.sum(dim=2).squeeze(0)  # [Lq * P]
-        print(f"probs_sum shape: {probs_sum.shape}")
+        #print(f"probs_sum shape: {probs_sum.shape}")
         # Now: sum attention to each chunk
         attn_per_chunk = probs_sum.split(196, dim=-1)  # list of N tensors (B, S_q, 196)
 
@@ -104,8 +104,8 @@ class TransformerProjector(nn.Module):
 
         # Stack to get (B, S_q, N)
         attn_chunk_map = torch.stack(attn_chunk_sums, dim=-1)  # shape: (B, S_q, N)
-        print(f"attn_chunk_map shape: {attn_chunk_map.shape}")
-        print(f"attn_chunk_map: {attn_chunk_map}")
+        #print(f"attn_chunk_map shape: {attn_chunk_map.shape}")
+        #print(f"attn_chunk_map: {attn_chunk_map}")
         updated_4d = updated_2d.view(B, Lq, P, D)
         return updated_4d.squeeze(0)
 

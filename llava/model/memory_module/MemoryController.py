@@ -105,6 +105,7 @@ class TransformerProjector(nn.Module):
         # Stack to get (B, S_q, N)
         attn_chunk_map = torch.stack(attn_chunk_sums, dim=-1)  # shape: (B, S_q, N)
         print(f"attn_chunk_map shape: {attn_chunk_map.shape}")
+        print(f"attn_chunk_map: {attn_chunk_map}")
         updated_4d = updated_2d.view(B, Lq, P, D)
         return updated_4d.squeeze(0)
 

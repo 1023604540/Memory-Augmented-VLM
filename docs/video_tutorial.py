@@ -122,7 +122,7 @@ def dynamic_load_video(video_path):
 print("load video")
 # Load and process video
 video_path = "docs/needle_32.mp4"
-# video_path = "/hkfs/home/project/hk-project-p0022560/tum_tyz7686/count_126.mp4"
+video_path = "/hkfs/home/project/hk-project-p0022560/tum_tyz7686/count_126.mp4"
 # video_frames = load_video(video_path, 64)
 video_frames = load_video(video_path, 128)
 print(video_frames.shape) # (16, 1024, 576, 3)

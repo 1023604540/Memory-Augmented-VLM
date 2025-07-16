@@ -49,7 +49,7 @@ class Attention(nn.Module):
         key = self.transpose_for_scores(self.k_proj(kv_hidden_states if kv_hidden_states is not None else hidden_states))
         value = self.transpose_for_scores(self.v_proj(kv_hidden_states if kv_hidden_states is not None else hidden_states))
         scores = torch.matmul(query, key.transpose(-1, -2)) / math.sqrt(self.attention_head_size)
-        probs = torch.nn.functional.softmax(scores, dim=-1)
+        probs = torch.nn.functional.softmax(scores, dim=-1)  #(batch_size, num_heads, query_len, key_len)
         context = torch.matmul(probs, value)
         context = context.permute(0, 2, 1, 3).contiguous().view(context.size(0), -1, self.hidden_size)
         output = self.residual(context, hidden_states)
@@ -94,6 +94,17 @@ class TransformerProjector(nn.Module):
         keyval_2d = past_memory.view(1, -1, D)
         updated_2d, memory_evolution_prob = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
         print(f"memory_evolution_prob shape: {memory_evolution_prob.shape}")
+        probs_sum = memory_evolution_prob.sum(dim=1).sum(dim=1).squeeze(0)  # [Lq * P]
+        print(f"probs_sum shape: {probs_sum.shape}")
+        # Now: sum attention to each chunk
+        attn_per_chunk = probs_sum.split(196, dim=-1)  # list of N tensors (B, S_q, 196)
+
+        # For each chunk, sum over the key_len axis (last dim)
+        attn_chunk_sums = [chunk.sum(dim=-1) for chunk in attn_per_chunk]  # list of (B, S_q)
+
+        # Stack to get (B, S_q, N)
+        attn_chunk_map = torch.stack(attn_chunk_sums, dim=-1)  # shape: (B, S_q, N)
+        print(f"attn_chunk_map shape: {attn_chunk_map.shape}")
         updated_4d = updated_2d.view(B, Lq, P, D)
         return updated_4d.squeeze(0)
 
@@ -103,7 +114,6 @@ class TransformerProjector(nn.Module):
         dtype = image_features.dtype
         B = 1
         F, P, D = image_features.shape
-        print("memory module forward called")
         memory_tokens = self.initial_memory.to(device=device, dtype=dtype)
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]

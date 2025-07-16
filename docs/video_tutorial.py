@@ -24,8 +24,8 @@ from memory import KMeansMemory
 print("load model")
 warnings.filterwarnings("ignore")
 # Load the OneVision model
-# pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/checkpoints/0.5b_FAU_llava_onevision_qwen2_8tokens_initial_2ndHalf_2ndEpoch"
-pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
+pretrained = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/KIT_0.5b_qwen2_recurrent_8tokens_catmemory_pe_linear_depth2_filtered-data_smallLR/checkpoint-1600"
+# pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
 # pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
 # pretrained = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-0.5b-qwen2-KIT_recurrent_8tokens_catmemory_pe_mlp_128frames_depth2/checkpoint-1600"   # Use this for 7B model
 model_name = "llava_qwen"
@@ -124,7 +124,7 @@ print("load video")
 video_path = "docs/needle_32.mp4"
 # video_path = "/hkfs/home/project/hk-project-p0022560/tum_tyz7686/count_126.mp4"
 # video_frames = load_video(video_path, 64)
-video_frames = load_video(video_path, 30)
+video_frames = load_video(video_path, 128)
 print(video_frames.shape) # (16, 1024, 576, 3)
 image_tensors = []
 frames = image_processor.preprocess(video_frames, return_tensors="pt")["pixel_values"].half().cuda()

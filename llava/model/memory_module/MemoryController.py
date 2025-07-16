@@ -92,7 +92,8 @@ class TransformerProjector(nn.Module):
         B, Lq, P, D = query.shape
         query_2d = query.view(B, Lq * P, D)
         keyval_2d = past_memory.view(1, -1, D)
-        updated_2d, _ = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
+        updated_2d, memory_evolution_prob = self.memory_update_attention(query_2d, kv_hidden_states=keyval_2d)
+        print(f"memory_evolution_prob shape: {memory_evolution_prob.shape}")
         updated_4d = updated_2d.view(B, Lq, P, D)
         return updated_4d.squeeze(0)
 

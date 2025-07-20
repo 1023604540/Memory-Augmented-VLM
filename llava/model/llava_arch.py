@@ -546,8 +546,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
             image_features = memory_augmented_features
 
-
-
+            video_idx_in_batch.append(1)
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")
@@ -565,7 +564,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # we want to first unflatten it to (2, 2, h, w, hidden_size)
                     # rank0_print("At least we are reaching here")
                     # import pdb; pdb.set_trace()
+
                     print("video_idx_in_batch",video_idx_in_batch)
+
                     if image_idx in video_idx_in_batch:  # video operations
                         rank0_print("Video in batch")
                         if mm_newline_position == "grid":

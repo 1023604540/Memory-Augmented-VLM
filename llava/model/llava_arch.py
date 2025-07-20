@@ -396,7 +396,6 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             for _ in range(len(modalities)):
                 if modalities[_] == "video":
                     video_idx_in_batch.append(_)
-                    video_idx_in_batch.append(_)
 
             images_list = []
             for image in images:
@@ -566,6 +565,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # we want to first unflatten it to (2, 2, h, w, hidden_size)
                     # rank0_print("At least we are reaching here")
                     # import pdb; pdb.set_trace()
+                    print("video_idx_in_batch",video_idx_in_batch)
                     if image_idx in video_idx_in_batch:  # video operations
                         rank0_print("Video in batch")
                         if mm_newline_position == "grid":

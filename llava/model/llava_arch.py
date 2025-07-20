@@ -565,10 +565,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # rank0_print("At least we are reaching here")
                     # import pdb; pdb.set_trace()
 
-                    print("video_idx_in_batch",video_idx_in_batch)
+                    # print("video_idx_in_batch",video_idx_in_batch)
 
                     if image_idx in video_idx_in_batch:  # video operations
-                        rank0_print("Video in batch")
+                        # rank0_print("Video in batch")
                         if mm_newline_position == "grid":
                             print("Grid-wise")
                             # 模型将视频帧划分为多个网格（grid），并在每个网格位置添加一个视觉 token
@@ -603,16 +603,16 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
                             # Add hierarchical memory module
                             # frame_memory = self.compress_temporal_features(image_feature)
-                            rank_print(f"Image feature shape one_token before flatten: {image_feature.shape}")  # [frame_num*196, 3584]
+                            #rank_print(f"Image feature shape one_token before flatten: {image_feature.shape}")  # [frame_num*196, 3584]
                             image_feature = image_feature.flatten(0, 1)
                             # image_feature = torch.cat((image_feature, frame_memory[0]), dim=0)
-                            rank_print(f"Image feature shape one_token : {image_feature.shape}")  # [frame_num*196, 3584]
+                            #rank_print(f"Image feature shape one_token : {image_feature.shape}")  # [frame_num*196, 3584]
                             if 'unpad' in mm_patch_merge_type:
                                 image_feature = torch.cat((
                                     image_feature,
                                     self.model.image_newline[None].to(image_feature.device) # Adds a new dimension at the beginning of the tensor
                                 ), dim=0)
-                            rank_print(f"Image feature shape one_token after unpad: {image_feature.shape}")  # [frame_num*196+1, 3584]
+                            #rank_print(f"Image feature shape one_token after unpad: {image_feature.shape}")  # [frame_num*196+1, 3584]
                             new_image_features.append(image_feature)
                             #rank_print(f"new_image_features length: {len(new_image_features)}")
                         elif mm_newline_position == "no_token":

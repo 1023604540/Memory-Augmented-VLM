@@ -129,9 +129,9 @@ class LlavaMetaModel:
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)
         self.memory_fuser = nn.Sequential(
-            nn.Linear(LLM_hidden_dim, LLM_hidden_dim),
-            # nn.GELU(),
-            # nn.Linear(LLM_hidden_dim * 4, LLM_hidden_dim)
+            nn.Linear(LLM_hidden_dim, LLM_hidden_dim * 4),
+            nn.GELU(),
+            nn.Linear(LLM_hidden_dim * 4, LLM_hidden_dim)
         ).to(self.device)
         # self.memory_fuser = MemoryFuser(
         #     hidden_dim=LLM_hidden_dim,

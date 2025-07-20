@@ -705,6 +705,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         image_features_with_prompt = [torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, image_features[1]), dim=0)]
         rank_print(f"Image features with prompt shape: {image_features_with_prompt[0].shape}")  # [n, 3584]
         rank_print(f"Image features shape: {image_features[0].shape},{image_features[1].shape}")  # [n, 3584]
+        image_features = image_features_with_prompt
 
         # TODO: image start / end is not implemented here to support pretraining.
         if getattr(self.config, "tune_mm_mlp_adapter", False) and getattr(self.config, "mm_use_im_start_end", False):

@@ -693,13 +693,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # Step 1: embed memory prompt
         # “This is a high-level summary of the video:”
         memory_prompt_ids = torch.tensor([[1986, 374, 264, 1550, 11591, 12126, 315, 279, 2766, 25]], device=self.device)
-        memory_prompt_embeds = self.get_model().embed_tokens(memory_prompt_ids)
+        memory_prompt_embeds = self.get_model().embed_tokens(memory_prompt_ids).squeeze(0)  # [10, 3584]
         print(f"Memory prompt embeds shape: {memory_prompt_embeds.shape}")  # [1, 10, 3584]
 
         # Step 2: embed frame prompt
         # “These are sampled visual frames from the video:”
         frame_prompt_ids = torch.tensor([[9485, 525, 48876, 9124, 14087, 504, 279, 2766, 25]], device=self.device)
-        frame_prompt_embeds = self.get_model().embed_tokens(frame_prompt_ids)
+        frame_prompt_embeds = self.get_model().embed_tokens(frame_prompt_ids).squeeze(0)  # [9, 3584]
         print(f"Frame prompt embeds shape: {frame_prompt_embeds.shape}")  # [1, 9, 3584]
         # Step 3: insert memory and frame prompts
         image_features_with_prompt = [torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, image_features[1]), dim=0)]

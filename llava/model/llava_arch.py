@@ -691,16 +691,20 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
 
         # insert memory and frames prompt
         # Step 1: embed memory prompt
-        #memory_prompt_ids = self.get_model().tokenizer("This is a summary of the video:").input_ids
-        #memory_prompt_embeds = self.get_model().embed_tokens(torch.tensor(memory_prompt_ids, device=self.device))
+        # “This is a high-level summary of the video:”
+        memory_prompt_ids = torch.tensor([[1986, 374, 264, 1550, 11591, 12126, 315, 279, 2766, 25]], device=self.device)
+        memory_prompt_embeds = self.get_model().embed_tokens(memory_prompt_ids)
+        print(f"Memory prompt embeds shape: {memory_prompt_embeds.shape}")  # [1, 10, 3584]
 
         # Step 2: embed frame prompt
-        #frame_prompt_ids = self.get_model().tokenizer("Here are some sampled frames:").input_ids
-        #frame_prompt_embeds = self.get_model().embed_tokens(torch.tensor(frame_prompt_ids, device=self.device))
+        # “These are sampled visual frames from the video:”
+        frame_prompt_ids = torch.tensor([[9485, 525, 48876, 9124, 14087, 504, 279, 2766, 25]], device=self.device)
+        frame_prompt_embeds = self.get_model().embed_tokens(frame_prompt_ids)
+        print(f"Frame prompt embeds shape: {frame_prompt_embeds.shape}")  # [1, 9, 3584]
         # Step 3: insert memory and frame prompts
-        #image_features_with_prompt = [torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, image_features[1]), dim=0)]
-        #rank_print(f"Image features with prompt shape: {image_features_with_prompt[0].shape}")  # [n, 3584]
-        #rank_print(f"Image features shape: {image_features[0].shape},{image_features[1].shape}")  # [n, 3584]
+        image_features_with_prompt = [torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, image_features[1]), dim=0)]
+        rank_print(f"Image features with prompt shape: {image_features_with_prompt[0].shape}")  # [n, 3584]
+        rank_print(f"Image features shape: {image_features[0].shape},{image_features[1].shape}")  # [n, 3584]
 
         # TODO: image start / end is not implemented here to support pretraining.
         if getattr(self.config, "tune_mm_mlp_adapter", False) and getattr(self.config, "mm_use_im_start_end", False):

@@ -396,6 +396,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             for _ in range(len(modalities)):
                 if modalities[_] == "video":
                     video_idx_in_batch.append(_)
+                    video_idx_in_batch.append(_)
 
             images_list = []
             for image in images:
@@ -566,7 +567,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     # rank0_print("At least we are reaching here")
                     # import pdb; pdb.set_trace()
                     if image_idx in video_idx_in_batch:  # video operations
-                        # rank0_print("Video in batch")
+                        rank0_print("Video in batch")
                         if mm_newline_position == "grid":
                             print("Grid-wise")
                             # 模型将视频帧划分为多个网格（grid），并在每个网格位置添加一个视觉 token

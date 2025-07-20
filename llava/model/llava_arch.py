@@ -540,9 +540,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 # rank0_print(f"memory_cache shape : {memory_cache.shape}")
                 memory_cache = memory_cache + mem_type_embeds
                 original_frames = original_frames + fine_type_embeds
-                combined_feature = torch.cat((memory_cache, original_frames), dim=0)
-
-                memory_augmented_features.append(combined_feature)
+                # combined_feature = torch.cat((memory_cache, original_frames), dim=0)
+                memory_augmented_features.append(memory_cache)
+                memory_augmented_features.append(original_frames)
 
             image_features = memory_augmented_features
 
@@ -686,6 +686,19 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 raise ValueError(f"Unexpected mm_patch_merge_type: {self.config.mm_patch_merge_type}")
         else:
             image_features = self.encode_images(images)
+
+        # insert memory and frames prompt
+        # Step 1: embed memory prompt
+        memory_prompt_ids = self.get_model().tokenizer("This is a summary of the video:").input_ids
+        memory_prompt_embeds = self.get_model().embed_tokens(torch.tensor(memory_prompt_ids, device=self.device))
+
+        # Step 2: embed frame prompt
+        frame_prompt_ids = self.get_model().tokenizer("Here are some sampled frames:").input_ids
+        frame_prompt_embeds = self.get_model().embed_tokens(torch.tensor(frame_prompt_ids, device=self.device))
+        # Step 3: insert memory and frame prompts
+        image_features_with_prompt = [torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, image_features[1]), dim=0)]
+        rank_print(f"Image features with prompt shape: {image_features_with_prompt[0].shape}")  # [n, 3584]
+        rank_print(f"Image features shape: {image_features[0].shape},{image_features[1].shape}")  # [n, 3584]
 
         # TODO: image start / end is not implemented here to support pretraining.
         if getattr(self.config, "tune_mm_mlp_adapter", False) and getattr(self.config, "mm_use_im_start_end", False):

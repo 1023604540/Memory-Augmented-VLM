@@ -145,7 +145,7 @@ conv.append_message(conv.roles[1], None)
 prompt_question = conv.get_prompt()
 print(prompt_question)
 input_ids = tokenizer_image_token(prompt_question, tokenizer, IMAGE_TOKEN_INDEX, return_tensors="pt").unsqueeze(0).to(device)
-print(input_ids)
+# print(input_ids)
 image_sizes = [frame.size for frame in video_frames]  # (width * height * 3)
 
 

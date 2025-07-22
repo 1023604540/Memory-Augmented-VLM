@@ -137,6 +137,14 @@ class TransformerProjector(nn.Module):
             frame_attn_scores.append(frame_scores)
 
         final_memory = memory_2d.view(B, self.num_memory_tokens, P, D)
+        # Check symmetry of memory tokens
+        mems = final_memory[0]  # shape (8, 196, 896)
+        # Compute pairwise differences between all token slices
+        for i in range(mems.size(0)):
+            for j in range(i + 1, mems.size(0)):
+                diff = (mems[i] - mems[j]).abs().mean().item()
+                print(f"Mean absolute diff between memory token {i} and {j}: {diff:.6f}")
+
         self.memory_cache.append(final_memory.squeeze(0))
         if len(self.memory_cache) > 10:
             self.memory_cache = self.memory_cache[-10:]

@@ -53,6 +53,7 @@ class Attention(nn.Module):
         context = torch.matmul(probs, value)
         context = context.permute(0, 2, 1, 3).contiguous().view(context.size(0), -1, self.hidden_size)
         output = self.residual(context, hidden_states)
+        print(f"Attention output shape: {output.shape}")
         return output, probs
 
 class TransformerLayer(nn.Module):

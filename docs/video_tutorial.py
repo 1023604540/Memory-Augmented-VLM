@@ -24,7 +24,7 @@ from memory import KMeansMemory
 print("load model")
 warnings.filterwarnings("ignore")
 # Load the OneVision model
-pretrained = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/KIT_7b_qwen2_recurrent_8tokens_catmemory_pe_linear_depth2_filtered-data_smallLR_3d/checkpoint-400"
+pretrained = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/KIT_7b_qwen2_recurrent_8tokens_catmemory_pe_mlp_depth2_filtered-data_smallLR_prompt/checkpoint-1200"
 # pretrained = "lmms-lab/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
 # pretrained = "/anvme/workspace/b232dd16-LLaVA-OV/llava-onevision-qwen2-0.5b-ov"   # Use this for 7B model
 # pretrained = "/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/llava-onevision-0.5b-qwen2-KIT_recurrent_8tokens_catmemory_pe_mlp_128frames_depth2/checkpoint-1600"   # Use this for 7B model

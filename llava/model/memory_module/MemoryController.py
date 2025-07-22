@@ -53,7 +53,7 @@ class Attention(nn.Module):
         context = torch.matmul(probs, value)
         context = context.permute(0, 2, 1, 3).contiguous().view(context.size(0), -1, self.hidden_size)
         output = self.residual(context, hidden_states)
-        print(f"Attention output shape: {output.shape}")
+        # print(f"Attention output shape: {output.shape}")
         return output, probs
 
 class TransformerLayer(nn.Module):
@@ -127,7 +127,6 @@ class TransformerProjector(nn.Module):
 
         if len(self.memory_cache) > 1:
             memory_tokens = self._update_memory_tokens_with_cache(memory_tokens)
-            print("memory update called")
         memory_2d = memory_tokens.reshape(B, self.num_memory_tokens * P, D)
         image_2d = image_features.reshape(B, F * P, D)
         frame_attn_scores = []

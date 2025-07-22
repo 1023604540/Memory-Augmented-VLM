@@ -80,6 +80,7 @@ class TransformerProjector(nn.Module):
         self.hidden_size = self.config.mm_hidden_size
         self.patch_size = self.config.patch_size
         self.initial_memory = nn.Parameter(torch.empty(self.num_memory_tokens, self.patch_size, self.hidden_size))
+        self.memory_pos_embed = nn.Parameter(torch.randn(self.num_memory_tokens, 1, self.hidden_size))
         nn.init.xavier_uniform_(self.initial_memory)
         self.memory_cache: List[torch.Tensor] = []
         self.memory_update_attention = Attention(self.config)
@@ -116,7 +117,8 @@ class TransformerProjector(nn.Module):
         dtype = image_features.dtype
         B = 1
         F, P, D = image_features.shape
-        memory_tokens = self.initial_memory.to(device=device, dtype=dtype)
+        initial_memory = self.initial_memory + self.memory_pos_embed
+        memory_tokens = initial_memory.to(device=device, dtype=dtype)
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]
 

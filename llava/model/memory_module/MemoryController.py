@@ -138,6 +138,8 @@ class TransformerProjector(nn.Module):
 
         final_memory = memory_2d.view(B, self.num_memory_tokens, P, D)
         # Check symmetry of memory tokens
+        mean_val = final_memory[0].abs().mean().item()
+        print(f"Mean value magnitude: {mean_val:.6f}")
         mems = final_memory[0]  # shape (8, 196, 896)
         # Compute pairwise differences between all token slices
         for i in range(mems.size(0)):

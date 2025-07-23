@@ -120,7 +120,7 @@ class TransformerProjector(nn.Module):
         if self.training:
             initial_memory = self.initial_memory + self.memory_pos_embed
         else:
-            initial_memory = self.initial_memory
+            initial_memory = self.initial_memory + self.memory_pos_embed
         memory_tokens = initial_memory.to(device=device, dtype=dtype)
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]

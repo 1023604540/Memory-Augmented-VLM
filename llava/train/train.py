@@ -975,42 +975,6 @@ def preprocess(sources: Sequence[str], tokenizer: transformers.PreTrainedTokeniz
 
     return dict(input_ids=input_ids, labels=targets)
 
-class StreamingDatasetWrapper(Dataset):
-    def __init__(self, base_dataset, samples_per_chunk=3000, tmpdir_env="TMPDIR"):
-        self.base_dataset = base_dataset
-        self.samples_per_chunk = samples_per_chunk
-        self.full_data = base_dataset.list_data_dict
-        self.tmp_dir = os.environ.get(tmpdir_env, "/tmp")
-        self.staged_dir = os.path.join(self.tmp_dir, "streaming_videos")
-        self.video_folder = base_dataset.data_args.video_folder
-        self.current_chunk = []
-        self.chunk_start = 0
-        self._load_next_chunk()
-
-    def _load_next_chunk(self):
-        self.cleanup_tmp()
-        self.current_chunk = self.full_data[self.chunk_start:self.chunk_start + self.samples_per_chunk]
-        os.makedirs(self.staged_dir, exist_ok=True)
-        for sample in self.current_chunk:
-            if "video" in sample:
-                src_path = os.path.join(self.video_folder, sample["video"])
-                dst_path = os.path.join(self.staged_dir, os.path.basename(sample["video"]))
-                if os.path.exists(src_path) and not os.path.exists(dst_path):
-                    shutil.copy2(src_path, dst_path)
-        self.chunk_start += self.samples_per_chunk
-
-    def cleanup_tmp(self):
-        if os.path.exists(self.staged_dir):
-            shutil.rmtree(self.staged_dir)
-
-    def __len__(self):
-        return len(self.current_chunk)
-
-    def __getitem__(self, idx):
-        sample = self.current_chunk[idx]
-        if "video" in sample:
-            sample["video"] = os.path.join(self.staged_dir, os.path.basename(sample["video"]))
-        return self.base_dataset._get_item(self.chunk_start - self.samples_per_chunk + idx)
 
 class LazySupervisedDataset(Dataset):
     def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer, data_args: DataArguments):
@@ -1920,7 +1884,58 @@ def train(attn_implementation=None):
 
     rank0_print(f"Model saved to {training_args.output_dir}")
 
+class StreamingDatasetWrapper(Dataset):
+    def __init__(self, base_dataset, samples_per_chunk=3000, tmpdir_env="TMPDIR"):
+        self.base_dataset = base_dataset
+        self.samples_per_chunk = samples_per_chunk
+        self.full_data = base_dataset.list_data_dict
+        self.tmp_dir = os.environ.get(tmpdir_env, "/tmp")
+        self.staged_dir = os.path.join(self.tmp_dir, "streaming_videos")
+        self.video_folder = base_dataset.data_args.video_folder
+        self.current_chunk = []
+        self.chunk_start = 0
 
+        print(f"[StreamingLoader] TMPDIR is set to: {self.tmp_dir}")
+        print(f"[StreamingLoader] Using video folder: {self.video_folder}")
+        print(f"[StreamingLoader] Total training samples: {len(self.full_data)}")
+
+        self._load_next_chunk()
+
+    def _load_next_chunk(self):
+        print(f"\n[StreamingLoader] Loading next chunk: samples {self.chunk_start} to {self.chunk_start + self.samples_per_chunk}")
+        self.cleanup_tmp()
+
+        self.current_chunk = self.full_data[self.chunk_start:self.chunk_start + self.samples_per_chunk]
+        os.makedirs(self.staged_dir, exist_ok=True)
+
+        copied = 0
+        for sample in self.current_chunk:
+            if "video" in sample:
+                src_path = os.path.join(self.video_folder, sample["video"])
+                dst_path = os.path.join(self.staged_dir, os.path.basename(sample["video"]))
+                if os.path.exists(src_path) and not os.path.exists(dst_path):
+                    try:
+                        shutil.copy2(src_path, dst_path)
+                        copied += 1
+                    except Exception as e:
+                        print(f"[StreamingLoader] Failed to copy {src_path} → {dst_path}: {e}")
+        print(f"[StreamingLoader] Copied {copied} video files to {self.staged_dir}")
+
+        self.chunk_start += self.samples_per_chunk
+
+    def cleanup_tmp(self):
+        if os.path.exists(self.staged_dir):
+            print(f"[StreamingLoader] Cleaning up {self.staged_dir}")
+            shutil.rmtree(self.staged_dir)
+
+    def __len__(self):
+        return len(self.current_chunk)
+
+    def __getitem__(self, idx):
+        sample = self.current_chunk[idx]
+        if "video" in sample:
+            sample["video"] = os.path.join(self.staged_dir, os.path.basename(sample["video"]))
+        return self.base_dataset._get_item(self.chunk_start - self.samples_per_chunk + idx)
 
 # class StepTimingCallback(TrainerCallback):
 #     def on_train_begin(self, args, state, control, **kwargs):

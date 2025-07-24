@@ -375,13 +375,13 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         else:
             return tensor
 
-    def get_synced_dropout_decision(prob: float = 0.5):
+    def get_synced_dropout_decision(self, prob: float = 0.5):
         """Generate a shared dropout decision across all ranks."""
         if not dist.is_initialized():
-            return torch.rand(1).item() < prob  # fallback to local
+            return torch.rand(1).item() < self  # fallback to local
         drop_tensor = torch.zeros(1, device=torch.device("cuda"))
         if dist.get_rank() == 0:
-            drop_tensor.fill_(1.0 if torch.rand(1).item() < prob else 0.0)
+            drop_tensor.fill_(1.0 if torch.rand(1).item() < self else 0.0)
         dist.broadcast(drop_tensor, src=0)
         return bool(drop_tensor.item())
 
@@ -715,7 +715,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # print(f"Frame prompt embeds shape: {frame_prompt_embeds.shape}")  # [1, 9, 3584]
         # Step 3: insert memory and frame prompts
         # Add original frames dropout
-        drop_frame = self.get_synced_dropout_decision(prob=0.5)
+        drop_frame = self.get_synced_dropout_decision(prob = 0.5)
         if self.training and drop_frame:
             # Drop frame features (use only memory)
             rank_print("Dropping frame features")

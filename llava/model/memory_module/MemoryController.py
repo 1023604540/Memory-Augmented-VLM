@@ -108,7 +108,7 @@ class TransformerProjector(nn.Module):
         attn_chunk_map = torch.stack(attn_chunk_sums, dim=-1)  # shape: (B, S_q, N)
         attn_chunk_map = attn_chunk_map.reshape(8, -1, 8).sum(dim=2)
         print(f"attn_chunk_map shape: {attn_chunk_map.shape}")
-        print(f"attn_chunk_map: {attn_chunk_map}")
+        print(f"attn_chunk_map: {attn_chunk_map[0]}")
         grouped_attn_chunk_map = attn_chunk_map.sum(dim=0)
         print(f"grouped_attn_chunk_map shape: {grouped_attn_chunk_map}")
         updated_4d = updated_2d.view(B, Lq, P, D)
@@ -121,7 +121,6 @@ class TransformerProjector(nn.Module):
         B = 1
         F, P, D = image_features.shape
         initial_memory = self.initial_memory + self.memory_pos_embed
-        initial_memory = self.initial_memory
         memory_tokens = initial_memory.to(device=device, dtype=dtype)
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]

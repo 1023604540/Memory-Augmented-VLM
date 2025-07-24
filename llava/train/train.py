@@ -1778,47 +1778,44 @@ def train(attn_implementation=None):
                     if training_args.bf16 and module.weight.dtype == torch.float32:
                         module = module.to(torch.bfloat16)
 
-    # data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
-    # # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    # # trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
-    # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    #
-    # # Manually create the optimizer with custom LR groups
-    # trainer.create_optimizer()
-    # # torch.autograd.set_detect_anomaly(True)
-    # set_global_optimizer(trainer.optimizer)
-    # print_grad_norm = False
-    # if print_grad_norm:
-    #     for name, param in model.named_parameters():
-    #         if not param.requires_grad:
-    #             continue
-    #
-    #         def make_param_hook(param_name, param_ref):
-    #             def hook(grad):
-    #                 grad_norm = grad.norm().item()
-    #                 # find this param’s LR
-    #                 lr = None
-    #                 for group in global_optimizer_ref.param_groups:
-    #                     for p in group["params"]:
-    #                         if p is param_ref:
-    #                             lr = group["lr"]
-    #                             break
-    #                 rank_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
-    #                 return grad
-    #
-    #             return hook
-    #
-    #         param.register_hook(make_param_hook(name, param))
-    #
-    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-    #     torch.serialization.add_safe_globals([LossScaler])
-    #     trainer.train(resume_from_checkpoint=True)
-    # else:
-    #     trainer.train()
-    # trainer.save_state()
+    data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+    # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    # trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
+    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
 
-    base_dataset = LazySupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
-    stream_train_by_chunks(base_dataset, tokenizer, training_args, model, chunk_size=3000)
+    # Manually create the optimizer with custom LR groups
+    trainer.create_optimizer()
+    # torch.autograd.set_detect_anomaly(True)
+    set_global_optimizer(trainer.optimizer)
+    print_grad_norm = False
+    if print_grad_norm:
+        for name, param in model.named_parameters():
+            if not param.requires_grad:
+                continue
+
+            def make_param_hook(param_name, param_ref):
+                def hook(grad):
+                    grad_norm = grad.norm().item()
+                    # find this param’s LR
+                    lr = None
+                    for group in global_optimizer_ref.param_groups:
+                        for p in group["params"]:
+                            if p is param_ref:
+                                lr = group["lr"]
+                                break
+                    rank_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
+                    return grad
+
+                return hook
+
+            param.register_hook(make_param_hook(name, param))
+
+    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+        torch.serialization.add_safe_globals([LossScaler])
+        trainer.train(resume_from_checkpoint=True)
+    else:
+        trainer.train()
+    trainer.save_state()
 
     model.config.use_cache = True
 
@@ -1888,52 +1885,6 @@ def train(attn_implementation=None):
 #
 #         return loss.detach()
 
-def stream_train_by_chunks(base_dataset, tokenizer, training_args, model, chunk_size=3000):
-    total_samples = len(base_dataset.list_data_dict)
-    video_folder = base_dataset.data_args.video_folder
-    tmp_dir = os.environ.get("TMPDIR", "/tmp")
-    staged_dir = os.path.join(tmp_dir, "streaming_videos")
 
-    for start in range(0, total_samples, chunk_size):
-        end = min(start + chunk_size, total_samples)
-        print(f"\n[Streaming] Training on samples {start} to {end}...")
-
-        chunk = base_dataset.list_data_dict[start:end]
-        os.makedirs(staged_dir, exist_ok=True)
-        copied = 0
-
-        for sample in chunk:
-            if "video" in sample:
-                src = os.path.join(video_folder, sample["video"])
-                dst = os.path.join(staged_dir, os.path.basename(sample["video"]))
-                if os.path.exists(src) and not os.path.exists(dst):
-                    try:
-                        shutil.copy2(src, dst)
-                        copied += 1
-                    except Exception as e:
-                        print(f"[Streaming] Failed to copy {src}: {e}")
-                sample["video"] = os.path.basename(sample["video"])
-
-        print(f"[Streaming] Copied {copied} videos to {staged_dir}")
-
-        # Patch dataset and train
-        base_dataset.list_data_dict = chunk
-        base_dataset.data_args.video_folder = staged_dir
-
-        data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
-        trainer = LLaVATrainer(
-            model=model,
-            tokenizer=tokenizer,
-            args=training_args,
-            train_dataset=base_dataset,
-            data_collator=data_collator,
-        )
-
-        trainer.create_optimizer()
-        trainer.train()
-        trainer.save_state()
-
-        print(f"[Streaming] Finished chunk {start}-{end}, cleaning up...")
-        shutil.rmtree(staged_dir)
 if __name__ == "__main__":
     train()

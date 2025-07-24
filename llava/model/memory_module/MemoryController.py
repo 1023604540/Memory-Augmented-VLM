@@ -107,10 +107,10 @@ class TransformerProjector(nn.Module):
         # Stack to get (B, S_q, N)
         attn_chunk_map = torch.stack(attn_chunk_sums, dim=-1)  # shape: (B, S_q, N)
         attn_chunk_map = attn_chunk_map.reshape(8, -1, 8).sum(dim=2)
-        print(f"attn_chunk_map shape: {attn_chunk_map.shape}")
-        print(f"attn_chunk_map: {attn_chunk_map[0]}")
-        grouped_attn_chunk_map = attn_chunk_map.sum(dim=0)
-        print(f"grouped_attn_chunk_map shape: {grouped_attn_chunk_map}")
+        #print(f"attn_chunk_map shape: {attn_chunk_map.shape}")
+        #print(f"attn_chunk_map: {attn_chunk_map[0]}")
+        #grouped_attn_chunk_map = attn_chunk_map.sum(dim=0)
+        #print(f"grouped_attn_chunk_map shape: {grouped_attn_chunk_map}")
         updated_4d = updated_2d.view(B, Lq, P, D)
         return updated_4d.squeeze(0)
 
@@ -140,14 +140,14 @@ class TransformerProjector(nn.Module):
 
         final_memory = memory_2d.view(B, self.num_memory_tokens, P, D)
         ######### Check symmetry of memory tokens ##########
-        mean_val = final_memory[0].abs().mean().item()
-        print(f"Mean value magnitude: {mean_val:.6f}")
-        mems = final_memory[0]  # shape (8, 196, 896)
-        # Compute pairwise differences between all token slices
-        for i in range(mems.size(0)-1):
-            j = i + 1
-            diff = (mems[i] - mems[j]).abs().mean().item()
-            print(f"Mean absolute diff between memory token {i} and {j}: {diff:.6f}")
+        # mean_val = final_memory[0].abs().mean().item()
+        # print(f"Mean value magnitude: {mean_val:.6f}")
+        # mems = final_memory[0]  # shape (8, 196, 896)
+        # # Compute pairwise differences between all token slices
+        # for i in range(mems.size(0)-1):
+        #     j = i + 1
+        #     diff = (mems[i] - mems[j]).abs().mean().item()
+        #     print(f"Mean absolute diff between memory token {i} and {j}: {diff:.6f}")
         ######### Check symmetry of memory tokens ##########
         self.memory_cache.append(final_memory.squeeze(0))
         if len(self.memory_cache) > 10:

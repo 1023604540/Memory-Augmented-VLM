@@ -118,6 +118,7 @@ class TransformerProjector(nn.Module):
         B = 1
         F, P, D = image_features.shape
         initial_memory = self.initial_memory + self.memory_pos_embed
+        initial_memory = self.initial_memory
         memory_tokens = initial_memory.to(device=device, dtype=dtype)
         if self.memory_cache:
             memory_tokens = self.memory_cache[-1]

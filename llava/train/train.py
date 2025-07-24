@@ -630,7 +630,7 @@ def preprocess_qwen(sources, tokenizer: transformers.PreTrainedTokenizer, has_im
             role =  roles.get(role, role)
 
             conv = [{"role" : role, "content" : content}]
-            print(f"conv: {conv}")
+            # print(f"conv: {conv}")
             encode_id = tokenizer.apply_chat_template(conv)
             input_id += encode_id
             if role in ["user", "system"]:

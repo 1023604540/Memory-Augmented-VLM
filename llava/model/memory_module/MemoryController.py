@@ -109,6 +109,8 @@ class TransformerProjector(nn.Module):
         attn_chunk_map = attn_chunk_map.reshape(8, -1, 8).sum(dim=2)
         print(f"attn_chunk_map shape: {attn_chunk_map.shape}")
         print(f"attn_chunk_map: {attn_chunk_map}")
+        grouped_attn_chunk_map = attn_chunk_map.sum(dim=0)
+        print(f"grouped_attn_chunk_map shape: {grouped_attn_chunk_map}")
         updated_4d = updated_2d.view(B, Lq, P, D)
         return updated_4d.squeeze(0)
 

@@ -1326,9 +1326,7 @@ class DataCollatorForSupervisedDataset(object):
 
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
-    # train_dataset = LazySupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
-    base_dataset = LazySupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
-    train_dataset = StreamingDatasetWrapper(base_dataset)
+    train_dataset = LazySupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
 
@@ -1780,92 +1778,47 @@ def train(attn_implementation=None):
                     if training_args.bf16 and module.weight.dtype == torch.float32:
                         module = module.to(torch.bfloat16)
 
-    data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
-    # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
-    # trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
-    trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    # data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+    # # trainer = LLaVAEvalTrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    # # trainer = DetailedTimingTrainer(model=model, tokenizer=tokenizer, args=training_args, callbacks=[StepTimingCallback()], **data_module)
+    # trainer = LLaVATrainer(model=model, tokenizer=tokenizer, args=training_args, **data_module)
+    #
+    # # Manually create the optimizer with custom LR groups
+    # trainer.create_optimizer()
+    # # torch.autograd.set_detect_anomaly(True)
+    # set_global_optimizer(trainer.optimizer)
+    # print_grad_norm = False
+    # if print_grad_norm:
+    #     for name, param in model.named_parameters():
+    #         if not param.requires_grad:
+    #             continue
+    #
+    #         def make_param_hook(param_name, param_ref):
+    #             def hook(grad):
+    #                 grad_norm = grad.norm().item()
+    #                 # find this param’s LR
+    #                 lr = None
+    #                 for group in global_optimizer_ref.param_groups:
+    #                     for p in group["params"]:
+    #                         if p is param_ref:
+    #                             lr = group["lr"]
+    #                             break
+    #                 rank_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
+    #                 return grad
+    #
+    #             return hook
+    #
+    #         param.register_hook(make_param_hook(name, param))
+    #
+    # if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
+    #     torch.serialization.add_safe_globals([LossScaler])
+    #     trainer.train(resume_from_checkpoint=True)
+    # else:
+    #     trainer.train()
+    # trainer.save_state()
 
-    # Manually create the optimizer with custom LR groups
-    trainer.create_optimizer()
-    # torch.autograd.set_detect_anomaly(True)
-    set_global_optimizer(trainer.optimizer)
-    print_grad_norm = False
-    if print_grad_norm:
-        for name, param in model.named_parameters():
-            if not param.requires_grad:
-                continue
-
-            def make_param_hook(param_name, param_ref):
-                def hook(grad):
-                    grad_norm = grad.norm().item()
-                    # find this param’s LR
-                    lr = None
-                    for group in global_optimizer_ref.param_groups:
-                        for p in group["params"]:
-                            if p is param_ref:
-                                lr = group["lr"]
-                                break
-                    rank_print(f"[PARAM] {param_name:60} | Grad Norm: {grad_norm:8.4f} | LR: {lr:.2e}")
-                    return grad
-
-                return hook
-
-            param.register_hook(make_param_hook(name, param))
-    # print(torch.cuda.memory_summary(device=torch.cuda.current_device(), abbreviated=False))
-    # import threading, time, subprocess, sys, os, socket
-    #
-    # def monitor_gpu(interval=5):
-    #     # identify this node/process
-    #     hostname = socket.gethostname()
-    #     node_rank = int(os.environ.get("NODE_RANK", os.environ.get("SLURM_NODEID", 0)))
-    #     gpus_per_node = torch.cuda.device_count()
-    #
-    #     # prepare header and separator
-    #     header_fmt = "{:19} | {:>10} | {:>6} | {:>5} | {:>5} | {:>6} | {:>5}"
-    #     headers = ["Timestamp", "Host", "N-Rank", "L-GPU", "G-GPU", "Util%", "Mem%"]
-    #     header_line = header_fmt.format(*headers)
-    #     sep_line = "-" * len(header_line)
-    #
-    #     while True:
-    #         now = time.strftime("%Y-%m-%d %H:%M:%S")
-    #         # separator + header
-    #         print(sep_line)
-    #         print(header_line)
-    #         print(sep_line)
-    #
-    #         # query all GPUs on this node
-    #         out = subprocess.check_output([
-    #             "nvidia-smi",
-    #             "--query-gpu=index,utilization.gpu,utilization.memory",
-    #             "--format=csv,nounits,noheader"
-    #         ])
-    #         for line in out.decode().splitlines():
-    #             idx, util, mem = [x.strip() for x in line.split(",")]
-    #             global_idx = node_rank * gpus_per_node + int(idx)
-    #             print(header_fmt.format(
-    #                 now,
-    #                 hostname,
-    #                 node_rank,
-    #                 int(idx),
-    #                 global_idx,
-    #                 f"{util}%",
-    #                 f"{mem}%"
-    #             ))
-    #
-    #         sys.stdout.flush()
-    #         time.sleep(interval)
-    #
-    # # start the background monitor
-    # t = threading.Thread(target=monitor_gpu, args=(5,), daemon=True)
-    # t.start()
-    # print("====== CUDA Memory Summary BEFORE Training ======")
-    # print(torch.cuda.memory_summary(device=torch.cuda.current_device(), abbreviated=False))
-    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-        torch.serialization.add_safe_globals([LossScaler])
-        trainer.train(resume_from_checkpoint=True)
-    else:
-        trainer.train()
-    trainer.save_state()
+    base_dataset = LazySupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
+    stream_train_by_chunks(base_dataset, tokenizer, training_args, model, chunk_size=3000)
 
     model.config.use_cache = True
 
@@ -1884,58 +1837,7 @@ def train(attn_implementation=None):
 
     rank0_print(f"Model saved to {training_args.output_dir}")
 
-class StreamingDatasetWrapper(Dataset):
-    def __init__(self, base_dataset, samples_per_chunk=3000, tmpdir_env="TMPDIR"):
-        self.base_dataset = base_dataset
-        self.samples_per_chunk = samples_per_chunk
-        self.full_data = base_dataset.list_data_dict
-        self.tmp_dir = os.environ.get(tmpdir_env, "/tmp")
-        self.staged_dir = os.path.join(self.tmp_dir, "streaming_videos")
-        self.video_folder = base_dataset.data_args.video_folder
-        self.current_chunk = []
-        self.chunk_start = 0
 
-        print(f"[StreamingLoader] TMPDIR is set to: {self.tmp_dir}")
-        print(f"[StreamingLoader] Using video folder: {self.video_folder}")
-        print(f"[StreamingLoader] Total training samples: {len(self.full_data)}")
-
-        self._load_next_chunk()
-
-    def _load_next_chunk(self):
-        print(f"\n[StreamingLoader] Loading next chunk: samples {self.chunk_start} to {self.chunk_start + self.samples_per_chunk}")
-        self.cleanup_tmp()
-
-        self.current_chunk = self.full_data[self.chunk_start:self.chunk_start + self.samples_per_chunk]
-        os.makedirs(self.staged_dir, exist_ok=True)
-
-        copied = 0
-        for sample in self.current_chunk:
-            if "video" in sample:
-                src_path = os.path.join(self.video_folder, sample["video"])
-                dst_path = os.path.join(self.staged_dir, os.path.basename(sample["video"]))
-                if os.path.exists(src_path) and not os.path.exists(dst_path):
-                    try:
-                        shutil.copy2(src_path, dst_path)
-                        copied += 1
-                    except Exception as e:
-                        print(f"[StreamingLoader] Failed to copy {src_path} → {dst_path}: {e}")
-        print(f"[StreamingLoader] Copied {copied} video files to {self.staged_dir}")
-
-        self.chunk_start += self.samples_per_chunk
-
-    def cleanup_tmp(self):
-        if os.path.exists(self.staged_dir):
-            print(f"[StreamingLoader] Cleaning up {self.staged_dir}")
-            shutil.rmtree(self.staged_dir)
-
-    def __len__(self):
-        return len(self.current_chunk)
-
-    def __getitem__(self, idx):
-        sample = self.current_chunk[idx]
-        if "video" in sample:
-            sample["video"] = os.path.join(self.staged_dir, os.path.basename(sample["video"]))
-        return self.base_dataset._get_item(self.chunk_start - self.samples_per_chunk + idx)
 
 # class StepTimingCallback(TrainerCallback):
 #     def on_train_begin(self, args, state, control, **kwargs):
@@ -1985,5 +1887,53 @@ class StreamingDatasetWrapper(Dataset):
 #         print(f"[Timing] fw: {t_fw:.4f}s │ bw: {t_bw:.4f}s │ opt: {t_opt:.4f}s")
 #
 #         return loss.detach()
+
+def stream_train_by_chunks(base_dataset, tokenizer, training_args, model, chunk_size=3000):
+    total_samples = len(base_dataset.list_data_dict)
+    video_folder = base_dataset.data_args.video_folder
+    tmp_dir = os.environ.get("TMPDIR", "/tmp")
+    staged_dir = os.path.join(tmp_dir, "streaming_videos")
+
+    for start in range(0, total_samples, chunk_size):
+        end = min(start + chunk_size, total_samples)
+        print(f"\n[Streaming] Training on samples {start} to {end}...")
+
+        chunk = base_dataset.list_data_dict[start:end]
+        os.makedirs(staged_dir, exist_ok=True)
+        copied = 0
+
+        for sample in chunk:
+            if "video" in sample:
+                src = os.path.join(video_folder, sample["video"])
+                dst = os.path.join(staged_dir, os.path.basename(sample["video"]))
+                if os.path.exists(src) and not os.path.exists(dst):
+                    try:
+                        shutil.copy2(src, dst)
+                        copied += 1
+                    except Exception as e:
+                        print(f"[Streaming] Failed to copy {src}: {e}")
+                sample["video"] = os.path.basename(sample["video"])
+
+        print(f"[Streaming] Copied {copied} videos to {staged_dir}")
+
+        # Patch dataset and train
+        base_dataset.list_data_dict = chunk
+        base_dataset.data_args.video_folder = staged_dir
+
+        data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+        trainer = LLaVATrainer(
+            model=model,
+            tokenizer=tokenizer,
+            args=training_args,
+            train_dataset=base_dataset,
+            data_collator=data_collator,
+        )
+
+        trainer.create_optimizer()
+        trainer.train()
+        trainer.save_state()
+
+        print(f"[Streaming] Finished chunk {start}-{end}, cleaning up...")
+        shutil.rmtree(staged_dir)
 if __name__ == "__main__":
     train()

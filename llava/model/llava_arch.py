@@ -19,6 +19,7 @@ import math
 import re
 import torch
 import torch.nn as nn
+import torch.distributed as dist
 import torch.nn.functional as F
 from .multimodal_encoder.builder import build_vision_tower
 from .multimodal_resampler.builder import build_vision_resampler
@@ -374,7 +375,15 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         else:
             return tensor
 
-
+    def get_synced_dropout_decision(prob: float = 0.5):
+        """Generate a shared dropout decision across all ranks."""
+        if not dist.is_initialized():
+            return torch.rand(1).item() < prob  # fallback to local
+        drop_tensor = torch.zeros(1, device=torch.device("cuda"))
+        if dist.get_rank() == 0:
+            drop_tensor.fill_(1.0 if torch.rand(1).item() < prob else 0.0)
+        dist.broadcast(drop_tensor, src=0)
+        return bool(drop_tensor.item())
 
     def prepare_inputs_labels_for_multimodal(self, input_ids, position_ids, attention_mask, past_key_values, labels, images, modalities=["image"], image_sizes=None):
         # start = time.time()
@@ -706,8 +715,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # print(f"Frame prompt embeds shape: {frame_prompt_embeds.shape}")  # [1, 9, 3584]
         # Step 3: insert memory and frame prompts
         # Add original frames dropout
-        if self.training and torch.rand(1).item() < 0.5:
+        drop_frame = self.get_synced_dropout_decision(prob=0.5)
+        if self.training and drop_frame:
             # Drop frame features (use only memory)
+            rank_print("Dropping frame features")
             image_features_with_prompt = [
                 torch.cat((memory_prompt_embeds, image_features[0]), dim=0)
             ]
@@ -949,3 +960,4 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     p.requires_grad = False
                 for p in self.get_output_embeddings().parameters():
                     p.requires_grad = False
+

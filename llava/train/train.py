@@ -13,7 +13,7 @@
 #    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #    See the License for the specific language governing permissions and
 #    limitations under the License.
-
+import shutil
 import ast
 import os
 import copy
@@ -975,6 +975,42 @@ def preprocess(sources: Sequence[str], tokenizer: transformers.PreTrainedTokeniz
 
     return dict(input_ids=input_ids, labels=targets)
 
+class StreamingDatasetWrapper(Dataset):
+    def __init__(self, base_dataset, samples_per_chunk=3000, tmpdir_env="TMPDIR"):
+        self.base_dataset = base_dataset
+        self.samples_per_chunk = samples_per_chunk
+        self.full_data = base_dataset.list_data_dict
+        self.tmp_dir = os.environ.get(tmpdir_env, "/tmp")
+        self.staged_dir = os.path.join(self.tmp_dir, "streaming_videos")
+        self.video_folder = base_dataset.data_args.video_folder
+        self.current_chunk = []
+        self.chunk_start = 0
+        self._load_next_chunk()
+
+    def _load_next_chunk(self):
+        self.cleanup_tmp()
+        self.current_chunk = self.full_data[self.chunk_start:self.chunk_start + self.samples_per_chunk]
+        os.makedirs(self.staged_dir, exist_ok=True)
+        for sample in self.current_chunk:
+            if "video" in sample:
+                src_path = os.path.join(self.video_folder, sample["video"])
+                dst_path = os.path.join(self.staged_dir, os.path.basename(sample["video"]))
+                if os.path.exists(src_path) and not os.path.exists(dst_path):
+                    shutil.copy2(src_path, dst_path)
+        self.chunk_start += self.samples_per_chunk
+
+    def cleanup_tmp(self):
+        if os.path.exists(self.staged_dir):
+            shutil.rmtree(self.staged_dir)
+
+    def __len__(self):
+        return len(self.current_chunk)
+
+    def __getitem__(self, idx):
+        sample = self.current_chunk[idx]
+        if "video" in sample:
+            sample["video"] = os.path.join(self.staged_dir, os.path.basename(sample["video"]))
+        return self.base_dataset._get_item(self.chunk_start - self.samples_per_chunk + idx)
 
 class LazySupervisedDataset(Dataset):
     def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer, data_args: DataArguments):
@@ -1326,7 +1362,9 @@ class DataCollatorForSupervisedDataset(object):
 
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
-    train_dataset = LazySupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
+    # train_dataset = LazySupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
+    base_dataset = LazySupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, data_args=data_args)
+    train_dataset = StreamingDatasetWrapper(base_dataset)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
 
@@ -1884,53 +1922,53 @@ def train(attn_implementation=None):
 
 
 
-class StepTimingCallback(TrainerCallback):
-    def on_train_begin(self, args, state, control, **kwargs):
-        # mark the moment training actually starts
-        self._last_time = time.time()
-
-    def on_step_begin(self, args, state, control, **kwargs):
-        now = time.time()
-        # time spent since the end of the last step (≈ data loading + any extras)
-        data_load = now - self._last_time
-        print(f"[DataLoad] {data_load:.4f}s")
-        # start timing compute
-        self._step_start = now
-
-    def on_step_end(self, args, state, control, **kwargs):
-        now = time.time()
-        # time spent in training_step + optimizer + scheduler + zero_grad
-        compute_time = now - self._step_start
-        print(f"[Compute] {compute_time:.4f}s")
-        # mark for next iteration’s data‐load timing
-        self._last_time = now
-class DetailedTimingTrainer(LLaVATrainer):
-    def training_step(self, model: nn.Module, inputs: dict) -> torch.Tensor:
-        # 1) make sure we're in train mode & inputs are ready
-        model.train()
-        inputs = self._prepare_inputs(inputs)
-
-        # 2) forward
-        t0 = time.time()
-        outputs = model(**inputs)
-        loss = outputs.loss
-        t_fw = time.time() - t0
-
-        # 3) backward
-        t1 = time.time()
-        loss.backward()
-        t_bw = time.time() - t1
-
-        # 4) optimizer + scheduler + zero_grad
-        t2 = time.time()
-        self.optimizer.step()
-        self.lr_scheduler.step()
-        self.optimizer.zero_grad()
-        t_opt = time.time() - t2
-
-        # 5) print out
-        print(f"[Timing] fw: {t_fw:.4f}s │ bw: {t_bw:.4f}s │ opt: {t_opt:.4f}s")
-
-        return loss.detach()
+# class StepTimingCallback(TrainerCallback):
+#     def on_train_begin(self, args, state, control, **kwargs):
+#         # mark the moment training actually starts
+#         self._last_time = time.time()
+#
+#     def on_step_begin(self, args, state, control, **kwargs):
+#         now = time.time()
+#         # time spent since the end of the last step (≈ data loading + any extras)
+#         data_load = now - self._last_time
+#         print(f"[DataLoad] {data_load:.4f}s")
+#         # start timing compute
+#         self._step_start = now
+#
+#     def on_step_end(self, args, state, control, **kwargs):
+#         now = time.time()
+#         # time spent in training_step + optimizer + scheduler + zero_grad
+#         compute_time = now - self._step_start
+#         print(f"[Compute] {compute_time:.4f}s")
+#         # mark for next iteration’s data‐load timing
+#         self._last_time = now
+# class DetailedTimingTrainer(LLaVATrainer):
+#     def training_step(self, model: nn.Module, inputs: dict) -> torch.Tensor:
+#         # 1) make sure we're in train mode & inputs are ready
+#         model.train()
+#         inputs = self._prepare_inputs(inputs)
+#
+#         # 2) forward
+#         t0 = time.time()
+#         outputs = model(**inputs)
+#         loss = outputs.loss
+#         t_fw = time.time() - t0
+#
+#         # 3) backward
+#         t1 = time.time()
+#         loss.backward()
+#         t_bw = time.time() - t1
+#
+#         # 4) optimizer + scheduler + zero_grad
+#         t2 = time.time()
+#         self.optimizer.step()
+#         self.lr_scheduler.step()
+#         self.optimizer.zero_grad()
+#         t_opt = time.time() - t2
+#
+#         # 5) print out
+#         print(f"[Timing] fw: {t_fw:.4f}s │ bw: {t_bw:.4f}s │ opt: {t_opt:.4f}s")
+#
+#         return loss.detach()
 if __name__ == "__main__":
     train()

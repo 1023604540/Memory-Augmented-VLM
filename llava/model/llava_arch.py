@@ -705,7 +705,17 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         frame_prompt_embeds = self.get_model().embed_tokens(frame_prompt_ids).squeeze(0)  # [9, 3584]
         # print(f"Frame prompt embeds shape: {frame_prompt_embeds.shape}")  # [1, 9, 3584]
         # Step 3: insert memory and frame prompts
-        image_features_with_prompt = [torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, image_features[1]), dim=0)]
+        # Add original frames dropout
+        if self.training and torch.rand(1).item() < 0.5:
+            # Drop frame features (use only memory)
+            image_features_with_prompt = [
+                torch.cat((memory_prompt_embeds, image_features[0]), dim=0)
+            ]
+        else:
+            # Use both memory and frame features
+            image_features_with_prompt = [
+                torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, image_features[1]), dim=0)
+            ]
         # rank_print(f"Image features with prompt shape: {image_features_with_prompt[0].shape}")  # [n, 3584]
         # rank_print(f"Image features shape: {image_features[0].shape},{image_features[1].shape}")  # [n, 3584]
         image_features = image_features_with_prompt

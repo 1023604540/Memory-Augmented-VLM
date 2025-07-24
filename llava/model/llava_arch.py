@@ -440,9 +440,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                     sample_frames = num_frames
                 else:
                     sample_frames = (num_frames // 32) * 32
-                    if sample_frames < 64:
-                        print("Sampling less than 64 frames, setting to 64.")
-                        sample_frames = 64
+                    # if sample_frames < 64:
+                    #     print("Sampling less than 64 frames, setting to 64.")
+                    #     sample_frames = 64
                     # if sample_frames < 96:
                     #     print(f"Sampling {sample_frames} frames from {num_frames} total frames.")
                     #     sample_frames = 96

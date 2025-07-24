@@ -378,10 +378,10 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
     def get_synced_dropout_decision(self, prob: float = 0.5):
         """Generate a shared dropout decision across all ranks."""
         if not dist.is_initialized():
-            return torch.rand(1).item() < self  # fallback to local
-        drop_tensor = torch.zeros(1, device=torch.device("cuda"))
+            return torch.rand(1).item() < prob  # fallback to local
+        drop_tensor = torch.zeros(1, device=self.device)
         if dist.get_rank() == 0:
-            drop_tensor.fill_(1.0 if torch.rand(1).item() < self else 0.0)
+            drop_tensor.fill_(1.0 if torch.rand(1).item() < prob else 0.0)
         dist.broadcast(drop_tensor, src=0)
         return bool(drop_tensor.item())
 

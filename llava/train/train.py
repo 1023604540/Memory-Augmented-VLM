@@ -1891,7 +1891,7 @@ def train(attn_implementation=None):
 def stream_train_by_chunks(base_dataset, tokenizer, training_args, model, chunk_size=3000):
     total_samples = len(base_dataset.list_data_dict)
     video_folder = base_dataset.data_args.video_folder
-    tmp_dir = os.environ.get["TMPDIR"]
+    tmp_dir = os.environ.get("TMPDIR", "/tmp")
     staged_dir = os.path.join(tmp_dir, "streaming_videos")
 
     for start in range(0, total_samples, chunk_size):

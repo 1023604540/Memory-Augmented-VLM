@@ -1660,6 +1660,7 @@ def train(attn_implementation=None):
         model.config.add_time_instruction = data_args.add_time_instruction
         model.config.force_sample = data_args.force_sample
         model.config.mm_spatial_pool_stride = model_args.mm_spatial_pool_stride
+        model.config.dropout_frames = model_args.dropout_frames
 
         ### Deciding train which part of the model
         if model_args.mm_tunable_parts is None:  # traditional way of deciding which part to train

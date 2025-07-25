@@ -98,7 +98,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --force_sample False \
     --frames_upbound 300 \
     --attn_implementation "flash_attention_2" \
-    --dropout_frames False
+    --dropout_frames True
 exit 0;
 
 # You can delete the sdpa attn_implementation if you want to use flash attn

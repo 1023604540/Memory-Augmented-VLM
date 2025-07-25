@@ -562,6 +562,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             mm_patch_merge_type = getattr(self.config, "mm_patch_merge_type", "flat")
             image_aspect_ratio = getattr(self.config, "image_aspect_ratio", "square")
             mm_newline_position = getattr(self.config, "mm_newline_position", "one_token")
+            dropout_frames = getattr(self.config, "dropout_frames", False)
             # print(mm_newline_position)
             if mm_patch_merge_type == "flat":
                 image_features = [x.flatten(0, 1) for x in image_features]
@@ -716,7 +717,7 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
         # Step 3: insert memory and frame prompts
         # Add original frames dropout
         drop_frame = self.get_synced_dropout_decision(prob = 0.5)
-        if self.training and drop_frame:
+        if self.training and drop_frame and dropout_frames:
             # Drop frame features (use only memory)
             rank_print("Dropping frame features")
             image_features_with_prompt = [

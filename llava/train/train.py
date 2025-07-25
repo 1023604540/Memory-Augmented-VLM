@@ -124,6 +124,7 @@ class ModelArguments:
     delay_load: Optional[bool] = field(default=True)
     add_faster_video: Optional[bool] = field(default=False)
     faster_token_stride: Optional[int] = field(default=10)
+    dropout_frames: Optional[bool] = field(default=False)
 
 
 
@@ -144,6 +145,7 @@ class DataArguments:
     frames_upbound: Optional[int] = field(default=0)
     add_time_instruction: Optional[bool] = field(default=False)
     force_sample: Optional[bool] = field(default=False)
+
 
 
 @dataclass

@@ -29,7 +29,7 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="KIT_0.5b_qwen2_mlp_depth2_filtered-data_largeLR_prompt_break_symmetry"
+RUN_NAME="KIT_0.5b_qwen2_mlp_depth4_filtered-data_smallLR_prompt_break_symmetry"
 # PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
 # PREV_STAGE_CHECKPOINT="/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/KIT_0.5b_qwen2_recurrent_8tokens_catmemory_pe_linear_depth2_fixLLM_bigbatch"
 PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov"
@@ -80,9 +80,9 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --save_strategy "steps" \
     --save_steps 200 \
     --save_total_limit 6 \
-    --learning_rate 4e-6 \
-    --memory_transformer_lr 1e-4 \
-    --memory_key_value_lr 1e-4 \
+    --learning_rate 1e-6 \
+    --memory_transformer_lr 1e-5 \
+    --memory_key_value_lr 1e-5 \
     --weight_decay 0. \
     --warmup_ratio 0.03 \
     --lr_scheduler_type "cosine" \

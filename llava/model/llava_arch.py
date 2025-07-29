@@ -125,7 +125,10 @@ class LlavaMetaModel:
         custom_config.mm_hidden_dropout_prob = 0.1
         custom_config.mm_intermediate_size = 4 * custom_config.mm_hidden_size
         custom_config.num_memory_tokens = 8
-        custom_config.depth = 4
+        if self.traing:
+            custom_config.depth = 4
+        else:
+            custom_config.depth = 2
         custom_config.mm_dtype = torch.float16
         # Define recurrent memory transformer
         self.recurrent_memory_transformer = TransformerProjector(custom_config).to(self.device)

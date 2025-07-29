@@ -125,7 +125,7 @@ class LlavaMetaModel:
         custom_config.mm_hidden_dropout_prob = 0.1
         custom_config.mm_intermediate_size = 4 * custom_config.mm_hidden_size
         custom_config.num_memory_tokens = 8
-        if self.traing:
+        if self.training:
             custom_config.depth = 4
         else:
             custom_config.depth = 2

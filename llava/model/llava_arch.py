@@ -513,15 +513,15 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
                 num_frames = image.shape[0]
                 num_samples = min(32, num_frames)  # can't sample more than you have!
 
-                # scene_aware_sample_index = sample_scenes_priority(image, sample_num=num_samples)
-                # print(f"scene_aware_sample_index : {scene_aware_sample_index}")
-                # original_frames = image[scene_aware_sample_index]
+                scene_aware_sample_index = sample_scenes_priority(image, sample_num=num_samples)
+                print(f"scene_aware_sample_index : {scene_aware_sample_index}")
+                original_frames = image[scene_aware_sample_index]
                 # Get linearly spaced float indices, then round to nearest int
-                original_frames_idx = torch.linspace(0, num_frames - 1, steps=num_samples)
-                original_frames_idx = torch.round(original_frames_idx).long()
-                original_frames_idx = torch.clamp(original_frames_idx, 0, num_frames - 1)
+                # original_frames_idx = torch.linspace(0, num_frames - 1, steps=num_samples)
+                # original_frames_idx = torch.round(original_frames_idx).long()
+                # original_frames_idx = torch.clamp(original_frames_idx, 0, num_frames - 1)
                 # Now index safely
-                original_frames = image[original_frames_idx]
+                # original_frames = image[original_frames_idx]
 
                 # Init recurrent memory module
                 # print(f"sample image shape : {image.shape}")

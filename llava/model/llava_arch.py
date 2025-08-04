@@ -725,9 +725,9 @@ class LlavaMetaForCausalLM(MultimodalOpsMixin, ABC):
             ]
         else:
             # Use both memory and frame features
-            fake_frame = torch.zeros_like(image_features[1])  # [n, 3584]
+            # fake_frame = torch.zeros_like(image_features[1])  # [n, 3584]
             image_features_with_prompt = [
-                torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, fake_frame), dim=0)
+                torch.cat((memory_prompt_embeds, image_features[0], frame_prompt_embeds, image_features[1]), dim=0)
             ]
         # rank_print(f"Image features with prompt shape: {image_features_with_prompt[0].shape}")  # [n, 3584]
         # rank_print(f"Image features shape: {image_features[0].shape},{image_features[1].shape}")  # [n, 3584]

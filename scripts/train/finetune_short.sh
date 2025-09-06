@@ -3,7 +3,7 @@ export NCCL_IB_DISABLE=0
 
 export NCCL_DEBUG=DEBUG
 export USE_PYTORCH_KERNEL_CACHE=0
-
+# export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 # export NCCL_DEBUG=INFO   # Uncomment for debugging
 export NCCL_DEBUG_SUBSYS=ALL
@@ -29,10 +29,9 @@ echo "BASE_RUN_NAME: ${BASE_RUN_NAME}"
 
 # Stage 2
 PROMPT_VERSION="qwen_1_5"
-RUN_NAME="KIT_7b_qwen2_mlp_depth2_smallLR_prompt_break_symmetry"
-PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-7b-ov" # replace it with your last checkpoint training from single image collection
-# PREV_STAGE_CHECKPOINT="/hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/checkpoints/KIT_0.5b_qwen2_recurrent_8tokens_catmemory_pe_linear_depth2_fixLLM_bigbatch"
-# PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov"
+RUN_NAME="7b_qwen2_mlp_depth2_smallLR_prompt_break_symmetry_short"
+PREV_STAGE_CHECKPOINT="lmms-lab/llava-onevision-qwen2-0.5b-ov" # replace it with your last checkpoint training from single image collection
+
 echo "PREV_STAGE_CHECKPOINT: ${PREV_STAGE_CHECKPOINT}"
 echo "MID_RUN_NAME: ${RUN_NAME}"
 
@@ -54,7 +53,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --deepspeed scripts/zero2.json \
     --model_name_or_path $PREV_STAGE_CHECKPOINT \
     --version $PROMPT_VERSION \
-    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/test.yaml \
+    --data_path /hkfs/work/workspace/scratch/tum_tyz7686-LLaVA-OV/LLaVA-NeXT/scripts/train/short_train.yaml \
     --image_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos \
     --video_folder /hkfs/work/workspace/scratch/tum_tyz7686-hf_storage/videos_tensors \
     --mm_tunable_parts="larimar_model,recurrent_model,mm_language_model" \
@@ -78,8 +77,8 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --gradient_accumulation_steps 4 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 200 \
-    --save_total_limit 6 \
+    --save_steps 100 \
+    --save_total_limit 4 \
     --learning_rate 1e-6 \
     --memory_transformer_lr 1e-5 \
     --memory_key_value_lr 1e-5 \
@@ -99,7 +98,7 @@ srun --mpi=pmix --export=ALL,ACCELERATE_CPU_AFFINITY=0 \
     --force_sample False \
     --frames_upbound 300 \
     --attn_implementation "flash_attention_2" \
-    --dropout_frames False
+    --dropout_frames True
 exit 0;
 
 # You can delete the sdpa attn_implementation if you want to use flash attn

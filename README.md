@@ -1,14 +1,16 @@
-<p align="center" width="100%">
-</p>
-
 # Memory Enhanced Video Language Model for Long Video Understanding
 
 
 This project introduces a Memory-Augmented Video-Language Model built on top of the LLaVA-OneVision backbone. The model integrates a recurrent memory module with learnable memory tokens that evolve over time, consolidating both recent and historical visual context. A lightweight Memory-Fuser combines these representations with fine-grained frame embeddings, enabling scalable reasoning across extended temporal contexts.
 
 We evaluate our approach on five long-video understanding benchmarks—LongVideoBench, VideoMME, MLVU, NExT-QA, and EgoSchema—achieving consistent improvements over the baseline. Unlike existing VLMs, our architecture maintains accuracy as video length increases, effectively bridging the gap between scalability and performance.
+<p align="center" width="100%">
+  <img src="assets/model_arch.png" alt="Model Overview" width="80%">
+</p>
 
-
+<p align="center" width="100%">
+  <img src="assets/evaluation.png" alt="Model Overview" width="80%">
+</p>
 ## Models & Scripts
 The model installation follows exactly the LLaVA-OneVision setup. Please refer to the [LLaVA-OneVision](https://github.com/LLaVA-VL/LLaVA-NeXT)
 ### Installation

@@ -31,7 +31,7 @@ pip install -e ".[train]"
 The training data come from [lmms-lab/LLaVA-Video-178K](https://huggingface.co/datasets/lmms-lab/LLaVA-Video-178K) dataset. Please also refer to [LLaVA-OneVision Data Preparation](https://github.com/LLaVA-VL/LLaVA-NeXT/blob/main/scripts/train/README.md) for data preparation instructions.
 
 ### Training
-The training is conducted in two stages. The first stage is to train the memory module first on short videos and the second stage is to fine-tune the whole model on longer video range. The script for the first stage is in [scripts/train/finetune_short.sh]() and the script for the second stage is in [scripts/train/finetune_long.sh](). Please refer to the scripts for more details.
+The training is conducted in two stages. The first stage is to train the memory module first on short videos and the second stage is to fine-tune the whole model on longer video range. The script for the first stage is in [scripts/train/finetune_short.sh](https://github.com/1023604540/Memory-Augmented-VLM/blob/recurrent_memory_mlp_prompt/scripts/train/finetune_short.sh) and the script for the second stage is in [scripts/train/finetune_long.sh](https://github.com/1023604540/Memory-Augmented-VLM/blob/recurrent_memory_mlp_prompt/scripts/train/finetune_long.sh). Please refer to the scripts for more details.
 
 ### Evaluaton
 The evaluation is performed using [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval). Please first install the lmms-eval package. To reproduce the results in our paper, you can use the following script:
